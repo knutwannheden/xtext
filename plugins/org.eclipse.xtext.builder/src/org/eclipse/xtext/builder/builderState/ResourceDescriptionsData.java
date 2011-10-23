@@ -18,21 +18,27 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
+import org.eclipse.xtext.resource.IResourceDescriptions;
+import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.ISelectable;
 import org.eclipse.xtext.resource.impl.AbstractCompoundSelectable;
 
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  */
-public class ResourceDescriptionsData extends AbstractCompoundSelectable {
+public class ResourceDescriptionsData extends AbstractCompoundSelectable implements IResourceDescriptions, IResourceDescriptionsExtension {
 
 	private final Map<URI, IResourceDescription> resourceDescriptionMap;
 	private final Multimap<QualifiedName, IResourceDescription> lookupMap;
@@ -122,6 +128,67 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable {
 				lookupMap.put(object.getName().toLowerCase(), newDescription);
 			}
 		}
+	}
+
+	public Iterable<IResourceDescription> findAllReferencingResources(Iterable<IResourceDescription> targetResources,
+			final ReferenceMatchPolicy matchPolicy) {
+		if (Iterables.isEmpty(targetResources)) {
+			return ImmutableSet.of();
+		}
+
+		return Iterables.concat(Iterables.transform(targetResources, new Function<IResourceDescription, Iterable<IResourceDescription>>() {
+			public Iterable<IResourceDescription> apply(IResourceDescription from) {
+				return findObjectReferencingResources(from.getExportedObjects(), matchPolicy);
+			}}));
+	}
+
+	public Iterable<IResourceDescription> findObjectReferencingResources(
+			Iterable<IEObjectDescription> targetObjects, final ReferenceMatchPolicy matchPolicy) {
+		if (Iterables.isEmpty(targetObjects)) {
+			return ImmutableSet.of();
+		}
+
+		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetObjects));
+		final Set<QualifiedName> exportedNames = Sets.newHashSet();
+		for (IEObjectDescription obj : targetObjects) {
+			targetUris.add(obj.getEObjectURI());
+			if (matchNames) {
+				exportedNames.add(obj.getName());
+			}
+		}
+
+		return Iterables.filter(getAllResourceDescriptions(), new Predicate<IResourceDescription>() {
+			public boolean apply(final IResourceDescription input) {
+				if (matchNames) {
+					for (QualifiedName name : input.getImportedNames()) {
+						if (exportedNames.contains(name)) {
+							return true;
+						}
+					}
+				}
+				if (matchPolicy.includes(ReferenceMatchPolicy.REFERENCES)) {
+					for (IReferenceDescription ref : input.getReferenceDescriptions()) {
+						if (targetUris.contains(ref.getTargetEObjectUri())) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		});
+	}
+
+	public Iterable<IReferenceDescription> findReferencesToObjects(final Iterable<URI> targetObjects) {
+	    return Iterables.concat(Iterables.transform(getAllResourceDescriptions(), new Function<IResourceDescription, Iterable<IReferenceDescription>>() {
+	        public Iterable<IReferenceDescription> apply(final IResourceDescription from) {
+	          return Iterables.filter(from.getReferenceDescriptions(), new Predicate<IReferenceDescription>() {
+	            public boolean apply(final IReferenceDescription input) {
+	              return Iterables.contains(targetObjects, input.getTargetEObjectUri());
+	            }
+	          });
+	        }
+	      }));
 	}
 
 }

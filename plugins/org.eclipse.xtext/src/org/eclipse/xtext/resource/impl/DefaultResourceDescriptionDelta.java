@@ -19,6 +19,7 @@ import com.google.common.collect.Iterables;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
+ * @since 2.1
  */
 public class DefaultResourceDescriptionDelta implements IResourceDescription.Delta {
 
@@ -39,6 +40,10 @@ public class DefaultResourceDescriptionDelta implements IResourceDescription.Del
 		}
 		this.old = old;
 		this._new = _new;
+	}
+
+	public URI getUri() {
+		return old == null ? _new.getURI() : old.getURI();
 	}
 
 	public IResourceDescription getNew() {
@@ -105,13 +110,10 @@ public class DefaultResourceDescriptionDelta implements IResourceDescription.Del
 		return true;
 	}
 
-	public URI getUri() {
-		return old == null ? _new.getURI() : old.getURI();
-	}
-
 	@Override
 	public String toString() {
 		return getClass().getSimpleName() + " for " + getUri() + " old :" + (getOld() != null) + ",new :"
 				+ (getNew() != null);
 	}
+
 }

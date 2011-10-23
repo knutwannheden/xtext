@@ -9,7 +9,6 @@ package org.eclipse.xtext.builder.clustering;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Queue;
 import java.util.Set;
@@ -41,11 +40,15 @@ import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceServiceProvider;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
+import org.eclipse.xtext.resource.impl.ExtendedResourceDescriptionDelta;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.Strings;
 
+import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
@@ -58,7 +61,6 @@ import com.google.inject.name.Named;
 public class ClusteringBuilderState extends AbstractBuilderState {
 
     public static final String RESOURCELOADER_CROSS_LINKING = "org.eclipse.xtext.builder.resourceloader.crossLinking";
-
     public static final String RESOURCELOADER_GLOBAL_INDEX = "org.eclipse.xtext.builder.resourceloader.globalIndex";
 
     /** Class-wide logger. */
@@ -236,7 +238,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                             final IResourceDescription newDesc = newState.getResourceDescription(changedURI);
                             ResourceDescriptionImpl indexReadyDescription = newDesc != null ? BuilderStateUtil.create(newDesc) : null;
                             if ((oldDescription != null || indexReadyDescription != null) && oldDescription != indexReadyDescription) {
-                                newDelta = new DefaultResourceDescriptionDelta(oldDescription, indexReadyDescription);
+                                newDelta = new ExtendedResourceDescriptionDelta(oldDescription, indexReadyDescription);
                             }
                         }
                     }
@@ -332,7 +334,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                         // We also don't care what kind of Delta we get here; it's just a temporary transport vehicle. That interface
                         // could do with some clean-up, too, because all we actually want to do is register the new resource
                         // description, not the delta.
-                        newState.register(new DefaultResourceDescriptionDelta(oldState.getResourceDescription(uri), copiedDescription));
+                        newState.register(new ExtendedResourceDescriptionDelta(oldState.getResourceDescription(uri), copiedDescription));
                         buildData.queueURI(uri);
                     }
                 } catch (final WrappedException ex) {
@@ -425,32 +427,51 @@ public class ClusteringBuilderState extends AbstractBuilderState {
             Collection<Delta> deltas,
             BuildData buildData,
             final IProgressMonitor monitor) {
-        if (deltas.isEmpty()) {
-            return;
-        }
-        final SubMonitor progress = SubMonitor.convert(monitor, allRemainingURIs.size());
-        Iterator<URI> iter = allRemainingURIs.iterator();
-        while (iter.hasNext()) {
-            if (progress.isCanceled()) {
-                throw new OperationCanceledException();
-            }
-            final URI candidateURI = iter.next();
-            final IResourceDescription candidateDescription = oldState.getResourceDescription(candidateURI);
-            final IResourceDescription.Manager manager = getResourceDescriptionManager(candidateURI);
-            if (candidateDescription == null || manager == null) {
-                // If there is no description in the old state, there's no need to re-check this over and over.
-                iter.remove();
-            } else {
-                if (manager.isAffected(deltas, candidateDescription, newState)) {
-                    buildData.queueURI(candidateURI);
-                    iter.remove();
-                }
-            }
-            progress.worked(1);
-        }
+		if (deltas.isEmpty() || allRemainingURIs.isEmpty()) {
+			return;
+		}
+
+		ImmutableListMultimap<IResourceDescription.Manager, URI> candidatesByManager = Multimaps.index(allRemainingURIs,
+				new Function<URI, IResourceDescription.Manager>() {
+					public IResourceDescription.Manager apply(final URI from) {
+						return getResourceDescriptionManager(from);
+					}
+				});
+
+		final SubMonitor progressMonitor = SubMonitor.convert(monitor, candidatesByManager.keySet().size());
+		for (IResourceDescription.Manager manager : candidatesByManager.keySet()) {
+			if (manager instanceof IResourceDescription.ManagerExtension) {
+				if (monitor.isCanceled()) {
+					throw new OperationCanceledException();
+				}
+				Set<URI> candidates = Sets.newHashSet(candidatesByManager.get(manager));
+				candidates.retainAll(allRemainingURIs);
+				Collection<URI> affected = ((IResourceDescription.ManagerExtension) manager).getAffectedResources(deltas, candidates, newState);
+				for (URI uri : affected) {
+					if (allRemainingURIs.remove(uri)) {
+						buildData.queueURI(uri);
+					}
+				}
+			} else {
+				for (URI candidateURI : candidatesByManager.get(manager)) {
+					if (monitor.isCanceled()) {
+						throw new OperationCanceledException();
+					}
+					if (allRemainingURIs.contains(candidateURI)
+							&& manager.isAffected(deltas, oldState.getResourceDescription(candidateURI), newState)) {
+						allRemainingURIs.remove(candidateURI);
+						buildData.queueURI(candidateURI);
+					}
+				}
+			}
+			progressMonitor.worked(1);
+			if (allRemainingURIs.isEmpty()) {
+				return;
+			}
+		}
     }
 
-    protected IResourceDescription.Manager getResourceDescriptionManager(URI uri) {
+	protected IResourceDescription.Manager getResourceDescriptionManager(URI uri) {
         IResourceServiceProvider resourceServiceProvider = managerRegistry.getResourceServiceProvider(uri);
         if (resourceServiceProvider == null) {
             return null;

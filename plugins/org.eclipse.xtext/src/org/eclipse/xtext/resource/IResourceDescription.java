@@ -82,7 +82,7 @@ public interface IResourceDescription extends ISelectable {
 		 * @param deltas List of deltas to check. May not be <code>null</code>.
 		 * @param candidate The description to check. May not be <code>null</code>.
 		 * @param context The current context of the batch operation. May not be <code>null</code>.
-		 * @return whether the condidate is affected by any of the given changes.
+		 * @return whether the candidate is affected by any of the given changes.
 		 * @throws IllegalArgumentException
 		 *             if this manager is not responsible for the given candidate.
 		 */
@@ -92,6 +92,26 @@ public interface IResourceDescription extends ISelectable {
 				throws IllegalArgumentException;
 
 	}
+
+	/**
+	 * @since 2.1
+	 */
+	interface ManagerExtension {
+		
+		  /**
+		   * Batch operation to return all URIs of resources (managed by this manager) which are affected by the given set of deltas.
+		   * 
+		   * @param deltas
+		   *          List of deltas to check. May not be <code>null</code>.
+		   * @param candidates
+		   *          The candidates to check. May also include resources not managed by this manager. May not be <code>null</code>.
+		   * @param context
+		   *          The current context of the batch operation. May not be <code>null</code>.
+		   * @return collection of all resources affected by the given deltas
+		   */
+		  public Collection<URI> getAffectedResources(final Collection<Delta> deltas, final Collection<URI> candidates, final IResourceDescriptionsExtension context);
+
+	 }
 
 	/**
 	 * A delta describing the differences between two versions of the same {@link IResourceDescription}. Instances have
@@ -124,6 +144,19 @@ public interface IResourceDescription extends ISelectable {
 		 * @return whether there are differences between the old and the new resource description.
 		 */
 		boolean haveEObjectDescriptionsChanged();
+
+	}
+
+	/**
+	 * @since 2.1
+	 */
+	interface DeltaExtension {
+
+		public Iterable<IEObjectDescription> getDeletedObjects();
+
+		public Iterable<IEObjectDescription> getChangedObjects();
+
+		public Iterable<IEObjectDescription> getAddedObjects();
 
 	}
 

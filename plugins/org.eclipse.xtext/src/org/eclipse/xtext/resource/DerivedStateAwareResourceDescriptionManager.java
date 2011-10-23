@@ -9,8 +9,16 @@ package org.eclipse.xtext.resource;
 
 import static com.google.common.collect.Lists.*;
 
+import java.util.Collection;
+
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.xtext.resource.IResourceDescription.Delta;
+import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionManager;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 
 /**
  * 
@@ -44,4 +52,15 @@ public class DerivedStateAwareResourceDescriptionManager extends DefaultResource
 			}
 		}
 	}
+
+	// FIXME required because NameBasedEObjectDescription#getEObjectURI() throws an exception
+	@Override
+	public Collection<URI> getAffectedResources(final Collection<Delta> deltas, Collection<URI> candidates,
+			final IResourceDescriptionsExtension context) {
+		return Collections2.filter(candidates, new Predicate<URI>(){
+			public boolean apply(URI input) {
+				return isAffected(deltas, ((IResourceDescriptions) context).getResourceDescription(input), (IResourceDescriptions) context);
+			}});
+	}
+
 }

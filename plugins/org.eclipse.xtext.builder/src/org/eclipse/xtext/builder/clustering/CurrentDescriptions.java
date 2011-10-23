@@ -18,14 +18,16 @@ import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.builder.builderState.ResourceDescriptionsData;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescriptions;
+import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  * @author Thomas Wolf <thomas.wolf@paranor.ch> - Performance optimization and JavaDoc
  */
-public class CurrentDescriptions extends AdapterImpl implements IResourceDescriptions {
+public class CurrentDescriptions extends AdapterImpl implements IResourceDescriptions, IResourceDescriptionsExtension {
 
 	/**
 	 * New index.
@@ -103,6 +105,20 @@ public class CurrentDescriptions extends AdapterImpl implements IResourceDescrip
 		return newData.getExportedObjectsByObject(object);
 	}
 
+	public Iterable<IResourceDescription> findAllReferencingResources(Iterable<IResourceDescription> targetResources,
+			ReferenceMatchPolicy matchPolicy) {
+		return newData.findAllReferencingResources(targetResources, matchPolicy);
+	}
+
+	public Iterable<IResourceDescription> findObjectReferencingResources(
+			Iterable<IEObjectDescription> targetObjects, ReferenceMatchPolicy matchPolicy) {
+		return newData.findObjectReferencingResources(targetObjects, matchPolicy);
+	}
+
+	public Iterable<IReferenceDescription> findReferencesToObjects(Iterable<URI> targetObjects) {
+		return newData.findReferencesToObjects(targetObjects);
+	}
+
 	/**
 	 * @return <code>true</code> if the given type is class {@link CurrentDescriptions}. 
 	 */
@@ -171,4 +187,5 @@ public class CurrentDescriptions extends AdapterImpl implements IResourceDescrip
 		}
 
 	}
+
 }

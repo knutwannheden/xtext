@@ -18,4 +18,5 @@ public class ChangedResourceDescriptionDelta extends DefaultResourceDescriptionD
 	public boolean haveEObjectDescriptionsChanged() {
 		return true;
 	}
+
 }
