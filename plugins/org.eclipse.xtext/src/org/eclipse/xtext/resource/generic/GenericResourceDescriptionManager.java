@@ -20,7 +20,7 @@ import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescription;
-import org.eclipse.xtext.resource.impl.ExtendedResourceDescriptionDelta;
+import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
 import org.eclipse.xtext.util.IResourceScopeCache;
 
 import com.google.inject.Inject;
@@ -48,7 +48,7 @@ public class GenericResourceDescriptionManager implements IResourceDescription.M
 	}
 
 	public Delta createDelta(IResourceDescription oldDescription, IResourceDescription newDescription) {
-		return new ExtendedResourceDescriptionDelta(oldDescription, newDescription);
+		return new DefaultResourceDescriptionDelta(oldDescription, newDescription);
 	}
 
 	public boolean isAffected(Delta delta, IResourceDescription candidate) throws IllegalArgumentException {

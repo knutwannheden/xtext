@@ -136,10 +136,40 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 			return ImmutableSet.of();
 		}
 
-		return Iterables.concat(Iterables.transform(targetResources, new Function<IResourceDescription, Iterable<IResourceDescription>>() {
-			public Iterable<IResourceDescription> apply(IResourceDescription from) {
-				return findObjectReferencingResources(from.getExportedObjects(), matchPolicy);
-			}}));
+		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
+		final boolean ignoreCase = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE);
+		final boolean matchNames = ignoreCase || matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+
+		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetResources));
+		final Set<QualifiedName> exportedNames = Sets.newHashSet();
+		for (IResourceDescription resource : targetResources) {
+			if (matchReferences)
+				targetUris.add(resource.getURI());
+			if (matchNames)
+				for (IEObjectDescription obj : resource.getExportedObjects()) {
+						exportedNames.add(ignoreCase ? obj.getName().toLowerCase() : obj.getName());
+				}
+		}
+
+		return Iterables.filter(getAllResourceDescriptions(), new Predicate<IResourceDescription>() {
+			public boolean apply(final IResourceDescription input) {
+				if (matchReferences) {
+					for (IReferenceDescription ref : input.getReferenceDescriptions()) {
+						if (targetUris.contains(ref.getTargetEObjectUri().trimFragment())) {
+							return true;
+						}
+					}
+				}
+				if (matchNames) {
+					for (QualifiedName name : input.getImportedNames()) {
+						if (exportedNames.contains(ignoreCase ? name.toLowerCase() : name)) {
+							return true;
+						}
+					}
+				}
+				return false;
+			}
+		});
 	}
 
 	public Iterable<IResourceDescription> findObjectReferencingResources(
@@ -148,28 +178,31 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 			return ImmutableSet.of();
 		}
 
-		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
+		final boolean ignoreCase = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE);
+		final boolean matchNames = ignoreCase || matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+
 		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetObjects));
 		final Set<QualifiedName> exportedNames = Sets.newHashSet();
 		for (IEObjectDescription obj : targetObjects) {
-			targetUris.add(obj.getEObjectURI());
-			if (matchNames) {
-				exportedNames.add(obj.getName());
-			}
+			if (matchReferences)
+				targetUris.add(obj.getEObjectURI());
+			if (matchNames)
+				exportedNames.add(ignoreCase ? obj.getName().toLowerCase() : obj.getName());
 		}
 
 		return Iterables.filter(getAllResourceDescriptions(), new Predicate<IResourceDescription>() {
 			public boolean apply(final IResourceDescription input) {
-				if (matchNames) {
-					for (QualifiedName name : input.getImportedNames()) {
-						if (exportedNames.contains(name)) {
+				if (matchReferences) {
+					for (IReferenceDescription ref : input.getReferenceDescriptions()) {
+						if (targetUris.contains(ref.getTargetEObjectUri())) {
 							return true;
 						}
 					}
 				}
-				if (matchPolicy.includes(ReferenceMatchPolicy.REFERENCES)) {
-					for (IReferenceDescription ref : input.getReferenceDescriptions()) {
-						if (targetUris.contains(ref.getTargetEObjectUri())) {
+				if (matchNames) {
+					for (QualifiedName name : input.getImportedNames()) {
+						if (exportedNames.contains(ignoreCase ? name.toLowerCase() : name)) {
 							return true;
 						}
 					}

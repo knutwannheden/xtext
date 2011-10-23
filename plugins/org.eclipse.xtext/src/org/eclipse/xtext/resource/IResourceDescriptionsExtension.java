@@ -19,7 +19,21 @@ public interface IResourceDescriptionsExtension {
 	 * Policy to determine how references are to be matched.
 	 */
 	public static enum ReferenceMatchPolicy {
-		REFERENCES, IMPORTED_NAMES, ALL;
+
+		/** Matches up a resource's reference descriptions against the target objects. */
+		REFERENCES,
+
+		/** Matches a resource's imported names against the target object names. */
+		IMPORTED_NAMES,
+
+		/** Same as {@link #IMPORTED_NAMES} but ignores case. */
+		IMPORTED_NAMES_IGNORE_CASE,
+
+		/**
+		 * Matches any references. Same as the union of matching using {@link #REFERENCES} and
+		 * {@link #IMPORTED_NAMES_IGNORE_CASE}.
+		 */
+		ALL;
 
 		/**
 		 * Checks whether this policy includes the given other policy.

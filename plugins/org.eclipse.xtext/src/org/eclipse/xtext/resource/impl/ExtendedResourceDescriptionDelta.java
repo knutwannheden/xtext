@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.util.Pair;
@@ -32,10 +33,17 @@ import com.google.common.collect.Sets;
  */
 public class ExtendedResourceDescriptionDelta implements IResourceDescription.Delta, IResourceDescription.DeltaExtension {
 
-	private static final Ordering<IEObjectDescription> URI_ORDERING = Ordering.natural().onResultOf(
+	protected static final Ordering<IEObjectDescription> URI_ORDERING = Ordering.natural().onResultOf(
 			new Function<IEObjectDescription, String>() {
 				public String apply(final IEObjectDescription from) {
 					return from.getEObjectURI().fragment();
+				}
+			});
+
+	protected static final Ordering<IEObjectDescription> NAME_ORDERING = Ordering.natural().onResultOf(
+			new Function<IEObjectDescription, QualifiedName>() {
+				public QualifiedName apply(final IEObjectDescription from) {
+					return from.getName();
 				}
 			});
 
@@ -128,11 +136,11 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 	}
 
 	public Iterable<IEObjectDescription> getDeletedObjects() {
-	    return computeDetailedDiff(old, getNew()).getFirst();
+	    return computeDetailedDiff().getFirst();
 	}
 
 	public Iterable<IEObjectDescription> getChangedObjects() {
-	    Collection<Pair<IEObjectDescription, IEObjectDescription>> changes = computeDetailedDiff(old, getNew()).getSecond();
+	    Collection<Pair<IEObjectDescription, IEObjectDescription>> changes = computeDetailedDiff().getSecond();
 	    List<IEObjectDescription> changedObjects = Lists.newArrayListWithCapacity(changes.size());
 	    for (Pair<IEObjectDescription, IEObjectDescription> change : changes) {
 	      changedObjects.add(change.getSecond());
@@ -141,11 +149,15 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 	}
 
 	public Iterable<IEObjectDescription> getAddedObjects() {
-	    return computeDetailedDiff(old, getNew()).getThird();
+	    return computeDetailedDiff().getThird();
+	}
+
+	protected Triple<Collection<IEObjectDescription>, Collection<Pair<IEObjectDescription, IEObjectDescription>>, Collection<IEObjectDescription>> computeDetailedDiff() {
+		return computeDetailedDiff(old, getNew(), NAME_ORDERING);
 	}
 
 	protected Triple<Collection<IEObjectDescription>, Collection<Pair<IEObjectDescription, IEObjectDescription>>, Collection<IEObjectDescription>> computeDetailedDiff(
-			final IResourceDescription oldRes, final IResourceDescription newRes) {
+			final IResourceDescription oldRes, final IResourceDescription newRes, Ordering<IEObjectDescription> ordering) {
 		if (diff == null) {
 			Collection<IEObjectDescription> deletedObjects = Sets.newHashSet();
 			Collection<Pair<IEObjectDescription, IEObjectDescription>> changedObjects = Sets.newHashSet();
@@ -156,8 +168,8 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 			} else if (newRes == null) {
 				Iterables.addAll(deletedObjects, oldRes.getExportedObjects());
 			} else {
-				final List<IEObjectDescription> oldEObjects = URI_ORDERING.sortedCopy(oldRes.getExportedObjects());
-				final List<IEObjectDescription> newEObjects = URI_ORDERING.sortedCopy(newRes.getExportedObjects());
+				final List<IEObjectDescription> oldEObjects = ordering.sortedCopy(oldRes.getExportedObjects());
+				final List<IEObjectDescription> newEObjects = ordering.sortedCopy(newRes.getExportedObjects());
 				int oldIdx = 0;
 				int newIdx = 0;
 				for (;;) {
@@ -172,7 +184,7 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 						deletedObjects.add(oldObj);
 						oldIdx++;
 					} else {
-						int compare = URI_ORDERING.compare(oldObj, newObj);
+						int compare = ordering.compare(oldObj, newObj);
 						if (compare == 0) {
 							if (!equals(oldObj, newObj)) {
 								changedObjects.add(Tuples.create(oldObj, newObj));

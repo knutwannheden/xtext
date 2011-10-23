@@ -40,7 +40,6 @@ import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceServiceProvider;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
-import org.eclipse.xtext.resource.impl.ExtendedResourceDescriptionDelta;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.Strings;
 
@@ -238,7 +237,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                             final IResourceDescription newDesc = newState.getResourceDescription(changedURI);
                             ResourceDescriptionImpl indexReadyDescription = newDesc != null ? BuilderStateUtil.create(newDesc) : null;
                             if ((oldDescription != null || indexReadyDescription != null) && oldDescription != indexReadyDescription) {
-                                newDelta = new ExtendedResourceDescriptionDelta(oldDescription, indexReadyDescription);
+                                newDelta = new DefaultResourceDescriptionDelta(oldDescription, indexReadyDescription);
                             }
                         }
                     }
@@ -334,7 +333,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                         // We also don't care what kind of Delta we get here; it's just a temporary transport vehicle. That interface
                         // could do with some clean-up, too, because all we actually want to do is register the new resource
                         // description, not the delta.
-                        newState.register(new ExtendedResourceDescriptionDelta(oldState.getResourceDescription(uri), copiedDescription));
+                        newState.register(new DefaultResourceDescriptionDelta(oldState.getResourceDescription(uri), copiedDescription));
                         buildData.queueURI(uri);
                     }
                 } catch (final WrappedException ex) {

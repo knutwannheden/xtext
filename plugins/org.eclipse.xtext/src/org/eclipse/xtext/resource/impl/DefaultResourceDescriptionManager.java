@@ -82,7 +82,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	}
 
 	public Delta createDelta(IResourceDescription oldDescription, IResourceDescription newDescription) {
-		return new ExtendedResourceDescriptionDelta(oldDescription, newDescription);
+		return new DefaultResourceDescriptionDelta(oldDescription, newDescription);
 	}
 
 	protected IResourceDescription internalGetResourceDescription(Resource resource,
@@ -248,8 +248,8 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		}
 
 		Iterables.addAll(references, Iterables.transform(Iterables.concat(
-				context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.REFERENCES),
-				context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.REFERENCES)),
+				context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.ALL),
+				context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.ALL)),
 				new Function<IResourceDescription, URI>() {
 					public URI apply(final IResourceDescription from) {
 						return from.getURI();
@@ -258,7 +258,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 
 		for (String container : addedResources.keySet()) {
 			for (IResourceDescription res : context.findAllReferencingResources(addedResources.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES)) {
+					ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE)) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);
@@ -267,7 +267,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		}
 		for (String container : addedObjects.keySet()) {
 			for (IResourceDescription res : context.findObjectReferencingResources(addedObjects.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES)) {
+					ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE)) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);

@@ -196,7 +196,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		//change back to valid state
 		foo_file.setContents(new StringInputStream("object Foo "),true,true,monitor());
 		waitForAutoBuild();
-		assertEquals(0, countMarkers(bar_file));
+		assertEquals(printMarkers(bar_file), 0, countMarkers(bar_file));
 	}
 	
 	public void testDeleteReferencedFile() throws Exception {
