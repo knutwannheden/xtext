@@ -22,6 +22,7 @@ import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
+import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 import org.eclipse.xtext.resource.ISelectable;
 import org.eclipse.xtext.resource.impl.AbstractCompoundSelectable;
 
@@ -136,8 +137,8 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 			return ImmutableSet.of();
 		}
 
-		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
-		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
+		final boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
 		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetResources));
 		final Set<QualifiedName> exportedNames = Sets.newHashSet();
@@ -177,8 +178,8 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 			return ImmutableSet.of();
 		}
 
-		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
-		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
+		final boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
 		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetObjects));
 		final Set<QualifiedName> exportedNames = Sets.newHashSet();

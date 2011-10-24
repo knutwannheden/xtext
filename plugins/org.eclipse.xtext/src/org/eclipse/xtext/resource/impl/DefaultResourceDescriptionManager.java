@@ -240,28 +240,34 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 
 		final Set<IResourceDescription> changedOrDeletedResources = Sets.newHashSet();
 		Iterable<IEObjectDescription> changedOrDeletedObjects = ImmutableSet.of();
-		final Multimap<String, IResourceDescription> addedResources = ArrayListMultimap.create();
-		final Multimap<String, IEObjectDescription> addedObjects = ArrayListMultimap.create();
+		final Multimap<String, IResourceDescription> changedOrAddedResources = ArrayListMultimap.create();
+		final Multimap<String, IEObjectDescription> changedOrAddedObjects = ArrayListMultimap.create();
 
 		for (Delta delta : interestingDeltas) {
 			String container = getContainer(delta.getUri());
 			if (delta instanceof IResourceDescription.DeltaExtension) {
 				IResourceDescription.DeltaExtension detailedDelta = (IResourceDescription.DeltaExtension) delta;
-				changedOrDeletedObjects = Iterables.concat(detailedDelta.getChangedObjects(),
-						detailedDelta.getDeletedObjects());
-				addedObjects.putAll(container, detailedDelta.getAddedObjects());
+				Iterable<IEObjectDescription> changedObjects = detailedDelta.getChangedObjects();
+				changedOrDeletedObjects = Iterables.concat(changedObjects, detailedDelta.getDeletedObjects());
+				changedOrAddedObjects.putAll(container, changedObjects);
+				changedOrAddedObjects.putAll(container, detailedDelta.getAddedObjects());
 			} else {
-				if (delta.getOld() != null) {
-					changedOrDeletedResources.add(delta.getNew() != null ? delta.getNew() : delta.getOld());
+				IResourceDescription oldDesc = delta.getOld();
+				IResourceDescription newDesc = delta.getNew();
+				if (oldDesc == null) {
+					changedOrAddedResources.put(container, newDesc);
+				} else if (newDesc == null) {
+					changedOrDeletedResources.add(oldDesc);
 				} else {
-					addedResources.put(container, delta.getNew());
+					changedOrDeletedResources.add(newDesc);
+					changedOrAddedResources.put(container, newDesc);
 				}
 			}
 		}
 
 		if (!changedOrDeletedResources.isEmpty()) {
 			Iterables.addAll(references, Iterables.transform(
-					context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.ALL),
+					context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.referencesOnly()),
 					new Function<IResourceDescription, URI>() {
 						public URI apply(final IResourceDescription from) {
 							return from.getURI();
@@ -270,7 +276,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		}
 		if (!Iterables.isEmpty(changedOrDeletedObjects)) {
 			Iterables.addAll(references, Iterables.transform(
-					context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.ALL),
+					context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.referencesOnly()),
 					new Function<IResourceDescription, URI>() {
 						public URI apply(final IResourceDescription from) {
 							return from.getURI();
@@ -278,18 +284,18 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 					}));
 		}
 
-		for (String container : addedResources.keySet()) {
-			for (IResourceDescription res : context.findAllReferencingResources(addedResources.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES)) {
+		for (String container : changedOrAddedResources.keySet()) {
+			for (IResourceDescription res : context.findAllReferencingResources(changedOrAddedResources.get(container),
+					ReferenceMatchPolicy.importedNamesOnly())) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);
 				}
 			}
 		}
-		for (String container : addedObjects.keySet()) {
-			for (IResourceDescription res : context.findObjectReferencingResources(addedObjects.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES)) {
+		for (String container : changedOrAddedObjects.keySet()) {
+			for (IResourceDescription res : context.findObjectReferencingResources(changedOrAddedObjects.get(container),
+					ReferenceMatchPolicy.importedNamesOnly())) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);

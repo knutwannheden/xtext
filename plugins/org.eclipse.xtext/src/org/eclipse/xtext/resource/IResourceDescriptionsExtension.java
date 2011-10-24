@@ -8,6 +8,7 @@
 package org.eclipse.xtext.resource;
 
 import org.eclipse.emf.common.util.URI;
+import org.eclipse.xtext.util.Arrays;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
@@ -18,19 +19,33 @@ public interface IResourceDescriptionsExtension {
 	/**
 	 * Policy to determine how references are to be matched.
 	 */
-	public static enum ReferenceMatchPolicy {
+	public static class ReferenceMatchPolicy {
 
-		/** Matches up a resource's reference descriptions against the target objects. */
-		REFERENCES,
+		public static enum MatchType {
+			/** Matches up a resource's reference descriptions against the target objects. */
+			REFERENCES,
+	
+			/** Matches a resource's imported names (ignoring case) against the target object names. */
+			IMPORTED_NAMES;
+		}
 
-		/** Matches a resource's imported names (ignoring case) against the target object names. */
-		IMPORTED_NAMES,
+		private MatchType[] matchTypes;
 
-		/**
-		 * Matches any references. Same as the union of matching using {@link #REFERENCES} and
-		 * {@link #IMPORTED_NAMES_IGNORE_CASE}.
-		 */
-		ALL;
+		protected ReferenceMatchPolicy(MatchType... matchTypes) {
+			this.matchTypes = matchTypes;
+		}
+
+		public static ReferenceMatchPolicy create(MatchType... matchTypes) {
+			return new ReferenceMatchPolicy(matchTypes);
+		}
+
+		public static ReferenceMatchPolicy referencesOnly() {
+			return new ReferenceMatchPolicy(MatchType.REFERENCES);
+		}
+
+		public static ReferenceMatchPolicy importedNamesOnly() {
+			return new ReferenceMatchPolicy(MatchType.IMPORTED_NAMES);
+		}
 
 		/**
 		 * Checks whether this policy includes the given other policy.
@@ -39,17 +54,15 @@ public interface IResourceDescriptionsExtension {
 		 *            other policy
 		 * @return true if this match policy includes the given policy
 		 */
-		public boolean includes(final ReferenceMatchPolicy policy) {
-			if (this == ALL || this == policy) {
-				return true;
-			}
-			return false;
+		public boolean includes(final MatchType type) {
+			return Arrays.contains(matchTypes, type);
 		}
 	}
 
 	/**
-	 * Find all {@link IResourceDescription}s of all resources containing cross-references to any of the resources. The
-	 * result may also include any of the given resources themselves as they could reference each other.
+	 * Find all {@link IResourceDescription}s containing cross-references to any object (whether exported or not) of the
+	 * target resources. The result may also include any of the target resources themselves as they could reference each
+	 * other.
 	 * 
 	 * @param targetResources
 	 *            target resources to find references for
@@ -61,7 +74,7 @@ public interface IResourceDescriptionsExtension {
 			ReferenceMatchPolicy matchPolicy);
 
 	/**
-	 * Find all {@link IResourceDescription}s of all resources containing cross-references to any of the objects.
+	 * Find all {@link IResourceDescription}s containing cross-references to any of the given target objects.
 	 * 
 	 * @param targetObjects
 	 *            target objects to find references for
