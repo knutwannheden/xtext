@@ -44,14 +44,6 @@ public class DBMetaModelAccess {
 		this.conn = conn;
 	}
 
-	public void addEClassMapping(EClass eClass, int id) {
-		classIdMap.put(eClass, id);
-	}
-
-	public void addEReferenceMapping(EReference eReference, int id) {
-		referenceIdMap.put(eReference, id);
-	}
-
 	public void registerEPackages(final Set<EPackage> ePackages) throws SQLException {
 		Set<EClass> allMissingEClasses = Sets.newHashSet();
 		for (EPackage ePackage : ePackages) {
@@ -111,6 +103,46 @@ public class DBMetaModelAccess {
 			conn.close(eclassSupertypesStmt);
 			conn.close(erefStmt);
 		}
+	}
+
+	public void reloadCaches() {
+		clearCaches();
+
+		PreparedStatement eclassStmt = null;
+		PreparedStatement erefStmt = null;
+		try {
+			eclassStmt = conn.prepare("SELECT ID, URI FROM ECLASS");
+			eclassStmt.execute();
+			ResultSet rs = eclassStmt.getResultSet();
+			while (rs.next()) {
+				EClass eClass = EClasses.getEClass(URI.createURI(rs.getString(2)));
+				if (eClass != null) {
+					addEClassMapping(eClass, rs.getInt(1));
+				}
+			}
+			eclassStmt = conn.prepare("SELECT ID, URI FROM EREF");
+			eclassStmt.execute();
+			rs = eclassStmt.getResultSet();
+			while (rs.next()) {
+				EReference ref = EClasses.getEReference(URI.createURI(rs.getString(2)));
+				if (ref != null) {
+					addEReferenceMapping(ref, rs.getInt(1));
+				}
+			}
+		} catch (SQLException e) {
+			throw new DBException(e);
+		} finally {
+			conn.close(eclassStmt);
+			conn.close(erefStmt);
+		}
+	}
+
+	protected void addEClassMapping(EClass eClass, int id) {
+		classIdMap.put(eClass, id);
+	}
+
+	protected void addEReferenceMapping(EReference eReference, int id) {
+		referenceIdMap.put(eReference, id);
 	}
 
 	public void clearCaches() {

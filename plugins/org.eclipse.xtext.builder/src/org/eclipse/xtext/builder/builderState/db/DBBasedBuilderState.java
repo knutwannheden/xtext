@@ -109,10 +109,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private void reloadCaches() {
 		synchronized (resourceIdMap) {
 			clearCaches();
+			metaModelAccess.reloadCaches();
 
 			PreparedStatement resStmt = null;
-			PreparedStatement eclassStmt = null;
-			PreparedStatement erefStmt = null;
 			try {
 				resStmt = conn.prepare("SELECT ID, URI FROM RES");
 				resStmt.execute();
@@ -120,30 +119,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				while (rs.next()) {
 					resourceIdMap.put(URI.createURI(rs.getString(2)), rs.getInt(1));
 				}
-				eclassStmt = conn.prepare("SELECT ID, URI FROM ECLASS");
-				eclassStmt.execute();
-				rs = eclassStmt.getResultSet();
-				while (rs.next()) {
-					EClass eClass = EClasses.getEClass(URI.createURI(rs.getString(2)));
-					if (eClass != null) {
-						metaModelAccess.addEClassMapping(eClass, rs.getInt(1));
-					}
-				}
-				eclassStmt = conn.prepare("SELECT ID, URI FROM EREF");
-				eclassStmt.execute();
-				rs = eclassStmt.getResultSet();
-				while (rs.next()) {
-					EReference ref = EClasses.getEReference(URI.createURI(rs.getString(2)));
-					if (ref != null) {
-						metaModelAccess.addEReferenceMapping(ref, rs.getInt(1));
-					}
-				}
 			} catch (SQLException e) {
 				throw new DBException(e);
 			} finally {
 				conn.close(resStmt);
-				conn.close(eclassStmt);
-				conn.close(erefStmt);
 			}
 		}
 	}
