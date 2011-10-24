@@ -253,7 +253,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			resNamesStmt.executeBatch();
 
 			objStmt = conn.prepare("INSERT INTO OBJ (RES_ID, FRAG, NAME, ECLASS_ID, USER_DATA) VALUES (?, ?, ?, ?, ?)");
-			refStmt = conn.prepare("INSERT INTO REF (RES_ID, SRC_FRAG, CONT_FRAG, TGT_RES_ID, TGT_FRAG, EREF_ID, IDX) VALUES (?, ?, ?, ?, ?, ?, ?)");
+			refStmt = conn
+					.prepare("INSERT INTO REF (RES_ID, SRC_FRAG, CONT_FRAG, TGT_RES_ID, TGT_FRAG, EREF_ID, IDX) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
 			for (IResourceDescription res : resourceDescriptions) {
 				Integer resId = resourceIdMap.get(res.getURI());
@@ -337,7 +338,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			IEObjectDescriptionIterable objects = new IEObjectDescriptionIterable() {
 				@Override
 				protected PreparedStatement createPreparedStatement() throws SQLException {
-					PreparedStatement stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID");
+					PreparedStatement stmt = conn
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID");
 					stmt.setObject(1, idArray);
 					return stmt;
 				}
@@ -360,8 +362,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	/**
-	 * Loads all object names present in the database associated with the URIs in which they occur. TODO: consider using
-	 * URI[] arrays (or even Object => URI, URI[]) to save more memory
+	 * Loads all object names present in the database associated with the URIs in which they occur.
+	 * <p>
+	 * TODO: consider using URI[] arrays (or even Object => URI, URI[]) to save more memory
 	 * 
 	 * @param destination
 	 *            map to which to add all names to the respective resources mappings
@@ -532,7 +535,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
-				PreparedStatement stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
+				PreparedStatement stmt = conn
+						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
 				stmt.setInt(1, resId);
 				return stmt;
 			}
@@ -548,13 +552,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 				boolean matchAllObjects = type == EcorePackage.Literals.EOBJECT;
 				String match = convertQualifiedNameToString(name);
-				// FIXME should probably be removed
-				boolean patternMatch = match.indexOf('*') != -1 || match.indexOf('?') != -1;
-				if (patternMatch) {
-					match = toSqlPattern(match);
-				}
-
-				String operator = patternMatch ? "LIKE" : "=";
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				StringBuilder query = new StringBuilder(
@@ -566,9 +563,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 
 				if (!ignoreCase) {
-					query.append(" AND O.NAME ").append(operator).append(" ?1");
+					query.append(" AND O.NAME = ?1");
 				} else {
-					query.append(" AND LOWER(O.NAME) ").append(operator).append(" LOWER(?1)");
+					query.append(" AND LOWER(O.NAME) = LOWER(?1)");
 				}
 
 				PreparedStatement stmt = conn.prepare(query);
@@ -595,13 +592,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 				boolean matchAllObjects = type == EcorePackage.Literals.EOBJECT;
 				String match = convertQualifiedNameToString(name);
-				// FIXME should probably be removed
-				boolean patternMatch = match.indexOf('*') != -1 || match.indexOf('?') != -1;
-				if (patternMatch) {
-					match = toSqlPattern(match);
-				}
-
-				String operator = patternMatch ? "LIKE" : "=";
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				StringBuilder query = new StringBuilder(
@@ -613,9 +603,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 
 				if (!ignoreCase) {
-					query.append(" AND O.NAME ").append(operator).append(" ?2");
+					query.append(" AND O.NAME = ?2");
 				} else {
-					query.append(" AND LOWER(O.NAME) ").append(operator).append(" LOWER(?2)");
+					query.append(" AND LOWER(O.NAME) = LOWER(?2)");
 				}
 
 				PreparedStatement stmt = conn.prepare(query);
@@ -639,7 +629,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				if (type == EcorePackage.Literals.EOBJECT) {
 					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O");
 				} else {
-					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE E.SUPERTYPE_ECLASS_ID = ?");
+					stmt = conn
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE E.SUPERTYPE_ECLASS_ID = ?");
 					stmt.setInt(1, metaModelAccess.getEClassId(type));
 				}
 				return stmt;
@@ -660,10 +651,12 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				PreparedStatement stmt = null;
 				if (type == EcorePackage.Literals.EOBJECT) {
-					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
+					stmt = conn
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
 					stmt.setInt(1, resId);
 				} else {
-					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE O.RES_ID = ? AND E.SUPERTYPE_ECLASS_ID = ?");
+					stmt = conn
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE O.RES_ID = ? AND E.SUPERTYPE_ECLASS_ID = ?");
 					stmt.setInt(1, resId);
 					stmt.setInt(2, metaModelAccess.getEClassId(type));
 				}
@@ -688,7 +681,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
-				PreparedStatement stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ? AND O.FRAG = ?");
+				PreparedStatement stmt = conn
+						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ? AND O.FRAG = ?");
 				stmt.setInt(1, resId);
 				stmt.setString(2, uri.fragment());
 				return stmt;
@@ -724,7 +718,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
-				PreparedStatement stmt = conn.prepare("SELECT R.URI, D.SRC_FRAG, D.CONT_FRAG, D.TGT_RES_ID, D.TGT_FRAG, D.EREF_ID, D.IDX FROM REF D JOIN RES R ON D.RES_ID = R.ID WHERE R.URI = ?");
+				PreparedStatement stmt = conn
+						.prepare("SELECT R.URI, D.SRC_FRAG, D.CONT_FRAG, D.TGT_RES_ID, D.TGT_FRAG, D.EREF_ID, D.IDX FROM REF D JOIN RES R ON D.RES_ID = R.ID WHERE R.URI = ?");
 				stmt.setString(1, resource.toString());
 				return stmt;
 			}
@@ -734,8 +729,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				URI sourceUri = URI.createURI(resultSet.getString(1));
 				return new ImmutableReferenceDescription(sourceUri.appendFragment(resultSet.getString(2)),
 						sourceUri.appendFragment(resultSet.getString(3)), getResourceURI(resultSet.getInt(4))
-								.appendFragment(resultSet.getString(5)), metaModelAccess.getEReference(resultSet.getInt(6)),
-						resultSet.getInt(7));
+								.appendFragment(resultSet.getString(5)), metaModelAccess.getEReference(resultSet
+								.getInt(6)), resultSet.getInt(7));
 			}
 		};
 	}
@@ -861,7 +856,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
-				PreparedStatement stmt = conn.prepare("SELECT S.URI, D.SRC_FRAG, D.CONT_FRAG, D.EREF_ID, D.TGT_RES_ID, D.TGT_FRAG, D.IDX FROM RES S JOIN REF D ON (D.RES_ID = S.ID) JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (D.TGT_RES_ID = T.ID AND D.TGT_FRAG = T.FRAG)");
+				PreparedStatement stmt = conn
+						.prepare("SELECT S.URI, D.SRC_FRAG, D.CONT_FRAG, D.EREF_ID, D.TGT_RES_ID, D.TGT_FRAG, D.IDX FROM RES S JOIN REF D ON (D.RES_ID = S.ID) JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (D.TGT_RES_ID = T.ID AND D.TGT_FRAG = T.FRAG)");
 				Object[] tgtResIdArray = new Object[Iterables.size(targetObjects)];
 				Object[] tgtFragArray = new Object[tgtResIdArray.length];
 				int idx = 0;
@@ -882,7 +878,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				return new ImmutableReferenceDescription(sourceUri.appendFragment(resultSet.getString(2)),
 						contFrag != null ? sourceUri.appendFragment(contFrag) : null, getResourceURI(
 								resultSet.getInt(5)).appendFragment(resultSet.getString(6)),
-								metaModelAccess.getEReference(resultSet.getInt(4)), resultSet.getInt(7));
+						metaModelAccess.getEReference(resultSet.getInt(4)), resultSet.getInt(7));
 			}
 		};
 	}
@@ -965,46 +961,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		});
 	}
 
-	/**
-	 * Returns the URI of the given resource.
-	 * 
-	 * @param id
-	 *            ID of resource
-	 * @return URI of resource
-	 */
 	private URI getResourceURI(final int id) {
 		return resourceIdMap.inverse().get(id);
-	}
-
-	/**
-	 * Converts a GLOB pattern to an SQL pattern: '*' -> '%', '?' -> '_', '%' -> '\%', and '_' -> '\_'.
-	 * 
-	 * @param globPattern
-	 *            pattern to convert
-	 * @return converted pattern
-	 */
-	private static String toSqlPattern(final String globPattern) {
-		int len = globPattern.length();
-
-		StringBuilder res = new StringBuilder(len + 2);
-		for (int i = 0; i < len; i++) {
-			char c = globPattern.charAt(i);
-			switch (c) {
-				case '*':
-					res.append('%');
-					break;
-				case '?':
-					res.append('_');
-					break;
-				case '%':
-				case '_':
-					res.append('\\');
-				default:
-					res.append(c);
-					break;
-			}
-		}
-		return res.toString();
 	}
 
 	/**
@@ -1017,9 +975,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	/**
-	 * Create an {@link IEObjectDescription} object from a database {@link ResultSet}.
-	 */
 	private abstract class IEObjectDescriptionIterable extends ClosingResultSetIterable<IEObjectDescription> {
 
 		@Override
