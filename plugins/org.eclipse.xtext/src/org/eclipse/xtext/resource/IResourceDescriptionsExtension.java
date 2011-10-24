@@ -23,11 +23,8 @@ public interface IResourceDescriptionsExtension {
 		/** Matches up a resource's reference descriptions against the target objects. */
 		REFERENCES,
 
-		/** Matches a resource's imported names against the target object names. */
+		/** Matches a resource's imported names (ignoring case) against the target object names. */
 		IMPORTED_NAMES,
-
-		/** Same as {@link #IMPORTED_NAMES} but ignores case. */
-		IMPORTED_NAMES_IGNORE_CASE,
 
 		/**
 		 * Matches any references. Same as the union of matching using {@link #REFERENCES} and

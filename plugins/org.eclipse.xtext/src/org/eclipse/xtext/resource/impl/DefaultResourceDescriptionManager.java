@@ -233,32 +233,43 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		final Multimap<String, IEObjectDescription> addedObjects = ArrayListMultimap.create();
 
 		for (Delta delta : interestingDeltas) {
+			String container = getContainer(delta.getUri());
 			if (delta instanceof IResourceDescription.DeltaExtension) {
 				IResourceDescription.DeltaExtension detailedDelta = (IResourceDescription.DeltaExtension) delta;
 				changedOrDeletedObjects = Iterables.concat(detailedDelta.getChangedObjects(),
 						detailedDelta.getDeletedObjects());
-				addedObjects.putAll(getContainer(delta.getUri()), detailedDelta.getAddedObjects());
+				addedObjects.putAll(container, detailedDelta.getAddedObjects());
 			} else {
 				if (delta.getOld() != null) {
-					changedOrDeletedResources.add(delta.getOld());
+					changedOrDeletedResources.add(delta.getNew() != null ? delta.getNew() : delta.getOld());
 				} else {
-					addedResources.put(getContainer(delta.getUri()), delta.getNew());
+					addedResources.put(container, delta.getNew());
 				}
 			}
 		}
 
-		Iterables.addAll(references, Iterables.transform(Iterables.concat(
-				context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.ALL),
-				context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.ALL)),
-				new Function<IResourceDescription, URI>() {
-					public URI apply(final IResourceDescription from) {
-						return from.getURI();
-					}
-				}));
+		if (!changedOrDeletedResources.isEmpty()) {
+			Iterables.addAll(references, Iterables.transform(
+					context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.ALL),
+					new Function<IResourceDescription, URI>() {
+						public URI apply(final IResourceDescription from) {
+							return from.getURI();
+						}
+					}));
+		}
+		if (!Iterables.isEmpty(changedOrDeletedObjects)) {
+			Iterables.addAll(references, Iterables.transform(
+					context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.ALL),
+					new Function<IResourceDescription, URI>() {
+						public URI apply(final IResourceDescription from) {
+							return from.getURI();
+						}
+					}));
+		}
 
 		for (String container : addedResources.keySet()) {
 			for (IResourceDescription res : context.findAllReferencingResources(addedResources.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE)) {
+					ReferenceMatchPolicy.IMPORTED_NAMES)) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);
@@ -267,7 +278,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		}
 		for (String container : addedObjects.keySet()) {
 			for (IResourceDescription res : context.findObjectReferencingResources(addedObjects.get(container),
-					ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE)) {
+					ReferenceMatchPolicy.IMPORTED_NAMES)) {
 				URI uri = res.getURI();
 				if (filter.apply(uri) && isContainerVisible(uri, container)) {
 					references.add(uri);

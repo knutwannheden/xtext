@@ -137,8 +137,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 		}
 
 		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
-		final boolean ignoreCase = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE);
-		final boolean matchNames = ignoreCase || matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
 
 		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetResources));
 		final Set<QualifiedName> exportedNames = Sets.newHashSet();
@@ -147,7 +146,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 				targetUris.add(resource.getURI());
 			if (matchNames)
 				for (IEObjectDescription obj : resource.getExportedObjects()) {
-						exportedNames.add(ignoreCase ? obj.getName().toLowerCase() : obj.getName());
+						exportedNames.add(obj.getName().toLowerCase());
 				}
 		}
 
@@ -162,7 +161,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 				}
 				if (matchNames) {
 					for (QualifiedName name : input.getImportedNames()) {
-						if (exportedNames.contains(ignoreCase ? name.toLowerCase() : name)) {
+						if (exportedNames.contains(name.toLowerCase())) {
 							return true;
 						}
 					}
@@ -179,8 +178,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 		}
 
 		final boolean matchReferences = matchPolicy.includes(ReferenceMatchPolicy.REFERENCES);
-		final boolean ignoreCase = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES_IGNORE_CASE);
-		final boolean matchNames = ignoreCase || matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
+		final boolean matchNames = matchPolicy.includes(ReferenceMatchPolicy.IMPORTED_NAMES);
 
 		final Set<URI> targetUris = Sets.newHashSetWithExpectedSize(Iterables.size(targetObjects));
 		final Set<QualifiedName> exportedNames = Sets.newHashSet();
@@ -188,7 +186,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 			if (matchReferences)
 				targetUris.add(obj.getEObjectURI());
 			if (matchNames)
-				exportedNames.add(ignoreCase ? obj.getName().toLowerCase() : obj.getName());
+				exportedNames.add(obj.getName().toLowerCase());
 		}
 
 		return Iterables.filter(getAllResourceDescriptions(), new Predicate<IResourceDescription>() {
@@ -202,7 +200,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 				}
 				if (matchNames) {
 					for (QualifiedName name : input.getImportedNames()) {
-						if (exportedNames.contains(ignoreCase ? name.toLowerCase() : name)) {
+						if (exportedNames.contains(name.toLowerCase())) {
 							return true;
 						}
 					}
