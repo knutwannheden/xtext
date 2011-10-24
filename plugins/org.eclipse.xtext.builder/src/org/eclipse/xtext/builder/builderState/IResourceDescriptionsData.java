@@ -19,12 +19,12 @@ import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
  */
 public interface IResourceDescriptionsData extends IResourceDescriptions, IResourceDescriptionsExtension {
 
-	IResourceDescriptionsData copy();
-
-	void removeDescription(URI uri);
-
 	Set<URI> getAllURIs();
 
+	IResourceDescriptionsData copy();
+
 	void addDescription(URI uri, IResourceDescription newDescription);
+	
+	void removeDescription(URI uri);
 
 }
