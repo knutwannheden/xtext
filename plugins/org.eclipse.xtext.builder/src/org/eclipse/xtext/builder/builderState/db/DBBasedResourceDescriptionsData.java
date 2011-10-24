@@ -135,7 +135,8 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	@Override
 	public Iterable<IEObjectDescription> getExportedObjectsByObject(final EObject object) {
 		ensureInitialized();
-		IResourceDescription res = cache.get(object.eIsProxy() ? ((InternalEObject) object).eProxyURI().trimFragment() : object.eResource().getURI());
+		IResourceDescription res = cache.get(object.eIsProxy() ? ((InternalEObject) object).eProxyURI().trimFragment()
+				: object.eResource().getURI());
 		if (res != null) {
 			return res.getExportedObjectsByObject(object);
 		}
@@ -200,21 +201,25 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	}
 
 	public void commitChanges() {
-		flushChanges();
-		buffer.stop();
-		buffer = null;
-		index.commitChanges();
-		inTransaction = false;
+		if (inTransaction) {
+			flushChanges();
+			buffer.stop();
+			buffer = null;
+			index.commitChanges();
+			inTransaction = false;
+		}
 	}
 
 	public void rollbackChanges() {
-		try {
-			buffer.stop();
-			buffer = null;
-			index.rollbackChanges();
-		} finally {
-			inTransaction = false;
-			reset();
+		if (inTransaction) {
+			try {
+				buffer.stop();
+				buffer = null;
+				index.rollbackChanges();
+			} finally {
+				inTransaction = false;
+				reset();
+			}
 		}
 	}
 
@@ -304,8 +309,6 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		}
 		if (!missing.isEmpty()) {
 			for (IResourceDescription loaded : index.loadResources(missing)) {
-				// index.loadResources(..) returns HybridResourceDescriptions or IndexBasedResourceDescriptions which are both
-				// OK to add to the cache because they do not "cache" the dangerously big elements:
 				cache.put(loaded.getURI(), loaded);
 				candidates.add(loaded);
 			}

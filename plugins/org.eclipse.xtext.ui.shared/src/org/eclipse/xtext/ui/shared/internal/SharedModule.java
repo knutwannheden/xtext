@@ -16,7 +16,10 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.builder.builderState.IBuilderState;
+import org.eclipse.xtext.builder.builderState.db.DBBasedBuilderState;
+import org.eclipse.xtext.builder.builderState.db.DBBasedBuilderStateProvider;
 import org.eclipse.xtext.builder.clustering.ClusteringBuilderState;
+import org.eclipse.xtext.builder.clustering.DBBasedClusteringBuilderState;
 import org.eclipse.xtext.builder.impl.DirtyStateAwareResourceDescriptions;
 import org.eclipse.xtext.builder.impl.ProjectOpenedOrClosedListener;
 import org.eclipse.xtext.builder.impl.XtextBuilder;
@@ -48,7 +51,8 @@ public class SharedModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(IBuilderState.class).to(ClusteringBuilderState.class).in(Scopes.SINGLETON);
+		bind(DBBasedBuilderState.class).toProvider(DBBasedBuilderStateProvider.class);
+		bind(IBuilderState.class).to(DBBasedClusteringBuilderState.class).in(Scopes.SINGLETON);
 		bind(IResourceDescriptions.class).to(DirtyStateAwareResourceDescriptions.class).in(Scopes.SINGLETON);
 		bind(IResourceServiceProvider.Registry.class).toInstance(IResourceServiceProvider.Registry.INSTANCE);
 		bind(IResourceSetProvider.class).to(SimpleResourceSetProvider.class);

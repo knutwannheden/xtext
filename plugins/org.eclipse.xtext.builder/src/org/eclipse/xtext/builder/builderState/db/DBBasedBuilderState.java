@@ -458,6 +458,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	 *            map to which to add all names to the respective resources mappings
 	 */
 	public void loadAllQualifiedNames(final Map<QualifiedName, Collection<URI>> destination) {
+		ensureInitialized();
 		PreparedStatement stmt = null;
 		try {
 			stmt = prepare("SELECT NAME, RES_ID FROM OBJ");

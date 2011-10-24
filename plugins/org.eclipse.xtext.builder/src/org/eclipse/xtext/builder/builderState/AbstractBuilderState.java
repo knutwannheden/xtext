@@ -51,15 +51,14 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 	private volatile boolean isLoaded = false;
 
 	public synchronized void load() {
-		if (!isLoaded) {
-			resourceDescriptionData = new ResourceDescriptionsData(persister.load());
-			isLoaded = true;
-		}
+		setResourceDescriptionsData(new ResourceDescriptionsData(persister.load()));
 	}
 
 	protected void ensureLoaded() {
-		if (!isLoaded)
+		if (!isLoaded) {
 			load();
+			isLoaded = true;
+		}
 	}
 
 	protected Set<URI> ensureNotNull(Set<URI> uris) {
