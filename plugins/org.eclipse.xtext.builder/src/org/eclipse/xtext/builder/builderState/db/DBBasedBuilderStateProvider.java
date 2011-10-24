@@ -7,6 +7,9 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState.db;
 
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.xtext.builder.internal.Activator;
+
 import com.google.inject.Provider;
 
 /**
@@ -14,9 +17,22 @@ import com.google.inject.Provider;
  */
 public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState> {
 
+	private IPath cachedPath;
+
 	public DBBasedBuilderState get() {
-		return new DBBasedBuilderState(System.getProperty("user.dir") + "/h2",
-				DBBasedBuilderState.DEFAULT_H2_CONFIGURATION);
+		return new DBBasedBuilderState(getBuilderStateLocation(), DBBasedBuilderState.DEFAULT_H2_CONFIGURATION);
+	}
+
+	protected String getBuilderStateLocation() {
+		Activator activator = Activator.getDefault();
+		if (activator == null) {
+			if (cachedPath != null)
+				return cachedPath.toFile().getAbsolutePath();
+			return null;
+		}
+		IPath path = activator.getStateLocation().append("state");
+		cachedPath = path;
+		return path.toFile().getAbsolutePath();
 	}
 
 }
