@@ -20,8 +20,6 @@ import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
-import org.eclipse.xtext.resource.IResourceDescriptions;
-import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 import org.eclipse.xtext.resource.ISelectable;
 import org.eclipse.xtext.resource.impl.AbstractCompoundSelectable;
@@ -39,7 +37,7 @@ import com.google.common.collect.Sets;
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  */
-public class ResourceDescriptionsData extends AbstractCompoundSelectable implements IResourceDescriptions, IResourceDescriptionsExtension {
+public class ResourceDescriptionsData extends AbstractCompoundSelectable implements IResourceDescriptionsData {
 
 	private final Map<URI, IResourceDescription> resourceDescriptionMap;
 	private final Multimap<QualifiedName, IResourceDescription> lookupMap;

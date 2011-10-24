@@ -28,7 +28,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.builder.builderState.AbstractBuilderState;
 import org.eclipse.xtext.builder.builderState.BuilderStateUtil;
-import org.eclipse.xtext.builder.builderState.ResourceDescriptionsData;
+import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.builder.builderState.impl.ResourceDescriptionImpl;
 import org.eclipse.xtext.builder.impl.BuildData;
 import org.eclipse.xtext.builder.resourceloader.IResourceLoader;
@@ -99,7 +99,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
      * @return A list of deltas describing all changes made by the build.
      */
     @Override
-    protected Collection<Delta> doUpdate(BuildData buildData, ResourceDescriptionsData newData, IProgressMonitor monitor) {
+    protected Collection<Delta> doUpdate(BuildData buildData, IResourceDescriptionsData newData, IProgressMonitor monitor) {
         final SubMonitor progress = SubMonitor.convert(monitor, 100);
 
 

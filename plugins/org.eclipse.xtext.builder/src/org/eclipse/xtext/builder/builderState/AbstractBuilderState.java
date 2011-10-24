@@ -39,7 +39,7 @@ import com.google.inject.Inject;
 public abstract class AbstractBuilderState extends AbstractResourceDescriptionChangeEventSource implements
 		IBuilderState {
 
-	private volatile ResourceDescriptionsData resourceDescriptionData = new ResourceDescriptionsData(
+	private volatile IResourceDescriptionsData resourceDescriptionData = new ResourceDescriptionsData(
 			Collections.<IResourceDescription> emptyList());
 
 	@Inject
@@ -66,7 +66,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		return uris != null ? uris : Collections.<URI> emptySet();
 	}
 
-	protected void setResourceDescriptionsData(ResourceDescriptionsData newData) {
+	protected void setResourceDescriptionsData(IResourceDescriptionsData newData) {
 		resourceDescriptionData = newData;
 	}
 
@@ -76,7 +76,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		markerUpdater.updateMarker(resourceSet, deltas, progress.newChild(1));
 	}
 
-	protected ResourceDescriptionsData getCopiedResourceDescriptionsData() {
+	protected IResourceDescriptionsData getCopiedResourceDescriptionsData() {
 		return resourceDescriptionData.copy();
 	}
 
@@ -103,7 +103,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		if (monitor.isCanceled())
 			throw new OperationCanceledException();
 
-		final ResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
+		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
 		final Collection<IResourceDescription.Delta> result = doUpdate(buildData, newData, subMonitor.newChild(1));
 
 		if (monitor.isCanceled())
@@ -116,7 +116,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 	}
 
 	protected abstract Collection<IResourceDescription.Delta> doUpdate(BuildData buildData,
-			ResourceDescriptionsData newData, IProgressMonitor monitor);
+			IResourceDescriptionsData newData, IProgressMonitor monitor);
 
 	public synchronized ImmutableList<IResourceDescription.Delta> clean(Set<URI> toBeRemoved, IProgressMonitor monitor) {
 		ensureLoaded();
@@ -130,7 +130,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 			throw new OperationCanceledException();
 		Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
 
-		final ResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
+		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
 		if (monitor.isCanceled())
 			throw new OperationCanceledException();
 		for (IResourceDescription.Delta delta : deltas) {

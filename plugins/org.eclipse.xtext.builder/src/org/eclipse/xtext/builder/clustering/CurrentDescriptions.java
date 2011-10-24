@@ -15,7 +15,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.EcoreUtil2;
-import org.eclipse.xtext.builder.builderState.ResourceDescriptionsData;
+import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IReferenceDescription;
@@ -32,7 +32,7 @@ public class CurrentDescriptions extends AdapterImpl implements IResourceDescrip
 	/**
 	 * New index.
 	 */
-	private final ResourceDescriptionsData newData;
+	private final IResourceDescriptionsData newData;
 
 	/**
 	 * Create a new index based on an old one.
@@ -44,7 +44,7 @@ public class CurrentDescriptions extends AdapterImpl implements IResourceDescrip
 	 * @param initiallyDeleted
 	 *            URIs of resources physically deleted
 	 */
-	public CurrentDescriptions(ResourceSet resourceSet, ResourceDescriptionsData newData) {
+	public CurrentDescriptions(ResourceSet resourceSet, IResourceDescriptionsData newData) {
 		this.newData = newData;
 		resourceSet.eAdapters().add(this);
 	}
