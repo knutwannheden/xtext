@@ -1038,11 +1038,12 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
+				boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
 				boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
 				StringBuilder sql = new StringBuilder();
-				if (matchPolicy.includes(MatchType.REFERENCES)) {
+				if (matchReferences) {
 					sql.append("SELECT DISTINCT D.RES_ID FROM REF D INNER JOIN RES S ON D.RES_ID = S.ID INNER JOIN TABLE(ID INT=?) T ON D.TGT_RES_ID = T.ID");
 					if (matchNames)
 						sql.append(" UNION");
@@ -1056,18 +1057,17 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				Object[] targetUris = new Object[Iterables.size(targetResources)];
 				int i = 0;
 				for (IResourceDescription target : targetResources) {
-					targetUris[i++] = resourceIdMap.get(target.getURI());
+					if (matchReferences)
+						targetUris[i++] = resourceIdMap.get(target.getURI());
 					if (matchNames) {
 						for (IEObjectDescription obj : target.getExportedObjects()) {
-							if (matchPolicy.includes(MatchType.IMPORTED_NAMES)) {
-								allExportedNames.add(convertQualifiedNameToString(obj.getName().toLowerCase()));
-							}
+							allExportedNames.add(convertQualifiedNameToString(obj.getName().toLowerCase()));
 						}
 					}
 				}
 
 				int paramIdx = 1;
-				if (matchPolicy.includes(MatchType.REFERENCES)) {
+				if (matchReferences) {
 					stmt.setObject(paramIdx++, targetUris);
 				}
 				if (matchNames) {
@@ -1094,11 +1094,12 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
+				boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
 				boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
 				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
 				StringBuilder sql = new StringBuilder();
-				if (matchPolicy.includes(MatchType.REFERENCES)) {
+				if (matchReferences) {
 					sql.append("SELECT DISTINCT D.RES_ID FROM REF D INNER JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (D.TGT_RES_ID = T.ID AND D.TGT_FRAG = T.FRAG)");
 					if (matchNames)
 						sql.append(" UNION");
@@ -1113,16 +1114,18 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				Object[] targetFragments = new Object[targetResIds.length];
 				int i = 0;
 				for (IEObjectDescription obj : targetObjects) {
-					targetResIds[i] = resourceIdMap.get(obj.getEObjectURI().trimFragment());
-					targetFragments[i] = obj.getEObjectURI().fragment();
-					i++;
-					if (matchPolicy.includes(MatchType.IMPORTED_NAMES)) {
+					if (matchReferences) {
+						targetResIds[i] = resourceIdMap.get(obj.getEObjectURI().trimFragment());
+						targetFragments[i] = obj.getEObjectURI().fragment();
+						i++;
+					}
+					if (matchNames) {
 						allExportedNames.add(convertQualifiedNameToString(obj.getName().toLowerCase()));
 					}
 				}
 
 				int paramIdx = 1;
-				if (matchPolicy.includes(MatchType.REFERENCES)) {
+				if (matchReferences) {
 					stmt.setObject(paramIdx++, targetResIds);
 					stmt.setObject(paramIdx++, targetFragments);
 				}

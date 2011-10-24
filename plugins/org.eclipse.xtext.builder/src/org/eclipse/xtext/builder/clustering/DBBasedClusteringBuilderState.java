@@ -7,10 +7,20 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.clustering;
 
+import java.util.Collection;
+import java.util.Map;
+
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.builder.builderState.db.DBBasedBuilderState;
 import org.eclipse.xtext.builder.builderState.db.DBBasedResourceDescriptionsData;
+import org.eclipse.xtext.builder.impl.BuildData;
+import org.eclipse.xtext.resource.IResourceDescription;
+import org.eclipse.xtext.resource.IResourceDescription.Delta;
 
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -21,6 +31,8 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 
 	@Inject
 	private Provider<DBBasedBuilderState> builderStateProvider;
+
+	private Map<URI, IResourceDescription> oldDescriptions;
 
 	@Override
 	public synchronized void load() {
@@ -38,6 +50,33 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	protected void setResourceDescriptionsData(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).commitChanges();
 		super.setResourceDescriptionsData(newData);
+	}
+
+	@Override
+	protected Collection<Delta> doUpdate(BuildData buildData, IResourceDescriptionsData newData,
+			IProgressMonitor monitor) {
+		try {
+			loadToBeBuiltResources(buildData);
+			return super.doUpdate(buildData, newData, monitor);
+		} finally {
+			oldDescriptions.clear();
+		}
+	}
+
+	// FIXME properly handle old descriptions in DB
+	private void loadToBeBuiltResources(BuildData buildData) {
+		oldDescriptions = Maps.newHashMap();
+		for (URI uri : Iterables.concat(buildData.getToBeUpdated(), buildData.getToBeDeleted())) {
+			IResourceDescription resourceDescription = getResourceDescription(uri);
+			oldDescriptions.put(uri, resourceDescription != null ? new CopiedResourceDescription(resourceDescription) : null);
+		}
+	}
+
+	@Override
+	public IResourceDescription getResourceDescription(URI uri) {
+		if (oldDescriptions.containsKey(uri))
+			return oldDescriptions.get(uri);
+		return super.getResourceDescription(uri);
 	}
 
 }

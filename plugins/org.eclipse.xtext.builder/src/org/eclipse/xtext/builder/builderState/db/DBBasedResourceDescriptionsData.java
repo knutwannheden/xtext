@@ -284,6 +284,9 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 
 	@Override
 	public DBBasedResourceDescriptionsData copy() {
+		if (inTransaction)
+			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData still in transaction");
+		// FIXME properly handle old descriptions in DB
 		return this;
 	}
 
