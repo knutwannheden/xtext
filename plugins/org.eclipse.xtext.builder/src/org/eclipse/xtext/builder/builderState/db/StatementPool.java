@@ -24,25 +24,18 @@ import com.google.common.collect.MapMaker;
  */
 public class StatementPool {
 
-	/** Class-wide logger. */
 	private static final Logger LOGGER = Logger.getLogger(StatementPool.class);
-
-	private Connection conn;
 
 	private final ConcurrentMap<String, PreparedStatement> statementPool = new ConcurrentHashMap<String, PreparedStatement>();
 	private final Map<PreparedStatement, String> statementsInUse = new MapMaker().concurrencyLevel(1).softKeys()
 			.softValues().makeMap();
-
-	public StatementPool(Connection conn) {
-		this.conn = conn;
-	}
 
 	public void clear() {
 		statementPool.clear();
 		statementsInUse.clear();
 	}
 
-	public PreparedStatement getPooledStatement(CharSequence sql) throws SQLException {
+	public PreparedStatement getPooledStatement(Connection conn, CharSequence sql) throws SQLException {
 		String str = sql.toString();
 		PreparedStatement stmt = null;
 		synchronized (statementPool) {
