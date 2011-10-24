@@ -20,8 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
@@ -39,7 +37,6 @@ import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
-import org.h2.jdbc.JdbcPreparedStatement;
 
 import com.google.common.base.Function;
 import com.google.common.collect.BiMap;
@@ -47,7 +44,6 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.MapMaker;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -59,9 +55,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	/** Class-wide logger. */
 	private static final Logger LOGGER = Logger.getLogger(DBBasedBuilderState.class);
 
-	private static final QualifiedName EMPTY_NAME = QualifiedName.create();
-
 	private static final String SCHEMA = "org/eclipse/xtext/builder/builderState/db/default-schema.sql";
+	private static final QualifiedName EMPTY_NAME = QualifiedName.create();
 
 	private static final Integer UNKNOWN_ECLASS = -1;
 	private static final int MAX_REF_SRC_FRAG_LENGTH = 2500;
@@ -69,9 +64,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private final Connection conn;
 	private boolean initialized;
 
-	private final ConcurrentMap<String, PreparedStatement> statementPool = new ConcurrentHashMap<String, PreparedStatement>();
-	private final Map<PreparedStatement, String> statementsInUse = new MapMaker().concurrencyLevel(1).softKeys()
-			.softValues().makeMap();
+	private StatementPool statementCache;
 
 	private final BiMap<URI, Integer> resourceIdMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
 
@@ -85,6 +78,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	public DBBasedBuilderState(final Connection conn) {
 		this.conn = conn;
+		this.statementCache = new StatementPool(conn);
 	}
 
 	protected Connection getConnection() {
@@ -167,8 +161,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	private void clearCaches() {
-		statementPool.clear();
-		statementsInUse.clear();
+		statementCache.clear();
 		resourceIdMap.clear();
 		classIdMap.clear();
 		referenceIdMap.clear();
@@ -234,19 +227,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	private PreparedStatement prepare(final CharSequence sql) throws SQLException {
-		String str = sql.toString();
-		PreparedStatement stmt = null;
-		synchronized (statementPool) {
-			stmt = statementPool.remove(str);
-			if (stmt == null) {
-				stmt = getConnection().prepareStatement(str);
-			} else if (((JdbcPreparedStatement) stmt).isClosed()) {
-				LOGGER.error("Closed statement found in pool: " + str);
-				stmt = getConnection().prepareStatement(str);
-			}
-			statementsInUse.put(stmt, str);
-		}
-		return stmt;
+		return statementCache.getPooledStatement(sql);
 	}
 
 	private void insertResources(final Iterable<IResourceDescription> resourceDescriptions, final boolean external) {
@@ -1148,18 +1129,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	private void closeStatement(final PreparedStatement stmt) {
 		try {
-			if (stmt != null) {
-				synchronized (statementPool) {
-					String sql = statementsInUse.remove(stmt);
-					if (sql != null) {
-						if (statementPool.putIfAbsent(sql, stmt) != null) {
-							stmt.close();
-						}
-					} else {
-						stmt.close();
-					}
-				}
-			}
+			statementCache.returnToPool(stmt);
 		} catch (SQLException e) {
 			throw new DBException(e);
 		}
