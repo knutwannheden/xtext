@@ -28,6 +28,7 @@ import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
 import org.eclipse.xtext.resource.impl.ResourceDescriptionChangeEvent;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -75,8 +76,12 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		markerUpdater.updateMarker(resourceSet, deltas, progress.newChild(1));
 	}
 
-	protected IResourceDescriptionsData getCopiedResourceDescriptionsData() {
-		return resourceDescriptionData.copy();
+	protected IResourceDescriptionsData getResourceDescriptionsData() {
+		return resourceDescriptionData;
+	}
+
+	protected IResourceDescriptionsData getCopiedResourceDescriptionsData(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+		return resourceDescriptionData.copy(toBeUpdated, toBeDeleted);
 	}
 
 	public Iterable<IResourceDescription> getAllResourceDescriptions() {
@@ -102,7 +107,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		if (monitor.isCanceled())
 			throw new OperationCanceledException();
 
-		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
+		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(buildData.getToBeUpdated(), buildData.getToBeDeleted());
 		final Collection<IResourceDescription.Delta> result = doUpdate(buildData, newData, subMonitor.newChild(1));
 
 		if (monitor.isCanceled())
@@ -129,7 +134,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 			throw new OperationCanceledException();
 		Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
 
-		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData();
+		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(ImmutableSet.<URI> of(), toBeRemoved);
 		if (monitor.isCanceled())
 			throw new OperationCanceledException();
 		for (IResourceDescription.Delta delta : deltas) {

@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedMap;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
@@ -46,9 +45,9 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	private volatile boolean inTransaction;
 
 	// caching
-	private final Set<URI> allURIs = Sets.newHashSet();
-	private final SortedMap<QualifiedName, Collection<URI>> lookupMap = Maps.newTreeMap();
-	private final Map<URI, IResourceDescription> cache = new MapMaker().concurrencyLevel(1).softValues().makeMap();
+	private Set<URI> allURIs = Sets.newHashSet();
+	private Map<QualifiedName, Collection<URI>> lookupMap = Maps.newHashMap();
+	private Map<URI, IResourceDescription> cache = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 
 	// buffering
 	private WriteBehindBuffer buffer;
@@ -56,6 +55,14 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	public DBBasedResourceDescriptionsData(final DBBasedBuilderState index) {
 		super(null, null);
 		this.index = index;
+	}
+
+	protected DBBasedResourceDescriptionsData(final DBBasedBuilderState index, Set<URI> allURIs, Map<QualifiedName, Collection<URI>> lookupMap, Map<URI, IResourceDescription> cache) {
+		super(null, null);
+		this.index = index;
+		this.allURIs = allURIs;
+		this.lookupMap = lookupMap;
+		this.cache = cache;
 	}
 
 	private synchronized void ensureInitialized() {
@@ -283,11 +290,14 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	}
 
 	@Override
-	public DBBasedResourceDescriptionsData copy() {
+	public DBBasedResourceDescriptionsData copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
 		if (inTransaction)
 			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData still in transaction");
-		// FIXME properly handle old descriptions in DB
-		return this;
+		DBBasedBuilderState indexCopy = index.copy(toBeUpdated, toBeDeleted);
+		Map<URI, IResourceDescription> cacheCopy = new MapMaker().concurrencyLevel(1).softValues().makeMap();
+		cacheCopy.putAll(cache);
+		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs), Maps.newHashMap(lookupMap), cacheCopy);
+		return copy;
 	}
 
 	@Override

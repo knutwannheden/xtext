@@ -51,7 +51,7 @@ public class SharedModule extends AbstractModule {
 
 	@Override
 	protected void configure() {
-		bind(DBBasedBuilderState.class).toProvider(DBBasedBuilderStateProvider.class);
+		bind(DBBasedBuilderState.class).toProvider(DBBasedBuilderStateProvider.class).in(Scopes.SINGLETON);
 		bind(IBuilderState.class).to(DBBasedClusteringBuilderState.class).in(Scopes.SINGLETON);
 		bind(IResourceDescriptions.class).to(DirtyStateAwareResourceDescriptions.class).in(Scopes.SINGLETON);
 		bind(IResourceServiceProvider.Registry.class).toInstance(IResourceServiceProvider.Registry.INSTANCE);

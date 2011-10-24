@@ -63,7 +63,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 		this.lookupMap = lookupMap;
 	}
 	
-	public ResourceDescriptionsData copy() {
+	public ResourceDescriptionsData copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
 		return new ResourceDescriptionsData(
 				Maps.newHashMap(resourceDescriptionMap),
 				HashMultimap.create(lookupMap));

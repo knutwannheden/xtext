@@ -7,7 +7,12 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState.db;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.xtext.builder.internal.Activator;
 
 import com.google.inject.Provider;
@@ -17,10 +22,30 @@ import com.google.inject.Provider;
  */
 public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState> {
 
+	public static final String H2_SCHEMA = "jdbc:h2";
+	public static final String DEFAULT_H2_CONFIGURATION = "CACHE_SIZE=65536;LOG=1;WRITE_DELAY=1000";
+
 	private IPath cachedPath;
 
 	public DBBasedBuilderState get() {
-		return new DBBasedBuilderState(getBuilderStateLocation(), DBBasedBuilderState.DEFAULT_H2_CONFIGURATION);
+		return new DBBasedBuilderState(getConnection(getDbUrl()));
+	}
+
+	protected String getDbUrl() {
+		return H2_SCHEMA + ":" + getBuilderStateLocation() + ";" + DEFAULT_H2_CONFIGURATION;
+	}
+
+	protected Connection getConnection(String dbUrl) {
+		try {
+			Class.forName("org.h2.Driver");
+			Connection conn = DriverManager.getConnection(dbUrl, "sa", "");
+			conn.setAutoCommit(false);
+			return conn;
+		} catch (ClassNotFoundException e) {
+			throw new WrappedException(e);
+		} catch (SQLException e) {
+			throw new DBException(e);
+		}
 	}
 
 	protected String getBuilderStateLocation() {

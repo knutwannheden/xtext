@@ -9,7 +9,6 @@ package org.eclipse.xtext.builder.builderState.db;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,7 +25,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.common.util.WrappedException;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
@@ -58,24 +56,18 @@ import com.google.common.collect.Sets;
  */
 public class DBBasedBuilderState implements IResourceDescriptions, IResourceDescriptionsExtension {
 
-	public static final String DEFAULT_H2_CONFIGURATION = "CACHE_SIZE=65536;LOG=1;WRITE_DELAY=1000";
-
 	/** Class-wide logger. */
 	private static final Logger LOGGER = Logger.getLogger(DBBasedBuilderState.class);
 
 	private static final QualifiedName EMPTY_NAME = QualifiedName.create();
-
-	private static final String H2_SCHEMA = "jdbc:h2";
 
 	private static final String SCHEMA = "org/eclipse/xtext/builder/builderState/db/default-schema.sql";
 
 	private static final Integer UNKNOWN_ECLASS = -1;
 	private static final int MAX_REF_SRC_FRAG_LENGTH = 2500;
 
-	private final String dbUrl;
-
+	private final Connection conn;
 	private boolean initialized;
-	private Connection conn;
 
 	private final ConcurrentMap<String, PreparedStatement> statementPool = new ConcurrentHashMap<String, PreparedStatement>();
 	private final Map<PreparedStatement, String> statementsInUse = new MapMaker().concurrencyLevel(1).softKeys()
@@ -91,31 +83,11 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	// TODO should be injected
 	private final IQualifiedNameConverter nameConverter = new IQualifiedNameConverter.DefaultImpl();
 
-	public DBBasedBuilderState(final String url) {
-		super();
-		this.dbUrl = url;
+	public DBBasedBuilderState(final Connection conn) {
+		this.conn = conn;
 	}
 
-	public DBBasedBuilderState(final String location, final String h2Configuration) {
-		this(H2_SCHEMA + ":" + location + (h2Configuration.trim().length() > 0 ? ";" + h2Configuration : ""));
-	}
-
-	private String getDbUrl() {
-		return dbUrl;
-	}
-
-	private Connection getConnection() {
-		if (conn == null) {
-			try {
-				Class.forName("org.h2.Driver");
-				conn = DriverManager.getConnection(getDbUrl(), "sa", "");
-				conn.setAutoCommit(false);
-			} catch (ClassNotFoundException e) {
-				throw new WrappedException(e);
-			} catch (SQLException e) {
-				throw new DBException(e);
-			}
-		}
+	protected Connection getConnection() {
 		return conn;
 	}
 
@@ -224,7 +196,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
-			conn = null;
 			clearCaches();
 			initialized = false;
 		}
@@ -1203,8 +1174,13 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		return nameConverter.toString(qn);
 	}
 
+	public DBBasedBuilderState copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+		// FIXME return copy and set this to access old copied entries (where appropriate)
+		return this;
+	}
+
 	public void beginChanges() {
-		begin = true; // TODO: what's the contract here? Nested beginChanges? Allow as long as no modification occurred yet?
+		begin = true;
 	}
 
 	public void commitChanges() {

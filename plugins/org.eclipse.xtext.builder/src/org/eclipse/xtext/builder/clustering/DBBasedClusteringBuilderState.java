@@ -9,6 +9,7 @@ package org.eclipse.xtext.builder.clustering;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.common.util.URI;
@@ -32,7 +33,7 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	@Inject
 	private Provider<DBBasedBuilderState> builderStateProvider;
 
-	private Map<URI, IResourceDescription> oldDescriptions;
+	private Map<URI, IResourceDescription> oldDescriptions = Maps.newHashMap();
 
 	@Override
 	public synchronized void load() {
@@ -40,8 +41,8 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	}
 
 	@Override
-	protected IResourceDescriptionsData getCopiedResourceDescriptionsData() {
-		IResourceDescriptionsData result = super.getCopiedResourceDescriptionsData();
+	protected IResourceDescriptionsData getCopiedResourceDescriptionsData(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+		IResourceDescriptionsData result = super.getCopiedResourceDescriptionsData(toBeUpdated, toBeDeleted);
 		((DBBasedResourceDescriptionsData) result).beginChanges();
 		return result;
 	}
@@ -65,7 +66,7 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 
 	// FIXME properly handle old descriptions in DB
 	private void loadToBeBuiltResources(BuildData buildData) {
-		oldDescriptions = Maps.newHashMap();
+		oldDescriptions.clear();
 		for (URI uri : Iterables.concat(buildData.getToBeUpdated(), buildData.getToBeDeleted())) {
 			IResourceDescription resourceDescription = getResourceDescription(uri);
 			oldDescriptions.put(uri, resourceDescription != null ? new CopiedResourceDescription(resourceDescription) : null);
