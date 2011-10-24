@@ -67,7 +67,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	@Inject
 	private IResourceServiceProvider serviceProvider;
 
-	@Inject
+	@Inject(optional = true)
 	private IAllContainersState containersState;
 
 	private static final String CACHE_KEY = DefaultResourceDescriptionManager.class.getName()
@@ -212,13 +212,24 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	 */
 	public Collection<URI> getAffectedResources(Collection<Delta> deltas, final Collection<URI> candidates,
 			IResourceDescriptionsExtension context) {
-		Collection<Delta> interestingDeltas = Collections2.filter(deltas, new Predicate<Delta>() {
+		final Collection<Delta> interestingDeltas = Collections2.filter(deltas, new Predicate<Delta>() {
 			public boolean apply(Delta input) {
 				return isInterestedIn(input);
 			}
 		});
 		if (interestingDeltas.isEmpty())
 			return ImmutableSet.of();
+
+		// FIXME this is a hack to support non StateBasedContainerManager implementations
+		if (containersState == null) {
+			final IResourceDescriptions resourceDescriptions = (IResourceDescriptions) context;
+			return Collections2.filter(candidates, new Predicate<URI>() {
+				public boolean apply(URI input) {
+					return isAffected(interestingDeltas, resourceDescriptions.getResourceDescription(input),
+							resourceDescriptions);
+				}
+			});
+		}
 
 		final Set<URI> references = Sets.newHashSet();
 		Predicate<URI> filter = new Predicate<URI>() {
@@ -289,12 +300,10 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		return references;
 	}
 
-	// FIXME this only works for StateBasedContainerManager
 	private String getContainer(URI uri) {
 	    return containersState.getContainerHandle(uri);
 	}
 
-	// FIXME this only works for StateBasedContainerManager
 	private boolean isContainerVisible(URI uri, String container) {
 		return containersState.getVisibleContainerHandles(containersState.getContainerHandle(uri)).contains(container);
 	}
