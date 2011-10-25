@@ -19,7 +19,6 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EClassifier;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
-import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
@@ -118,7 +117,7 @@ public class DBEPackageRegistry {
 			eclassStmt.execute();
 			ResultSet rs = eclassStmt.getResultSet();
 			while (rs.next()) {
-				EClass eClass = DBEPackageRegistry.getEClass(URI.createURI(rs.getString(2)));
+				EClass eClass = getEClass(URI.createURI(rs.getString(2)));
 				if (eClass != null) {
 					addEClassMapping(eClass, rs.getInt(1));
 				}
@@ -127,7 +126,7 @@ public class DBEPackageRegistry {
 			eclassStmt.execute();
 			rs = eclassStmt.getResultSet();
 			while (rs.next()) {
-				EReference ref = DBEPackageRegistry.getEReference(URI.createURI(rs.getString(2)));
+				EReference ref = getEReference(URI.createURI(rs.getString(2)));
 				if (ref != null) {
 					addEReferenceMapping(ref, rs.getInt(1));
 				}
@@ -194,7 +193,7 @@ public class DBEPackageRegistry {
 			ResultSet rs = stmt.getResultSet();
 			if (rs.next()) {
 				uri = URI.createURI(rs.getString(1));
-				result = DBEPackageRegistry.getEClass(uri);
+				result = getEClass(uri);
 			}
 		} finally {
 			conn.close(stmt);
@@ -259,7 +258,7 @@ public class DBEPackageRegistry {
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 			if (rs.next()) {
-				result = DBEPackageRegistry.getEReference(URI.createURI(rs.getString(1)));
+				result = getEReference(URI.createURI(rs.getString(1)));
 			}
 		} finally {
 			conn.close(stmt);
@@ -270,7 +269,7 @@ public class DBEPackageRegistry {
 		return result;
 	}
 
-	public static EReference getEReference(final URI uri) {
+	private EReference getEReference(final URI uri) {
 	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
 	    if (ePackage == null) {
 	      return null;
@@ -291,7 +290,7 @@ public class DBEPackageRegistry {
 	    return null;
 	  }
 
-	public static EClass getEClass(final URI uri) {
+	private EClass getEClass(final URI uri) {
 	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
 	    if (ePackage != null) {
 	      if (ePackage.eResource() != null) {
