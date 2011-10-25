@@ -42,6 +42,7 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 
 	@Override
 	protected IResourceDescriptionsData getCopiedResourceDescriptionsData(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+		loadToBeBuiltResources(toBeUpdated, toBeDeleted);
 		IResourceDescriptionsData result = super.getCopiedResourceDescriptionsData(toBeUpdated, toBeDeleted);
 		((DBBasedResourceDescriptionsData) result).beginChanges();
 		return result;
@@ -50,24 +51,15 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	@Override
 	protected void commit(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).commitChanges();
+		oldDescriptions.clear();
 		super.commit(newData);
 	}
 
 	@Override
 	protected void rollback(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).rollbackChanges();
+		oldDescriptions.clear();
 		super.rollback(newData);
-	}
-
-	@Override
-	protected Collection<Delta> doUpdate(BuildData buildData, IResourceDescriptionsData newData,
-			IProgressMonitor monitor) {
-		try {
-			loadToBeBuiltResources(buildData.getToBeUpdated(), buildData.getToBeDeleted());
-			return super.doUpdate(buildData, newData, monitor);
-		} finally {
-			oldDescriptions.clear();
-		}
 	}
 
 	// FIXME properly handle old descriptions in DB

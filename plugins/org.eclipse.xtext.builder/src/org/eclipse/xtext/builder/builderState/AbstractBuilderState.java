@@ -134,13 +134,13 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 			return ImmutableList.of();
 		if (monitor.isCanceled())
 			throw new OperationCanceledException();
-		Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
 
 		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(ImmutableSet.<URI> of(), toBeRemoved);
 		try {
-			if (monitor.isCanceled())
-				throw new OperationCanceledException();
+			Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
 			for (IResourceDescription.Delta delta : deltas) {
+				if (monitor.isCanceled())
+					throw new OperationCanceledException();
 				newData.removeDescription(delta.getOld().getURI());
 			}
 			ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(deltas, this);
