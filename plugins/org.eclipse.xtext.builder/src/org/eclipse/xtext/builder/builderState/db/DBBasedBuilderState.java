@@ -63,14 +63,14 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	private final BiMap<URI, Integer> resourceIdMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
 
-	private DBMetaModelAccess metaModelAccess;
+	private DBEPackageRegistry metaModelAccess;
 
 	// TODO should be injected
 	private final IQualifiedNameConverter nameConverter = new IQualifiedNameConverter.DefaultImpl();
 
 	public DBBasedBuilderState(final Connection conn) {
 		this.conn = new ConnectionWrapper(conn);
-		this.metaModelAccess = new DBMetaModelAccess(this.conn);
+		this.metaModelAccess = new DBEPackageRegistry(this.conn);
 	}
 
 	private synchronized void ensureInitialized() {

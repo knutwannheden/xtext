@@ -16,7 +16,10 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
+import org.eclipse.emf.ecore.EClassifier;
+import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
+import org.eclipse.emf.ecore.EPackage.Registry;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 
@@ -29,9 +32,9 @@ import com.google.common.collect.Sets;
 /**
  * @author Knut Wannheden - Initial contribution and API
  */
-public class DBMetaModelAccess {
+public class DBEPackageRegistry {
 
-	private static final Logger LOGGER = Logger.getLogger(DBMetaModelAccess.class);
+	private static final Logger LOGGER = Logger.getLogger(DBEPackageRegistry.class);
 
 	private static final Integer UNKNOWN_ECLASS = -1;
 
@@ -40,7 +43,7 @@ public class DBMetaModelAccess {
 	private final BiMap<EClass, Integer> classIdMap = HashBiMap.create();
 	private final BiMap<EReference, Integer> referenceIdMap = HashBiMap.create();
 
-	public DBMetaModelAccess(ConnectionWrapper conn) {
+	public DBEPackageRegistry(ConnectionWrapper conn) {
 		this.conn = conn;
 	}
 
@@ -115,7 +118,7 @@ public class DBMetaModelAccess {
 			eclassStmt.execute();
 			ResultSet rs = eclassStmt.getResultSet();
 			while (rs.next()) {
-				EClass eClass = EClasses.getEClass(URI.createURI(rs.getString(2)));
+				EClass eClass = DBEPackageRegistry.getEClass(URI.createURI(rs.getString(2)));
 				if (eClass != null) {
 					addEClassMapping(eClass, rs.getInt(1));
 				}
@@ -124,7 +127,7 @@ public class DBMetaModelAccess {
 			eclassStmt.execute();
 			rs = eclassStmt.getResultSet();
 			while (rs.next()) {
-				EReference ref = EClasses.getEReference(URI.createURI(rs.getString(2)));
+				EReference ref = DBEPackageRegistry.getEReference(URI.createURI(rs.getString(2)));
 				if (ref != null) {
 					addEReferenceMapping(ref, rs.getInt(1));
 				}
@@ -191,7 +194,7 @@ public class DBMetaModelAccess {
 			ResultSet rs = stmt.getResultSet();
 			if (rs.next()) {
 				uri = URI.createURI(rs.getString(1));
-				result = EClasses.getEClass(uri);
+				result = DBEPackageRegistry.getEClass(uri);
 			}
 		} finally {
 			conn.close(stmt);
@@ -256,7 +259,7 @@ public class DBMetaModelAccess {
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 			if (rs.next()) {
-				result = EClasses.getEReference(URI.createURI(rs.getString(1)));
+				result = DBEPackageRegistry.getEReference(URI.createURI(rs.getString(1)));
 			}
 		} finally {
 			conn.close(stmt);
@@ -266,5 +269,41 @@ public class DBMetaModelAccess {
 		}
 		return result;
 	}
+
+	public static EReference getEReference(final URI uri) {
+	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
+	    if (ePackage == null) {
+	      return null;
+	    }
+	    if (ePackage.eResource() != null) {
+	      EObject eObject = ePackage.eResource().getEObject(uri.fragment());
+	      return eObject instanceof EReference ? (EReference) eObject : null; // NOPMD Null assignment
+	    }
+	    for (EClassifier eClassifier : ePackage.getEClassifiers()) {
+	      if (eClassifier instanceof EClass) {
+	        for (EReference ref : ((EClass) eClassifier).getEReferences()) {
+	          if (EcoreUtil.getURI(ref).equals(uri)) {
+	            return ref;
+	          }
+	        }
+	      }
+	    }
+	    return null;
+	  }
+
+	public static EClass getEClass(final URI uri) {
+	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
+	    if (ePackage != null) {
+	      if (ePackage.eResource() != null) {
+	        return (EClass) ePackage.eResource().getEObject(uri.fragment());
+	      }
+	      for (EClassifier eClassifier : ePackage.getEClassifiers()) {
+	        if (EcoreUtil.getURI(eClassifier).equals(uri) && eClassifier instanceof EClass) {
+	          return (EClass) eClassifier;
+	        }
+	      }
+	    }
+	    return null;
+	  }
 
 }
