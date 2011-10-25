@@ -9,6 +9,7 @@ package org.eclipse.xtext.builder.builderState.db;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -282,8 +283,14 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		assertInTransaction();
 		allURIs.remove(uri);
 		// TODO check if we can make this faster
-		for (Collection<URI> uris : lookupMap.values()) {
-			uris.remove(uri);
+		for (Iterator<Map.Entry<QualifiedName, Collection<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<QualifiedName, Collection<URI>> entry = it.next();
+			Collection<URI> uris = entry.getValue();
+			if (uris.remove(uri)) {
+				if (uris.isEmpty()) {
+					it.remove();
+				}
+			}
 		}
 		cache.remove(uri);
 		index.deleteResources(ImmutableSet.of(uri));
@@ -293,6 +300,7 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	public DBBasedResourceDescriptionsData copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
 		if (inTransaction)
 			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData still in transaction");
+		ensureInitialized();
 		DBBasedBuilderState indexCopy = index.copy(toBeUpdated, toBeDeleted);
 		Map<URI, IResourceDescription> cacheCopy = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 		cacheCopy.putAll(cache);
