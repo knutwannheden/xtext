@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009 itemis AG (http://www.itemis.eu) and others.
+ * Copyright (c) 2011 itemis AG (http://www.itemis.eu) and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -28,7 +28,7 @@ import com.google.common.collect.Ordering;
 import com.google.common.collect.Sets;
 
 /**
- * @author Sven Efftinge - Initial contribution and API
+ * @author Knut Wannheden - Initial contribution and API
  * @since 2.1
  */
 public class ExtendedResourceDescriptionDelta implements IResourceDescription.Delta, IResourceDescription.DeltaExtension {
@@ -205,6 +205,7 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 				hasChanges = false;
 			}
 			diff = Tuples.create(deletedObjects, changedObjects, newObjects);
+			// TODO at this point it would actually be possible to set old to null and _new could be a SoftReference
 		}
 
 		return diff;
