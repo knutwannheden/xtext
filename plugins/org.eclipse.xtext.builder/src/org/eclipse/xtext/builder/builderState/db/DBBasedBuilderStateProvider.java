@@ -22,8 +22,12 @@ import com.google.inject.Provider;
  */
 public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState> {
 
-	public static final String H2_SCHEMA = "jdbc:h2";
-	public static final String DEFAULT_H2_CONFIGURATION = "CACHE_SIZE=65536;LOG=1;WRITE_DELAY=1000";
+	// useful for debugging as it allows to connect to H2 from other process
+	private static boolean DEBUG = false;
+
+	protected static final String H2_SCHEMA = "jdbc:h2";
+	protected static final String DEFAULT_H2_CONFIGURATION = "CACHE_SIZE=65536;LOG=1;WRITE_DELAY=1000";
+	protected static final String DEBUG_H2_CONFIGURATION = DEFAULT_H2_CONFIGURATION + ";AUTO_SERVER=TRUE";
 
 	private IPath cachedPath;
 
@@ -32,14 +36,14 @@ public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState
 	}
 
 	protected String getDbUrl() {
-		return H2_SCHEMA + ":" + getBuilderStateLocation() + ";" + DEFAULT_H2_CONFIGURATION;
+		return H2_SCHEMA + ":" + getBuilderStateLocation() + ";" + (DEBUG ? DEBUG_H2_CONFIGURATION : DEFAULT_H2_CONFIGURATION);
 	}
 
 	protected Connection getConnection(String dbUrl) {
 		try {
 			Class.forName("org.h2.Driver");
 			Connection conn = DriverManager.getConnection(dbUrl, "sa", "");
-			conn.setAutoCommit(false);
+			conn.setAutoCommit(DEBUG);
 			return conn;
 		} catch (ClassNotFoundException e) {
 			throw new WrappedException(e);
