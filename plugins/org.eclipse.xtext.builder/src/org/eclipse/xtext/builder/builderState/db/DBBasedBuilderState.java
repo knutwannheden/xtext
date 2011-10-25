@@ -61,16 +61,34 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private boolean initialized;
 	private boolean begin;
 
-	private final BiMap<URI, Integer> resourceIdMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
-
-	private DBEPackageRegistry metaModelAccess;
+	private String resMapTable = "RES_MAP";
+	private final BiMap<URI, Integer> resourceIdMap;
+	private Set<URI> stashedResources = Sets.newHashSet();
+	private final DBEPackageRegistry packageRegistry;
 
 	// TODO should be injected
 	private final IQualifiedNameConverter nameConverter = new IQualifiedNameConverter.DefaultImpl();
 
 	public DBBasedBuilderState(final Connection conn) {
-		this.conn = new ConnectionWrapper(conn);
-		this.metaModelAccess = new DBEPackageRegistry(this.conn);
+		this(new ConnectionWrapper(conn));
+	}
+
+	public DBBasedBuilderState(final ConnectionWrapper conn) {
+		this(conn, Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create()), new DBEPackageRegistry(conn));
+	}
+
+	protected DBBasedBuilderState(final ConnectionWrapper conn, BiMap<URI, Integer> resourceIdMap,
+			DBEPackageRegistry packageRegistry) {
+		this.conn = conn;
+		this.resourceIdMap = resourceIdMap;
+		this.packageRegistry = packageRegistry;
+	}
+
+	public DBBasedBuilderState copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+		BiMap<URI, Integer> resourceIdMapCopy = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(resourceIdMap));
+		resetOldResourceMap(Sets.union(toBeUpdated, toBeDeleted));
+		resMapTable = "OLD_RES_MAP";
+		return new DBBasedBuilderState(conn, resourceIdMapCopy, packageRegistry);
 	}
 
 	private synchronized void ensureInitialized() {
@@ -101,7 +119,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		CallableStatement initCall = connection.prepareCall("RUNSCRIPT FROM '"
 				+ DBBasedBuilderState.class.getClassLoader().getResource(SCHEMA).toString() + "'");
 		initCall.execute();
-		metaModelAccess.registerEPackages(Collections.<EPackage> singleton(EcorePackage.eINSTANCE));
+		packageRegistry.registerEPackages(Collections.<EPackage> singleton(EcorePackage.eINSTANCE));
 		connection.commit();
 		reloadCaches();
 	}
@@ -109,11 +127,11 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private void reloadCaches() {
 		synchronized (resourceIdMap) {
 			clearCaches();
-			metaModelAccess.reloadCaches();
+			packageRegistry.reloadCaches();
 
 			PreparedStatement resStmt = null;
 			try {
-				resStmt = conn.prepare("SELECT ID, URI FROM RES");
+				resStmt = conn.prepare("SELECT R.ID, R.URI FROM RES R JOIN " + resMapTable + " M ON M.RES_ID = R.ID");
 				resStmt.execute();
 				ResultSet rs = resStmt.getResultSet();
 				while (rs.next()) {
@@ -130,7 +148,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private void clearCaches() {
 		conn.clearCaches();
 		resourceIdMap.clear();
-		metaModelAccess.clearCaches();
+		packageRegistry.clearCaches();
 	}
 
 	public void open() {
@@ -192,10 +210,30 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
+	private void resetOldResourceMap(Set<URI> uris) {
+		PreparedStatement insStmt = null;
+		try {
+			Statement stmt = conn.getConnection().createStatement();
+			stmt.execute("TRUNCATE TABLE OLD_RES_MAP");
+			stmt.execute("DELETE FROM RES WHERE ID < 0");
+			stmt.execute("DELETE FROM RES_NAMES WHERE RES_ID < 0");
+			stmt.execute("DELETE FROM OBJ WHERE RES_ID < 0");
+			stmt.execute("DELETE FROM REF WHERE RES_ID < 0");
+			stmt.close();
+
+			insStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT RES_ID FROM RES_MAP");
+			insStmt.execute();
+		} catch (SQLException e) {
+			throw new DBException(e);
+		} finally {
+			conn.close(insStmt);
+		}
+	}
+
 	private void insertResources(final Iterable<IResourceDescription> resourceDescriptions, final boolean external) {
 		PreparedStatement resIdStmt = null;
+		PreparedStatement resMapStmt = null;
 		PreparedStatement resInsStmt = null;
-		PreparedStatement resUpdStmt = null;
 		PreparedStatement resNamesStmt = null;
 		PreparedStatement objStmt = null;
 		PreparedStatement refStmt = null;
@@ -208,25 +246,25 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			resIdStmt.setInt(1, Iterables.size(resourceDescriptions));
 			ResultSet rs = resIdStmt.executeQuery();
 
-			resInsStmt = conn.prepare("INSERT INTO RES (ID, URI, OBSOLETE, EXTERNAL)" + " VALUES (?, ?, FALSE, ?)");
-			resUpdStmt = conn.prepare("UPDATE RES SET OBSOLETE = FALSE, EXTERNAL = ? WHERE ID = ?");
+			resMapStmt = conn.prepare("INSERT INTO RES_MAP (RES_ID) VALUES (?)");
+			resInsStmt = conn.prepare("INSERT INTO RES (ID, URI, EXTERNAL) VALUES (?, ?, ?)");
 
 			for (IResourceDescription res : resourceDescriptions) {
 				URI uri = res.getURI();
 				Integer resId = resourceIdMap.get(uri);
-				if (resId != null) {
-					resUpdStmt.setBoolean(1, external);
-					resUpdStmt.setInt(2, resId);
-					resUpdStmt.addBatch();
-				} else {
+				if (resId == null) {
 					rs.next();
 					resId = rs.getInt(1);
-					resInsStmt.setInt(1, resId);
-					resInsStmt.setString(2, uri.toString());
-					resInsStmt.setBoolean(3, external);
-					resInsStmt.addBatch();
-					resourceIdMap.put(uri, resId);
 				}
+
+				resMapStmt.setInt(1, resId);
+				resMapStmt.addBatch();
+				resourceIdMap.put(uri, resId);
+
+				resInsStmt.setInt(1, resId);
+				resInsStmt.setString(2, uri.toString());
+				resInsStmt.setBoolean(3, external);
+				resInsStmt.addBatch();
 
 				for (IEObjectDescription obj : res.getExportedObjects()) {
 					EPackage ePackage = obj.getEClass().getEPackage();
@@ -235,10 +273,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					}
 				}
 			}
+			resMapStmt.executeBatch();
 			resInsStmt.executeBatch();
-			resUpdStmt.executeBatch();
 
-			metaModelAccess.registerEPackages(ePackages);
+			packageRegistry.registerEPackages(ePackages);
 
 			resNamesStmt = conn.prepare("INSERT INTO RES_NAMES (RES_ID, IMPORTED_NAME)" + " VALUES (?, ?)");
 
@@ -262,7 +300,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					objStmt.setInt(1, resId);
 					objStmt.setString(2, obj.getEObjectURI().fragment());
 					objStmt.setString(3, convertQualifiedNameToString(obj.getName()));
-					objStmt.setInt(4, metaModelAccess.getEClassId(obj.getEClass()));
+					objStmt.setInt(4, packageRegistry.getEClassId(obj.getEClass()));
 					objStmt.setObject(5, getUserDataArray(obj));
 					objStmt.addBatch();
 				}
@@ -288,7 +326,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					refStmt.setString(5, tgtUri.fragment());
 					EReference eReference = ref.getEReference();
 					if (eReference != null) {
-						refStmt.setInt(6, metaModelAccess.getEReferenceId(eReference));
+						refStmt.setInt(6, packageRegistry.getEReferenceId(eReference));
 					} else {
 						refStmt.setNull(6, Types.INTEGER);
 					}
@@ -302,8 +340,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			throw new DBException(e);
 		} finally {
 			conn.close(resIdStmt);
+			conn.close(resMapStmt);
 			conn.close(resInsStmt);
-			conn.close(resUpdStmt);
 			conn.close(resNamesStmt);
 			conn.close(objStmt);
 			conn.close(refStmt);
@@ -327,12 +365,14 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement resStmt = null;
 		PreparedStatement objStmt = null;
 		try {
-			resStmt = conn.prepare("SELECT R.ID, R.URI FROM RES R INNER JOIN TABLE(ID INT=?) I ON R.ID = I.ID");
+			resStmt = conn.prepare("SELECT M.ID FROM " + resMapTable
+					+ " M INNER JOIN TABLE(ID INT=?) I ON M.RES_ID = I.ID");
 			resStmt.setObject(1, idArray);
 			resStmt.execute();
 			ResultSet rs = resStmt.getResultSet();
 			while (rs.next()) {
-				result.put(rs.getInt(1), new SelectableDBBasedResourceDescription(this, URI.createURI(rs.getString(2))));
+				int resId = rs.getInt(1);
+				result.put(resId, new SelectableDBBasedResourceDescription(this, getResourceURI(resId)));
 			}
 
 			IEObjectDescriptionIterable objects = new IEObjectDescriptionIterable() {
@@ -373,13 +413,15 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		ensureInitialized();
 		PreparedStatement stmt = null;
 		try {
-			stmt = conn.prepare("SELECT NAME, RES_ID FROM OBJ");
+			stmt = conn.prepare("SELECT O.NAME, O.RES_ID FROM OBJ O JOIN " + resMapTable + " M ON M.RES_ID = O.RES_ID");
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 			while (rs.next()) {
 				QualifiedName name = createQualifiedNameFromString(rs.getString(1).toLowerCase());
 				Collection<URI> resources = destination.get(name);
 				URI resource = getResourceURI(rs.getInt(2));
+				if (resource == null)
+					continue;
 				if (resources == null) {
 					resources = Lists.newArrayListWithCapacity(1);
 					resources.add(resource);
@@ -415,39 +457,102 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	private void deleteResourceDescriptions(final Iterable<URI> uris) {
-		PreparedStatement refStmt = null;
-		PreparedStatement objStmt = null;
-		PreparedStatement resNamesStmt = null;
-		PreparedStatement resStmt = null;
+		PreparedStatement refUpdStmt = null;
+		PreparedStatement objUpdStmt = null;
+		PreparedStatement resNamesUpdStmt = null;
+		PreparedStatement resUpdStmt = null;
+
+		PreparedStatement refDelStmt = null;
+		PreparedStatement objDelStmt = null;
+		PreparedStatement resNamesDelStmt = null;
+		PreparedStatement resDelStmt = null;
+
+		PreparedStatement resMapStmt = null;
+		PreparedStatement oldResMapStmt = null;
+
 		try {
-			refStmt = conn.prepare("DELETE FROM REF WHERE RES_ID = ?");
-			objStmt = conn.prepare("DELETE FROM OBJ WHERE RES_ID = ?");
-			resNamesStmt = conn.prepare("DELETE FROM RES_NAMES WHERE RES_ID = ?");
-			resStmt = conn.prepare("UPDATE RES SET OBSOLETE = TRUE WHERE ID = ?");
+
+			List<Integer> resourcesToStash = Lists.newArrayListWithCapacity(Iterables.size(uris));
+			List<Integer> resourcesToDelete = Lists.newArrayListWithCapacity(Iterables.size(uris));
 			for (URI uri : uris) {
-				Integer resId = resourceIdMap.get(uri);
-				if (resId != null) {
-					refStmt.setInt(1, resId);
-					refStmt.addBatch();
-					objStmt.setInt(1, resId);
-					objStmt.addBatch();
-					resNamesStmt.setInt(1, resId);
-					resNamesStmt.addBatch();
-					resStmt.setInt(1, resId);
-					resStmt.addBatch();
+				Integer id = resourceIdMap.get(uri);
+				if (stashedResources.add(uri) && id != null) {
+					resourcesToStash.add(id);
+				} else if (id != null) {
+					resourcesToDelete.add(id);
 				}
 			}
-			refStmt.executeBatch();
-			objStmt.executeBatch();
-			resNamesStmt.executeBatch();
-			resStmt.executeBatch();
+
+			if (!resourcesToStash.isEmpty()) {
+				refUpdStmt = conn
+						.prepare("UPDATE REF R SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.RES_ID)");
+				objUpdStmt = conn
+						.prepare("UPDATE OBJ O SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = O.RES_ID)");
+				resNamesUpdStmt = conn
+						.prepare("UPDATE RES_NAMES N SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = N.RES_ID)");
+				resUpdStmt = conn
+						.prepare("UPDATE RES R SET ID = -ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.ID)");
+				resMapStmt = conn
+						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = M.RES_ID)");
+				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT -ID FROM TABLE(ID INT=?)");
+
+				final Object[] idArray = resourcesToStash.toArray(new Object[resourcesToStash.size()]);
+				refUpdStmt.setObject(1, idArray);
+				objUpdStmt.setObject(1, idArray);
+				resNamesUpdStmt.setObject(1, idArray);
+				resUpdStmt.setObject(1, idArray);
+				resMapStmt.setObject(1, idArray);
+				oldResMapStmt.setObject(1, idArray);
+
+				refUpdStmt.execute();
+				objUpdStmt.execute();
+				resNamesUpdStmt.execute();
+				resUpdStmt.execute();
+				resMapStmt.execute();
+				oldResMapStmt.execute();
+
+				// resourceIdMap.values().removeAll(resourcesToStash);
+			}
+
+			if (!resourcesToDelete.isEmpty()) {
+				refDelStmt = conn
+						.prepare("DELETE FROM REF R WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.RES_ID)");
+				objDelStmt = conn
+						.prepare("DELETE FROM OBJ O WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = O.RES_ID)");
+				resNamesDelStmt = conn
+						.prepare("DELETE FROM RES_NAMES N WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = N.RES_ID)");
+				resDelStmt = conn
+						.prepare("DELETE FROM RES R WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.ID)");
+				resMapStmt = conn
+						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = M.RES_ID)");
+
+				final Object[] idArray = resourcesToDelete.toArray(new Object[resourcesToDelete.size()]);
+				refDelStmt.setObject(1, idArray);
+				objDelStmt.setObject(1, idArray);
+				resNamesDelStmt.setObject(1, idArray);
+				resDelStmt.setObject(1, idArray);
+				resMapStmt.setObject(1, idArray);
+
+				refDelStmt.execute();
+				objDelStmt.execute();
+				resNamesDelStmt.execute();
+				resDelStmt.execute();
+				resMapStmt.execute();
+			}
+
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
-			conn.close(refStmt);
-			conn.close(objStmt);
-			conn.close(resNamesStmt);
-			conn.close(resStmt);
+			conn.close(refUpdStmt);
+			conn.close(objUpdStmt);
+			conn.close(resNamesUpdStmt);
+			conn.close(resUpdStmt);
+			conn.close(refDelStmt);
+			conn.close(objDelStmt);
+			conn.close(resNamesDelStmt);
+			conn.close(resDelStmt);
+			conn.close(resMapStmt);
+			conn.close(oldResMapStmt);
 		}
 	}
 
@@ -466,11 +571,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 		try {
-			stmt = conn.prepare("SELECT COUNT(*) FROM RES WHERE OBSOLETE = FALSE AND EXTERNAL = FALSE");
+			stmt = conn.prepare("SELECT COUNT(1) FROM " + resMapTable);
 			stmt.execute();
 			rs = stmt.getResultSet();
-			rs.next();
-			return rs.getInt(1) == 0;
+			return !rs.next() || rs.getInt(1) == 0;
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
@@ -479,26 +583,23 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	public Iterable<IResourceDescription> getAllResourceDescriptions() {
-		return new ClosingResultSetIterable<IResourceDescription>() {
-			@Override
-			protected PreparedStatement createPreparedStatement() throws SQLException {
-				ensureInitialized();
-				return conn.prepare("SELECT ID FROM RES WHERE OBSOLETE = FALSE AND EXTERNAL = FALSE");
+		return Iterables.transform(resourceIdMap.keySet(), new Function<URI, IResourceDescription>() {
+			public IResourceDescription apply(URI from) {
+				return new DBBasedResourceDescription(DBBasedBuilderState.this, from);
 			}
-
-			@Override
-			protected IResourceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				return new DBBasedResourceDescription(DBBasedBuilderState.this, getResourceURI(resultSet.getInt(1)));
-			}
-		};
+		});
 	}
 
 	public IResourceDescription getResourceDescription(final URI normalizedURI) {
 		ensureInitialized();
 		PreparedStatement stmt = null;
 		try {
-			stmt = conn.prepare("SELECT ID FROM RES WHERE URI = ? AND OBSOLETE = FALSE AND EXTERNAL = FALSE");
-			stmt.setString(1, normalizedURI.toString());
+			if (!resourceIdMap.containsKey(normalizedURI))
+				return null;
+			stmt = conn.prepare("SELECT R.ID FROM RES R JOIN " + resMapTable
+					+ " M ON M.RES_ID = R.ID WHERE R.ID = ? AND R.EXTERNAL = FALSE");
+			Integer id = resourceIdMap.get(normalizedURI);
+			stmt.setInt(1, id);
 			stmt.execute();
 			ResultSet rs = stmt.getResultSet();
 			if (rs.next()) {
@@ -517,8 +618,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
-				return conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O");
+				return conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN "
+						+ resMapTable + " M ON M.RES_ID = O.RES_ID");
 			}
 		};
 	}
@@ -534,7 +635,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					return null;
 				}
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				PreparedStatement stmt = conn
 						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
 				stmt.setInt(1, resId);
@@ -553,9 +653,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				boolean matchAllObjects = type == EcorePackage.Literals.EOBJECT;
 				String match = convertQualifiedNameToString(name);
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				StringBuilder query = new StringBuilder(
-						"SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O");
+						"SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN " + resMapTable
+								+ " M ON M.RES_ID = O.RES_ID");
 				if (matchAllObjects) {
 					query.append(" WHERE 1=1");
 				} else {
@@ -571,7 +671,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				PreparedStatement stmt = conn.prepare(query);
 				stmt.setString(1, match);
 				if (!matchAllObjects) {
-					stmt.setInt(2, metaModelAccess.getEClassId(type));
+					stmt.setInt(2, packageRegistry.getEClassId(type));
 				}
 				return stmt;
 			}
@@ -593,9 +693,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				boolean matchAllObjects = type == EcorePackage.Literals.EOBJECT;
 				String match = convertQualifiedNameToString(name);
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				StringBuilder query = new StringBuilder(
-						"SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O ");
+						"SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN " + resMapTable
+								+ " M ON M.RES_ID = O.RES_ID");
 				if (matchAllObjects) {
 					query.append(" WHERE O.RES_ID = ?1");
 				} else {
@@ -612,7 +712,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				stmt.setInt(1, resId);
 				stmt.setString(2, match);
 				if (!matchAllObjects) {
-					stmt.setInt(3, metaModelAccess.getEClassId(type));
+					stmt.setInt(3, packageRegistry.getEClassId(type));
 				}
 				return stmt;
 			}
@@ -624,14 +724,16 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				PreparedStatement stmt = null;
 				if (type == EcorePackage.Literals.EOBJECT) {
-					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O");
+					stmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN "
+							+ resMapTable + " M ON M.RES_ID = O.RES_ID");
 				} else {
 					stmt = conn
-							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE E.SUPERTYPE_ECLASS_ID = ?");
-					stmt.setInt(1, metaModelAccess.getEClassId(type));
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN "
+									+ resMapTable
+									+ " M ON M.RES_ID = O.RES_ID JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE E.SUPERTYPE_ECLASS_ID = ?");
+					stmt.setInt(1, packageRegistry.getEClassId(type));
 				}
 				return stmt;
 			}
@@ -648,7 +750,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					return null;
 				}
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				PreparedStatement stmt = null;
 				if (type == EcorePackage.Literals.EOBJECT) {
 					stmt = conn
@@ -658,7 +759,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					stmt = conn
 							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O JOIN ECLASS_SUPERTYPES E ON O.ECLASS_ID = E.ECLASS_ID WHERE O.RES_ID = ? AND E.SUPERTYPE_ECLASS_ID = ?");
 					stmt.setInt(1, resId);
-					stmt.setInt(2, metaModelAccess.getEClassId(type));
+					stmt.setInt(2, packageRegistry.getEClassId(type));
 				}
 				return stmt;
 			}
@@ -680,7 +781,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					return null;
 				}
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no exported objects for deleted resources, hence join returns empty set
 				PreparedStatement stmt = conn
 						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ? AND O.FRAG = ?");
 				stmt.setInt(1, resId);
@@ -717,20 +817,24 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
+				Integer resId = resourceIdMap.get(resource);
+				if (resId == null) {
+					return null;
+				}
+
 				PreparedStatement stmt = conn
-						.prepare("SELECT R.URI, D.SRC_FRAG, D.CONT_FRAG, D.TGT_RES_ID, D.TGT_FRAG, D.EREF_ID, D.IDX FROM REF D JOIN RES R ON D.RES_ID = R.ID WHERE R.URI = ?");
-				stmt.setString(1, resource.toString());
+						.prepare("SELECT R.SRC_FRAG, R.CONT_FRAG, R.TGT_RES_ID, R.TGT_FRAG, R.EREF_ID, R.IDX FROM REF R WHERE R.RES_ID = ?");
+				stmt.setInt(1, resId);
 				return stmt;
 			}
 
 			@Override
 			protected IReferenceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				URI sourceUri = URI.createURI(resultSet.getString(1));
-				return new ImmutableReferenceDescription(sourceUri.appendFragment(resultSet.getString(2)),
-						sourceUri.appendFragment(resultSet.getString(3)), getResourceURI(resultSet.getInt(4))
-								.appendFragment(resultSet.getString(5)), metaModelAccess.getEReference(resultSet
-								.getInt(6)), resultSet.getInt(7));
+				// FIXME target resource ID may have wrong sign here...
+				return new ImmutableReferenceDescription(resource.appendFragment(resultSet.getString(1)),
+						resource.appendFragment(resultSet.getString(2)), getResourceURI(resultSet.getInt(3))
+								.appendFragment(resultSet.getString(4)), packageRegistry.getEReference(resultSet
+								.getInt(5)), resultSet.getInt(6));
 			}
 		};
 	}
@@ -748,10 +852,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
 				boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
 				StringBuilder sql = new StringBuilder();
 				if (matchReferences) {
-					sql.append("SELECT DISTINCT D.RES_ID FROM REF D INNER JOIN RES S ON D.RES_ID = S.ID INNER JOIN TABLE(ID INT=?) T ON D.TGT_RES_ID = T.ID");
+					sql.append("SELECT DISTINCT R.RES_ID FROM REF R INNER JOIN TABLE(ID INT=?) T ON R.TGT_RES_ID = T.ID");
 					if (matchNames)
 						sql.append(" UNION");
 				}
@@ -786,7 +889,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			@Override
 			protected IResourceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				return new DBBasedResourceDescription(DBBasedBuilderState.this, getResourceURI(resultSet.getInt(1)));
+				URI uri = getResourceURI(resultSet.getInt(1));
+				return uri == null ? null : new DBBasedResourceDescription(DBBasedBuilderState.this, uri);
 			}
 		};
 	}
@@ -804,10 +908,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				boolean matchReferences = matchPolicy.includes(MatchType.REFERENCES);
 				boolean matchNames = matchPolicy.includes(MatchType.IMPORTED_NAMES);
 
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
 				StringBuilder sql = new StringBuilder();
 				if (matchReferences) {
-					sql.append("SELECT DISTINCT D.RES_ID FROM REF D INNER JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (D.TGT_RES_ID = T.ID AND D.TGT_FRAG = T.FRAG)");
+					sql.append("SELECT DISTINCT R.RES_ID FROM REF R INNER JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (R.TGT_RES_ID = T.ID AND R.TGT_FRAG = T.FRAG)");
 					if (matchNames)
 						sql.append(" UNION");
 				}
@@ -845,7 +948,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			@Override
 			protected IResourceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				return new DBBasedResourceDescription(DBBasedBuilderState.this, getResourceURI(resultSet.getInt(1)));
+				URI uri = getResourceURI(resultSet.getInt(1));
+				return uri == null ? null : new DBBasedResourceDescription(DBBasedBuilderState.this, uri);
 			}
 		};
 	}
@@ -855,9 +959,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
-				// No need to restrict to "R.OBSOLETE = FALSE": there are no references for deleted resources, hence join returns empty set
+
 				PreparedStatement stmt = conn
-						.prepare("SELECT S.URI, D.SRC_FRAG, D.CONT_FRAG, D.EREF_ID, D.TGT_RES_ID, D.TGT_FRAG, D.IDX FROM RES S JOIN REF D ON (D.RES_ID = S.ID) JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (D.TGT_RES_ID = T.ID AND D.TGT_FRAG = T.FRAG)");
+						.prepare("SELECT R.RES_ID, R.SRC_FRAG, R.CONT_FRAG, R.EREF_ID, R.TGT_RES_ID, R.TGT_FRAG, R.IDX REF R JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (R.TGT_RES_ID = T.ID AND R.TGT_FRAG = T.FRAG)");
 				Object[] tgtResIdArray = new Object[Iterables.size(targetObjects)];
 				Object[] tgtFragArray = new Object[tgtResIdArray.length];
 				int idx = 0;
@@ -873,12 +977,14 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			@Override
 			protected IReferenceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				URI sourceUri = URI.createURI(resultSet.getString(1));
+				URI sourceUri = getResourceURI(resultSet.getInt(1));
+				if (sourceUri == null)
+					return null;
 				String contFrag = resultSet.getString(3);
 				return new ImmutableReferenceDescription(sourceUri.appendFragment(resultSet.getString(2)),
 						contFrag != null ? sourceUri.appendFragment(contFrag) : null, getResourceURI(
 								resultSet.getInt(5)).appendFragment(resultSet.getString(6)),
-						metaModelAccess.getEReference(resultSet.getInt(4)), resultSet.getInt(7));
+						packageRegistry.getEReference(resultSet.getInt(4)), resultSet.getInt(7));
 			}
 		};
 	}
@@ -890,11 +996,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private String convertQualifiedNameToString(final QualifiedName qn) {
 		// FIXME use different delimiter; '.' is not allowed inside a name segment!
 		return nameConverter.toString(qn);
-	}
-
-	public DBBasedBuilderState copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
-		// FIXME return copy and set this to access old copied entries (where appropriate)
-		return this;
 	}
 
 	public void beginChanges() {
@@ -909,10 +1010,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement resStmt = null;
 		Connection c = conn.getConnection();
 		try {
-			refStmt = conn.prepare("DELETE FROM REF WHERE TGT_RES_ID IN (SELECT ID FROM RES WHERE OBSOLETE = TRUE)");
+			refStmt = conn.prepare("DELETE FROM REF R WHERE NOT EXISTS (SELECT NULL FROM RES WHERE ID = R.TGT_RES_ID)");
 			refStmt.execute();
-			resStmt = conn.prepare("DELETE FROM RES WHERE OBSOLETE = TRUE");
-			resStmt.execute();
 
 			c.commit();
 		} catch (SQLException e) {
@@ -951,7 +1050,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			@Override
 			protected PreparedStatement createPreparedStatement() throws SQLException {
 				ensureInitialized();
-				return conn.prepare("SELECT URI FROM RES WHERE EXTERNAL = FALSE");
+				return conn.prepare("SELECT R.URI FROM RES R JOIN " + resMapTable
+						+ " M ON M.RES_ID = R.ID WHERE R.EXTERNAL = FALSE");
 			}
 
 			@Override
@@ -979,7 +1079,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 		@Override
 		protected IEObjectDescription computeNext(final ResultSet resultSet) throws SQLException {
-			final EClass type = metaModelAccess.getEClass(resultSet.getInt(4));
+			final EClass type = packageRegistry.getEClass(resultSet.getInt(4));
 			return type != null ? new ImmutableEObjectDescription(
 					createQualifiedNameFromString(resultSet.getString(3)), getResourceURI(resultSet.getInt(1))
 							.appendFragment(resultSet.getString(2)), type, getUserData(resultSet.getObject(5))) : null;

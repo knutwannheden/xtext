@@ -7,21 +7,13 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.clustering;
 
-import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.builder.builderState.db.DBBasedBuilderState;
 import org.eclipse.xtext.builder.builderState.db.DBBasedResourceDescriptionsData;
-import org.eclipse.xtext.builder.impl.BuildData;
-import org.eclipse.xtext.resource.IResourceDescription;
-import org.eclipse.xtext.resource.IResourceDescription.Delta;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
@@ -33,8 +25,6 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	@Inject
 	private Provider<DBBasedBuilderState> builderStateProvider;
 
-	private Map<URI, IResourceDescription> oldDescriptions = Maps.newHashMap();
-
 	@Override
 	public synchronized void load() {
 		setResourceDescriptionsData(new DBBasedResourceDescriptionsData(builderStateProvider.get()));
@@ -42,7 +32,6 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 
 	@Override
 	protected IResourceDescriptionsData getCopiedResourceDescriptionsData(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
-		loadToBeBuiltResources(toBeUpdated, toBeDeleted);
 		IResourceDescriptionsData result = super.getCopiedResourceDescriptionsData(toBeUpdated, toBeDeleted);
 		((DBBasedResourceDescriptionsData) result).beginChanges();
 		return result;
@@ -51,31 +40,13 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	@Override
 	protected void commit(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).commitChanges();
-		oldDescriptions.clear();
 		super.commit(newData);
 	}
 
 	@Override
 	protected void rollback(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).rollbackChanges();
-		oldDescriptions.clear();
 		super.rollback(newData);
-	}
-
-	// FIXME properly handle old descriptions in DB
-	private void loadToBeBuiltResources(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
-		oldDescriptions.clear();
-		for (URI uri : Iterables.concat(toBeUpdated, toBeDeleted)) {
-			IResourceDescription resourceDescription = getResourceDescription(uri);
-			oldDescriptions.put(uri, resourceDescription != null ? new CopiedResourceDescription(resourceDescription) : null);
-		}
-	}
-
-	@Override
-	public IResourceDescription getResourceDescription(URI uri) {
-		if (oldDescriptions.containsKey(uri))
-			return oldDescriptions.get(uri);
-		return super.getResourceDescription(uri);
 	}
 
 }
