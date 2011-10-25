@@ -108,15 +108,17 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 			throw new OperationCanceledException();
 
 		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(buildData.getToBeUpdated(), buildData.getToBeDeleted());
-		final Collection<IResourceDescription.Delta> result = doUpdate(buildData, newData, subMonitor.newChild(1));
+		try {
+			final Collection<IResourceDescription.Delta> result = doUpdate(buildData, newData, subMonitor.newChild(1));
 
-		if (monitor.isCanceled())
-			throw new OperationCanceledException();
-		final ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(result, this);
-		// update the reference
-		setResourceDescriptionsData(newData);
-		notifyListeners(event);
-		return event.getDeltas();
+			final ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(result, this);
+			commit(newData);
+			notifyListeners(event);
+			return event.getDeltas();
+		} catch (RuntimeException e) {
+			rollback(newData);
+			throw e;
+		}
 	}
 
 	protected abstract Collection<IResourceDescription.Delta> doUpdate(BuildData buildData,
@@ -135,19 +137,31 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
 
 		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(ImmutableSet.<URI> of(), toBeRemoved);
-		if (monitor.isCanceled())
-			throw new OperationCanceledException();
-		for (IResourceDescription.Delta delta : deltas) {
-			newData.removeDescription(delta.getOld().getURI());
+		try {
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+			for (IResourceDescription.Delta delta : deltas) {
+				newData.removeDescription(delta.getOld().getURI());
+			}
+			ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(deltas, this);
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+			updateMarkers(null, event.getDeltas(), subMonitor.newChild(1));
+			// update the reference
+			commit(newData);
+			notifyListeners(event);
+			return event.getDeltas();
+		} catch (RuntimeException e) {
+			rollback(newData);
+			throw e;
 		}
-		ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(deltas, this);
-		if (monitor.isCanceled())
-			throw new OperationCanceledException();
-		updateMarkers(null, event.getDeltas(), subMonitor.newChild(1));
-		// update the reference
+	}
+
+	protected void commit(final IResourceDescriptionsData newData) {
 		setResourceDescriptionsData(newData);
-		notifyListeners(event);
-		return event.getDeltas();
+	}
+
+	protected void rollback(IResourceDescriptionsData newData) {
 	}
 
 	protected Collection<IResourceDescription.Delta> doClean(Set<URI> toBeRemoved, IProgressMonitor monitor) {
