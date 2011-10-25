@@ -16,6 +16,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.util.IAcceptor;
@@ -28,6 +29,8 @@ import com.google.common.collect.Maps;
  * @author Knut Wannheden - Initial contribution and API
  */
 class WriteBehindBuffer implements Runnable {
+
+	private static final Logger LOG = Logger.getLogger(WriteBehindBuffer.class);
 
 	private static final int DELAY = 100;
 
@@ -77,8 +80,10 @@ class WriteBehindBuffer implements Runnable {
 			if (!bufferCopy.isEmpty()) {
 				index.updateResources(bufferCopy);
 			}
-			bufferFlushed.signalAll();
+		} catch (Exception e) {
+			LOG.error("Failed flushing buffer " + bufferCopy, e);
 		} finally {
+			bufferFlushed.signalAll();
 			bufferFlushLock.unlock();
 		}
 		flushAcceptor.accept(bufferCopy);
