@@ -86,6 +86,11 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 		}
 	}
 	
+	public void removeDescriptions(Set<URI> uris) {
+		for (URI uri : uris)
+			removeDescription(uri);
+	}
+
 	@Override
 	public Iterable<IEObjectDescription> getExportedObjects(final EClass type, final QualifiedName qualifiedName, final boolean ignoreCase) {
 		if (lookupMap.containsKey(qualifiedName.toLowerCase())) {

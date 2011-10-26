@@ -59,8 +59,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	private final ConnectionWrapper conn;
 	private boolean initialized;
-	private boolean begin;
+	private boolean inTransaction;
 
+	// TODO factor out into separate ResourceMap object
 	private String resMapTable = "RES_MAP";
 	private final BiMap<URI, Integer> resourceIdMap;
 	private Set<URI> stashedResources = Sets.newHashSet();
@@ -301,7 +302,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 					objStmt.setString(2, obj.getEObjectURI().fragment());
 					objStmt.setString(3, convertQualifiedNameToString(obj.getName()));
 					objStmt.setInt(4, packageRegistry.getEClassId(obj.getEClass()));
-					objStmt.setObject(5, getUserDataArray(obj));
+					objStmt.setObject(5, ImmutableEObjectDescription.getUserDataArray(obj));
 					objStmt.addBatch();
 				}
 				for (IReferenceDescription ref : res.getReferenceDescriptions()) {
@@ -554,16 +555,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			conn.close(resMapStmt);
 			conn.close(oldResMapStmt);
 		}
-	}
-
-	private Object[] getUserDataArray(final IEObjectDescription obj) {
-		String[] keys = obj.getUserDataKeys();
-		Object[] result = new String[keys.length * 2];
-		for (int i = 0; i < keys.length; i++) {
-			result[i] = keys[i];
-			result[keys.length + i] = obj.getUserData(keys[i]);
-		}
-		return result;
 	}
 
 	public boolean isEmpty() {
@@ -999,11 +990,11 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	public void beginChanges() {
-		begin = true;
+		inTransaction = true;
 	}
 
 	public void commitChanges() {
-		if (!begin) {
+		if (!inTransaction) {
 			throw new IllegalStateException("Trying to commit changes before invocation of beginChanges()");
 		}
 		PreparedStatement refStmt = null;
@@ -1026,13 +1017,13 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		} finally {
 			conn.close(refStmt);
 			conn.close(resStmt);
-			begin = false;
+			inTransaction = false;
 			reloadCaches();
 		}
 	}
 
 	public void rollbackChanges() {
-		if (!begin) {
+		if (!inTransaction) {
 			throw new IllegalStateException("Trying to rollback changes before invocation of beginChanges()");
 		}
 		try {
@@ -1040,7 +1031,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
-			begin = false;
+			inTransaction = false;
 			reloadCaches();
 		}
 	}

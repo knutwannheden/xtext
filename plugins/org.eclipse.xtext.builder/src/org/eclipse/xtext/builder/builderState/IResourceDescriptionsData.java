@@ -27,4 +27,6 @@ public interface IResourceDescriptionsData extends IResourceDescriptions, IResou
 	
 	void removeDescription(URI uri);
 
+	void removeDescriptions(Set<URI> uris);
+
 }

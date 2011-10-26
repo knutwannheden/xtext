@@ -14,8 +14,12 @@ import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
+import org.eclipse.xtext.resource.ISelectable;
 import org.eclipse.xtext.resource.impl.EObjectDescriptionLookUp;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 /**
@@ -28,6 +32,17 @@ public class SelectableDBBasedResourceDescription extends DBBasedResourceDescrip
 
 	public SelectableDBBasedResourceDescription(final DBBasedBuilderState index, final URI uri) {
 		super(index, uri);
+	}
+
+	public SelectableDBBasedResourceDescription(final DBBasedBuilderState index, final URI uri,
+			final ISelectable selectable) {
+		super(index, uri);
+		this.exportedObjects = ImmutableList.copyOf(Iterables.transform(selectable.getExportedObjects(),
+				new Function<IEObjectDescription, IEObjectDescription>() {
+					public IEObjectDescription apply(IEObjectDescription from) {
+						return ImmutableEObjectDescription.copyOf(from);
+					}
+				}));
 	}
 
 	@Override

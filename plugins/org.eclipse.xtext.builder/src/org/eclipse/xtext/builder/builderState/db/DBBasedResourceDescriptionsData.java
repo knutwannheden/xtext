@@ -8,7 +8,6 @@
 package org.eclipse.xtext.builder.builderState.db;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +17,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.InternalEObject;
-import org.eclipse.xtext.builder.builderState.ResourceDescriptionsData;
-import org.eclipse.xtext.builder.clustering.CopiedResourceDescription;
+import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IReferenceDescription;
@@ -39,7 +37,7 @@ import com.google.common.collect.Sets;
 /**
  * @author Knut Wannheden - Initial contribution and API
  */
-public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
+public class DBBasedResourceDescriptionsData implements IResourceDescriptionsData {
 
 	private final DBBasedBuilderState index;
 	private boolean initialized;
@@ -54,12 +52,11 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	private WriteBehindBuffer buffer;
 
 	public DBBasedResourceDescriptionsData(final DBBasedBuilderState index) {
-		super(null, null);
 		this.index = index;
 	}
 
-	protected DBBasedResourceDescriptionsData(final DBBasedBuilderState index, Set<URI> allURIs, Map<QualifiedName, Collection<URI>> lookupMap, Map<URI, IResourceDescription> cache) {
-		super(null, null);
+	protected DBBasedResourceDescriptionsData(final DBBasedBuilderState index, Set<URI> allURIs,
+			Map<QualifiedName, Collection<URI>> lookupMap, Map<URI, IResourceDescription> cache) {
 		this.index = index;
 		this.allURIs = allURIs;
 		this.lookupMap = lookupMap;
@@ -76,17 +73,25 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 
 	private void assertInTransaction() {
 		if (!inTransaction) {
-			throw new IllegalStateException("Transaction required"); //$NON-NLS-1$
+			throw new IllegalStateException("Operation requires a transaction");
 		}
 	}
 
-	@Override
-	public Iterable<IResourceDescription> getAllResourceDescriptions() {
+	public Set<URI> getAllURIs() {
 		ensureInitialized();
-		return index.getAllResourceDescriptions();
+		return ImmutableSet.copyOf(allURIs);
 	}
 
-	@Override
+	public Iterable<IResourceDescription> getAllResourceDescriptions() {
+		ensureInitialized();
+		return Iterables.transform(allURIs, new Function<URI, IResourceDescription>() {
+			public IResourceDescription apply(URI from) {
+				IResourceDescription description = cache.get(from);
+				return description != null ? description : new DBBasedResourceDescription(index, from);
+			}
+		});
+	}
+
 	public IResourceDescription getResourceDescription(final URI normalizedURI) {
 		ensureInitialized();
 		IResourceDescription res = cache.get(normalizedURI);
@@ -96,19 +101,16 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		return index.getResourceDescription(normalizedURI);
 	}
 
-	@Override
 	public boolean isEmpty() {
 		ensureInitialized();
 		return allURIs.isEmpty();
 	}
 
-	@Override
 	public Iterable<IEObjectDescription> getExportedObjects() {
 		ensureInitialized();
 		return index.getExportedObjects();
 	}
 
-	@Override
 	public Iterable<IEObjectDescription> getExportedObjects(final EClass type, final QualifiedName name,
 			final boolean ignoreCase) {
 		ensureInitialized();
@@ -129,18 +131,16 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 						if (from != null) {
 							return from.getExportedObjects(type, name, ignoreCase);
 						}
-						return Collections.emptyList();
+						return ImmutableSet.of();
 					}
 				}));
 	}
 
-	@Override
 	public Iterable<IEObjectDescription> getExportedObjectsByType(final EClass type) {
 		ensureInitialized();
 		return index.getExportedObjectsByType(type);
 	}
 
-	@Override
 	public Iterable<IEObjectDescription> getExportedObjectsByObject(final EObject object) {
 		ensureInitialized();
 		IResourceDescription res = cache.get(object.eIsProxy() ? ((InternalEObject) object).eProxyURI().trimFragment()
@@ -151,27 +151,18 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		return index.getExportedObjectsByObject(object);
 	}
 
-	@Override
-	public Set<URI> getAllURIs() {
-		ensureInitialized();
-		return allURIs;
-	}
-
-	@Override
 	public Iterable<IResourceDescription> findAllReferencingResources(
 			final Iterable<IResourceDescription> targetResources, final ReferenceMatchPolicy matchPolicy) {
 		ensureInitialized();
 		return index.findAllReferencingResources(targetResources, matchPolicy);
 	}
 
-	@Override
 	public Iterable<IResourceDescription> findObjectReferencingResources(
 			final Iterable<IEObjectDescription> targetObjects, final ReferenceMatchPolicy matchPolicy) {
 		ensureInitialized();
 		return index.findObjectReferencingResources(targetObjects, matchPolicy);
 	}
 
-	@Override
 	public Iterable<IReferenceDescription> findReferencesToObjects(final Iterable<URI> targetObjects) {
 		ensureInitialized();
 		return index.findReferencesToObjects(targetObjects);
@@ -201,9 +192,8 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	}
 
 	public void flushChanges() {
-		if (!inTransaction) {
+		if (!inTransaction)
 			return;
-		}
 
 		buffer.flush();
 	}
@@ -231,11 +221,6 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		}
 	}
 
-	public void clear() {
-		index.clear();
-		reset();
-	}
-
 	public void close() {
 		reset();
 		index.close(false);
@@ -255,7 +240,6 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		initialized = false;
 	}
 
-	@Override
 	public void addDescription(final URI uri, final IResourceDescription newDescription) {
 		assertInTransaction();
 		buffer.put(uri, newDescription);
@@ -278,16 +262,15 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		cache.put(uri, newDescription);
 	}
 
-	@Override
 	public void removeDescription(final URI uri) {
 		assertInTransaction();
 		allURIs.remove(uri);
 		// TODO check if we can make this faster
 		for (Iterator<Map.Entry<QualifiedName, Collection<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
 			Map.Entry<QualifiedName, Collection<URI>> entry = it.next();
-			Collection<URI> uris = entry.getValue();
-			if (uris.remove(uri)) {
-				if (uris.isEmpty()) {
+			Collection<URI> mappedUris = entry.getValue();
+			if (mappedUris.remove(uri)) {
+				if (mappedUris.isEmpty()) {
 					it.remove();
 				}
 			}
@@ -296,21 +279,34 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 		index.deleteResources(ImmutableSet.of(uri));
 	}
 
-	@Override
+	public void removeDescriptions(Set<URI> uris) {
+		assertInTransaction();
+		allURIs.removeAll(uris);
+		// TODO check if we can make this faster
+		for (Iterator<Map.Entry<QualifiedName, Collection<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<QualifiedName, Collection<URI>> entry = it.next();
+			Collection<URI> mappedUris = entry.getValue();
+			if (mappedUris.removeAll(uris)) {
+				if (mappedUris.isEmpty()) {
+					it.remove();
+				}
+			}
+		}
+		cache.keySet().removeAll(uris);
+		index.deleteResources(uris);
+	}
+
 	public DBBasedResourceDescriptionsData copy() {
 		if (inTransaction)
-			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData still in transaction");
+			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData in an open transaction");
 		ensureInitialized();
+
 		DBBasedBuilderState indexCopy = index.copy();
 		Map<URI, IResourceDescription> cacheCopy = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 		cacheCopy.putAll(cache);
-		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs), Maps.newHashMap(lookupMap), cacheCopy);
+		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs),
+				Maps.newHashMap(lookupMap), cacheCopy);
 		return copy;
-	}
-
-	@Override
-	protected Iterable<IResourceDescription> getSelectables() {
-		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -346,7 +342,7 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 			cache.put(uri, res);
 		} else {
 			// don't cache any reference descriptions or imported names
-			cache.put(uri, new CopiedResourceDescription(res));
+			cache.put(uri, new SelectableDBBasedResourceDescription(index, uri, res));
 		}
 	}
 

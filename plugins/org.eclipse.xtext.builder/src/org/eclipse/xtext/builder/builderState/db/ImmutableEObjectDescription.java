@@ -25,11 +25,17 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 	private final EClass eClass;
 	private final Object[] userData;
 
-	public ImmutableEObjectDescription(final QualifiedName name, final URI uri, final EClass eClass, final Object[] userData) {
+	public ImmutableEObjectDescription(final QualifiedName name, final URI uri, final EClass eClass,
+			final Object[] userData) {
 		this.name = name;
 		this.uri = uri;
 		this.eClass = eClass;
 		this.userData = userData;
+	}
+
+	public static ImmutableEObjectDescription copyOf(IEObjectDescription obj) {
+		return new ImmutableEObjectDescription(obj.getName(), obj.getEObjectURI(), obj.getEClass(),
+				getUserDataArray(obj));
 	}
 
 	public QualifiedName getName() {
@@ -74,6 +80,16 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 	@Override
 	public String toString() {
 		return "ImmutableEObjectDescription(" + getName().toString() + ")";
+	}
+
+	public static Object[] getUserDataArray(final IEObjectDescription obj) {
+		String[] keys = obj.getUserDataKeys();
+		Object[] result = new String[keys.length * 2];
+		for (int i = 0; i < keys.length; i++) {
+			result[i] = keys[i];
+			result[keys.length + i] = obj.getUserData(keys[i]);
+		}
+		return result;
 	}
 
 }

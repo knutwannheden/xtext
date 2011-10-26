@@ -23,10 +23,13 @@ import org.eclipse.xtext.builder.impl.BuildData;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
+import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.impl.AbstractResourceDescriptionChangeEventSource;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
 import org.eclipse.xtext.resource.impl.ResourceDescriptionChangeEvent;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
@@ -138,11 +141,14 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		final IResourceDescriptionsData newData = getCopiedResourceDescriptionsData(ImmutableSet.<URI> of(), toBeRemoved);
 		try {
 			Collection<IResourceDescription.Delta> deltas = doClean(toBeRemoved, subMonitor.newChild(1));
-			for (IResourceDescription.Delta delta : deltas) {
-				if (monitor.isCanceled())
-					throw new OperationCanceledException();
-				newData.removeDescription(delta.getOld().getURI());
-			}
+			if (monitor.isCanceled())
+				throw new OperationCanceledException();
+			newData.removeDescriptions(Sets.newHashSet(Collections2.transform(deltas,
+					new Function<IResourceDescription.Delta, URI>() {
+						public URI apply(Delta from) {
+							return from.getOld().getURI();
+						}
+					})));
 			ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(deltas, this);
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
