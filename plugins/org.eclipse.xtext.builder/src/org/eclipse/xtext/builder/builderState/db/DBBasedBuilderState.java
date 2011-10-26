@@ -524,8 +524,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 				refDelStmt = conn.prepare("DELETE FROM REF WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
 				objDelStmt = conn.prepare("DELETE FROM OBJ WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
-				resNamesDelStmt = conn
-						.prepare("DELETE FROM RES_NAMES WHERE EXISTS RES_ID IN (SELECT ID FROM WORK_SET)");
+				resNamesDelStmt = conn.prepare("DELETE FROM RES_NAMES WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
 				resDelStmt = conn.prepare("DELETE FROM RES WHERE ID IN (SELECT ID FROM WORK_SET)");
 				resMapStmt = conn.prepare("DELETE FROM RES_MAP WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
 

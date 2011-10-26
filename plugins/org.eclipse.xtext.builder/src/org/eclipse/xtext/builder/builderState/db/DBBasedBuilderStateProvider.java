@@ -78,7 +78,7 @@ public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState
 		try {
 			Class.forName("org.h2.Driver");
 			Connection conn = DriverManager.getConnection(dbUrl, "sa", "");
-			conn.setAutoCommit(DEBUG);
+			conn.setAutoCommit(false);
 			return conn;
 		} catch (ClassNotFoundException e) {
 			throw new WrappedException(e);
