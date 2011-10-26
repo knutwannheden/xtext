@@ -94,11 +94,11 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 
 	public IResourceDescription getResourceDescription(final URI normalizedURI) {
 		ensureInitialized();
-		IResourceDescription res = cache.get(normalizedURI);
-		if (res != null) {
-			return res;
-		}
-		return index.getResourceDescription(normalizedURI);
+		if (!allURIs.contains(normalizedURI))
+			return null;
+
+		IResourceDescription description = cache.get(normalizedURI);
+		return description != null ? description : new DBBasedResourceDescription(index, normalizedURI);
 	}
 
 	public boolean isEmpty() {

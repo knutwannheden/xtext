@@ -159,6 +159,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	public synchronized void close(final boolean compact) {
 		try {
 			if (initialized && conn != null) {
+				resetOldResourceMap();
 				Connection c = conn.getConnection();
 				Statement stmt = null;
 				try {
@@ -457,7 +458,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		deleteResourceDescriptions(uris);
 	}
 
+	// TODO create method to delete single resource
 	private void deleteResourceDescriptions(final Iterable<URI> uris) {
+		PreparedStatement workSetStmt = null;
+
 		PreparedStatement refUpdStmt = null;
 		PreparedStatement objUpdStmt = null;
 		PreparedStatement resNamesUpdStmt = null;
@@ -484,56 +488,57 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 			}
 
+			workSetStmt = conn.prepare("INSERT INTO WORK_SET DIRECT SELECT ID FROM TABLE(ID INT=?)");
+
 			if (!resourcesToStash.isEmpty()) {
+				Statement stmt = conn.getConnection().createStatement();
+				stmt.execute("DELETE FROM WORK_SET");
+				stmt.close();
+
+				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT -ID FROM WORK_SET");
 				refUpdStmt = conn
-						.prepare("UPDATE REF R SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.RES_ID)");
+						.prepare("UPDATE REF R SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = R.RES_ID)");
 				objUpdStmt = conn
-						.prepare("UPDATE OBJ O SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = O.RES_ID)");
+						.prepare("UPDATE OBJ O SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = O.RES_ID)");
 				resNamesUpdStmt = conn
-						.prepare("UPDATE RES_NAMES N SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = N.RES_ID)");
+						.prepare("UPDATE RES_NAMES N SET RES_ID = -RES_ID WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = N.RES_ID)");
 				resUpdStmt = conn
-						.prepare("UPDATE RES R SET ID = -ID WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.ID)");
+						.prepare("UPDATE RES R SET ID = -ID WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = R.ID)");
 				resMapStmt = conn
-						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = M.RES_ID)");
-				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT -ID FROM TABLE(ID INT=?)");
+						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = M.RES_ID)");
 
 				final Object[] idArray = resourcesToStash.toArray(new Object[resourcesToStash.size()]);
-				refUpdStmt.setObject(1, idArray);
-				objUpdStmt.setObject(1, idArray);
-				resNamesUpdStmt.setObject(1, idArray);
-				resUpdStmt.setObject(1, idArray);
-				resMapStmt.setObject(1, idArray);
-				oldResMapStmt.setObject(1, idArray);
+				workSetStmt.setObject(1, idArray);
 
+				workSetStmt.execute();
+				oldResMapStmt.execute();
 				refUpdStmt.execute();
 				objUpdStmt.execute();
 				resNamesUpdStmt.execute();
 				resUpdStmt.execute();
 				resMapStmt.execute();
-				oldResMapStmt.execute();
-
-				// resourceIdMap.values().removeAll(resourcesToStash);
 			}
 
 			if (!resourcesToDelete.isEmpty()) {
+				Statement stmt = conn.getConnection().createStatement();
+				stmt.execute("DELETE FROM WORK_SET");
+				stmt.close();
+
 				refDelStmt = conn
-						.prepare("DELETE FROM REF R WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.RES_ID)");
+						.prepare("DELETE FROM REF R WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = R.RES_ID)");
 				objDelStmt = conn
-						.prepare("DELETE FROM OBJ O WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = O.RES_ID)");
+						.prepare("DELETE FROM OBJ O WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = O.RES_ID)");
 				resNamesDelStmt = conn
-						.prepare("DELETE FROM RES_NAMES N WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = N.RES_ID)");
+						.prepare("DELETE FROM RES_NAMES N WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = N.RES_ID)");
 				resDelStmt = conn
-						.prepare("DELETE FROM RES R WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = R.ID)");
+						.prepare("DELETE FROM RES R WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = R.ID)");
 				resMapStmt = conn
-						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM TABLE(ID INT=?) X WHERE X.ID = M.RES_ID)");
+						.prepare("DELETE FROM RES_MAP M WHERE EXISTS (SELECT NULL FROM WORK_SET X WHERE X.ID = M.RES_ID)");
 
 				final Object[] idArray = resourcesToDelete.toArray(new Object[resourcesToDelete.size()]);
-				refDelStmt.setObject(1, idArray);
-				objDelStmt.setObject(1, idArray);
-				resNamesDelStmt.setObject(1, idArray);
-				resDelStmt.setObject(1, idArray);
-				resMapStmt.setObject(1, idArray);
+				workSetStmt.setObject(1, idArray);
 
+				workSetStmt.execute();
 				refDelStmt.execute();
 				objDelStmt.execute();
 				resNamesDelStmt.execute();
@@ -554,6 +559,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			conn.close(resDelStmt);
 			conn.close(resMapStmt);
 			conn.close(oldResMapStmt);
+			conn.close(workSetStmt);
 		}
 	}
 
