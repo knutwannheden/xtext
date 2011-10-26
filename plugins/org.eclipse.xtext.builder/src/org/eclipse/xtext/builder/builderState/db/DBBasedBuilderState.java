@@ -366,7 +366,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement resStmt = null;
 		PreparedStatement objStmt = null;
 		try {
-			resStmt = conn.prepare("SELECT M.ID FROM " + resMapTable
+			resStmt = conn.prepare("SELECT M.RES_ID FROM " + resMapTable
 					+ " M INNER JOIN TABLE(ID INT=?) I ON M.RES_ID = I.ID");
 			resStmt.setObject(1, idArray);
 			resStmt.execute();
