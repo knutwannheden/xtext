@@ -71,6 +71,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			</li>
 			</ul>
 		</p>
+		<img alt="Syntactic sugar" src="./images/syntactic-sugar.png">
 		</td>	
 	</tr>
 	<tr>
@@ -99,9 +100,10 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 		<td class="entry_cell">Improved Type Inference</td>
 		<td>
 		<p>
-			The type inference for generic types and and arrays has been improved, such that you can skip
+			The type inference for generic types and arrays has been improved, such that you can skip
 			explicit type declarations in even more cases.
 		</p>
+		<img alt="Inference for generic types" src="./images/infer-generics.png">
 		</td>	
 		</td>	
 	</tr>
@@ -115,6 +117,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			Import statements in Xtend files can now be organized as in JDT: Unused imports are marked and can 
 			be automatically pruned using the "Organize Imports" action. Wildcard imports have been deprecated.
 		</p>
+		<img alt="Organize Imports" src="./images/organize-imports.png">
 		</td>	
 	</tr>
 	<tr>
@@ -124,8 +127,20 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			Editing Xtend has become more comfortable: You can now enlarge/shrink the selection based on the 
 			semantics using CTRL-SHIFT-[LEFT|RIGHT]. Content assist matches upper case letters to camel case 
 			prefixes. Xtend files are colored semantically to better highlight extension calls, deprecation etc.
-			We have added more validation rules to help the user writing correct Xtend code.   
+			We have added more validation rules to help the user writing correct Xtend code.
 		</p>
+		<img alt="Camel Case Content assist" src="./images/camelcase-ca.png">
+		</td>	
+	</tr>
+	<tr>
+		<td class="entry_cell">Editor Navigation</td>
+		<td>
+		<p>
+			An go to Xtend source hyperlink has been added for generated java types, which directly opens the source
+			xtend file. By default, the hyperlink appears when you hold down the Ctrl key while hovering over
+			a generated java type.
+		</p>
+		<img alt="Go to declaration" src="./images/goto-declaration.png">
 		</td>	
 	</tr>
 	<tr>
@@ -134,6 +149,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 		<p>
 			The code generator translates comments from Xtend artifacts to JavaDoc in the generated Java code. 
 		</p>
+		<img alt="Comment To Javadoc" src="./images/javadoc.png">
 		</td>	
 	</tr>
 	<tr>
@@ -144,6 +160,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			are correctly updated in Java as well as in Xtend code, no matter where the refactoring has been 
 			triggered.
 		</p>
+		<img alt="Rename refactoring" src="./images/rename.png">
 		</td>	
 	</tr>
 </table>
@@ -158,6 +175,9 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			it is enough to specify how your own concepts relate to the JVM typesystem. The framework then derives 
 			all other services such as scoping or even the code generator from this mapping automatically. 
 		</p>
+		<img alt="Embedding Xbase - Xtext editor" src="./images/xtext-xbase-1.png">
+		<hr/>
+		<img alt="Embedding Xbase - Xtend editor" src="./images/xtext-xbase-4.png">
 		</td>	
 	</tr>
 	<tr>
@@ -184,6 +204,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			</li>
 			</ul>
 		</p>
+		<img alt="Syntactic sugar" src="./images/syntactic-sugar.png">
 		</td>	
 	</tr>
 	<tr>
@@ -194,6 +215,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			Upper case letters are matched to camel case names in content assist. The outline view shows better
 			defaults.
 		</p>
+		<img alt="Camel Case Content assist" src="./images/xtext-camel-ca.png">
 		</td>	
 	</tr>
 	<tr>
@@ -204,6 +226,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			across language and resource boundaries. Saving and inline editing can be configured in the 
 			preferences.
 		</p>
+		<img alt="Refactoring preferences" src="./images/xtext-refactoring-props.png">
 		</td>	
 	</tr>
 	<tr>
@@ -214,6 +237,7 @@ have been fixed since Indigo SR1. Here is a summary of the most significant enha
 			also adapts better to files with different sizes. The resource loading can be parallelized to 
 			further minimize build times.   
 		</p>
+		<img alt="Builder performance" src="./../helios/images/speed.png">
 		</td>	
 	</tr>
 </table>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
-<toc topic="contents/xtext.html" label="Xtext Documentation" >
+<toc topic="contents/xtext.html" label="Xtext 2.1 Documentation" >
 	<topic href="contents/xtext_15.html" label="Getting Started" >
 		<topic href="contents/005-installation.html" label="Installation" >
 			<topic href="contents/005-installation.html#InstallDistro" label="Install Pre-Configured Eclipse With Xtext" >
@@ -35,6 +35,18 @@
 			<topic href="contents/060-unit-tests.html" label="Unit Testing the Language" >
 			</topic>
 			<topic href="contents/050-validation.html" label="Creating Custom Validation Rules" >
+			</topic>
+		</topic>
+		<topic href="contents/035-domainmodel-java.html" label="5 simple steps to your JVM language" >
+			<topic href="contents/035-domainmodel-java.html#JvmDomainmodel_7" label="Step One: Create A New Xtext Project" >
+			</topic>
+			<topic href="contents/035-domainmodel-java.html#JvmDomainmodel_8" label="Step Two: Write the Grammar" >
+			</topic>
+			<topic href="contents/035-domainmodel-java.html#JvmDomainmodel_9" label="Step Three: Generate Language Artifacts" >
+			</topic>
+			<topic href="contents/035-domainmodel-java.html#JvmDomainmodel_10" label="Step Four: Define the Mapping to JVM Concepts" >
+			</topic>
+			<topic href="contents/035-domainmodel-java.html#JvmDomainmodel_11" label="Step Five : Try the Editor!" >
 			</topic>
 		</topic>
 	</topic>
@@ -215,10 +227,10 @@
 					<topic href="contents/080-scoping.html#local_scoping_7" label="Declarative Scoping" >
 					</topic>
 				</topic>
-				<topic href="contents/080-scoping.html#scoping_12" label="Imported Namespace-Aware Scoping" >
-					<topic href="contents/080-scoping.html#scoping_12_2" label="org.eclipse.xtext.naming.IQualifiedNameProvider" >
+				<topic href="contents/080-scoping.html#namespaceImports" label="Imported Namespace-Aware Scoping" >
+					<topic href="contents/080-scoping.html#namespaceImports_2" label="org.eclipse.xtext.naming.IQualifiedNameProvider" >
 					</topic>
-					<topic href="contents/080-scoping.html#scoping_12_3" label="Importing Namespaces" >
+					<topic href="contents/080-scoping.html#namespaceImports_3" label="Importing Namespaces" >
 					</topic>
 				</topic>
 			</topic>
@@ -570,7 +582,7 @@
 					</topic>
 				</topic>
 				<topic href="contents/02-Xtend_Classes_Functions.html#fields" label="Fields" >
-					<topic href="contents/02-Xtend_Classes_Functions.html#fields_6" label="Extension Methods" >
+					<topic href="contents/02-Xtend_Classes_Functions.html#extensionMethods" label="Extension Methods" >
 					</topic>
 				</topic>
 				<topic href="contents/02-Xtend_Classes_Functions.html#Functions" label="Functions" >
