@@ -125,9 +125,8 @@ public class ClusteringBuilderState extends AbstractBuilderState {
         // Step 4: Create a URI set of resources not yet in the delta. This is used for queuing; whenever a resource is
         // queued for processing, its URI is removed from this set. queueAffectedResources will consider only resources
         // in this set as potential candidates.
-        for (final URI uri : toBeDeleted) {
-            newData.removeDescription(uri);
-        }
+        newData.removeDescriptions(toBeDeleted);
+
         final Set<URI> allRemainingURIs = Sets.newLinkedHashSet(newData.getAllURIs());
         allRemainingURIs.removeAll(buildData.getToBeUpdated());
         for(URI remainingURI: buildData.getAllRemainingURIs()) {
