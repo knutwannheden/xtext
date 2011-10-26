@@ -297,11 +297,11 @@ public class DBBasedResourceDescriptionsData extends ResourceDescriptionsData {
 	}
 
 	@Override
-	public DBBasedResourceDescriptionsData copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+	public DBBasedResourceDescriptionsData copy() {
 		if (inTransaction)
 			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData still in transaction");
 		ensureInitialized();
-		DBBasedBuilderState indexCopy = index.copy(toBeUpdated, toBeDeleted);
+		DBBasedBuilderState indexCopy = index.copy();
 		Map<URI, IResourceDescription> cacheCopy = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 		cacheCopy.putAll(cache);
 		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs), Maps.newHashMap(lookupMap), cacheCopy);

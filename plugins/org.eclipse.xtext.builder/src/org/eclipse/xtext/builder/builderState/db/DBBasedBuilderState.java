@@ -84,9 +84,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		this.packageRegistry = packageRegistry;
 	}
 
-	public DBBasedBuilderState copy(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
+	public DBBasedBuilderState copy() {
 		BiMap<URI, Integer> resourceIdMapCopy = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(resourceIdMap));
-		resetOldResourceMap(Sets.union(toBeUpdated, toBeDeleted));
+		resetOldResourceMap();
 		resMapTable = "OLD_RES_MAP";
 		return new DBBasedBuilderState(conn, resourceIdMapCopy, packageRegistry);
 	}
@@ -210,7 +210,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	private void resetOldResourceMap(Set<URI> uris) {
+	private void resetOldResourceMap() {
 		PreparedStatement insStmt = null;
 		try {
 			Statement stmt = conn.getConnection().createStatement();

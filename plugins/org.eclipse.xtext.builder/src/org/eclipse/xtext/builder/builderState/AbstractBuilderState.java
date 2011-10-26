@@ -81,7 +81,7 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 	}
 
 	protected IResourceDescriptionsData getCopiedResourceDescriptionsData(Set<URI> toBeUpdated, Set<URI> toBeDeleted) {
-		return resourceDescriptionData.copy(toBeUpdated, toBeDeleted);
+		return resourceDescriptionData.copy();
 	}
 
 	public Iterable<IResourceDescription> getAllResourceDescriptions() {
