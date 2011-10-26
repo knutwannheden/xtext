@@ -276,7 +276,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 			}
 		}
 		cache.remove(uri);
-		index.deleteResources(ImmutableSet.of(uri));
+		index.deleteResource(uri);
 	}
 
 	public void removeDescriptions(Set<URI> uris) {
