@@ -15,7 +15,6 @@ import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
@@ -69,16 +68,14 @@ public class DefaultResourceDescriptionDelta implements IResourceDescription.Del
 
 		Iterable<IEObjectDescription> oldEObjects = old.getExportedObjects();
 		Iterable<IEObjectDescription> newEObjects = _new.getExportedObjects();
-		if (Iterables.size(oldEObjects) != Iterables.size(newEObjects))
-			return true;
 
-		Iterator<IEObjectDescription> iterator1 = oldEObjects.iterator();
-		Iterator<IEObjectDescription> iterator2 = newEObjects.iterator();
-		while (iterator1.hasNext()) {
-			if (!equals(iterator1.next(), iterator2.next()))
+		Iterator<IEObjectDescription> oldIterator = oldEObjects.iterator();
+		Iterator<IEObjectDescription> newIterator = newEObjects.iterator();
+		while (oldIterator.hasNext()) {
+			if (!newIterator.hasNext() || !equals(oldIterator.next(), newIterator.next()))
 				return true;
 		}
-		return false;
+		return newIterator.hasNext();
 	}
 
 	protected boolean equals(IEObjectDescription oldObj, IEObjectDescription newObj) {
