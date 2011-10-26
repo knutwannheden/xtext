@@ -69,7 +69,7 @@ class WriteBehindBuffer implements Runnable {
 	 * Immediately stops the write behind buffer thread.
 	 */
 	public void stop() {
-		bufferFlushScheduler.shutdownNow();
+		bufferFlushScheduler.shutdown();
 	}
 
 	/** {@inheritDoc} */

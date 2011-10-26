@@ -159,8 +159,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	public synchronized void close(final boolean compact) {
 		try {
 			if (initialized && conn != null) {
-				resetOldResourceMap();
 				Connection c = conn.getConnection();
+				c.rollback();
+				resetOldResourceMap();
 				Statement stmt = null;
 				try {
 					stmt = c.createStatement();
@@ -292,18 +293,21 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			}
 			resNamesStmt.executeBatch();
 
-			objStmt = conn.prepare("INSERT INTO OBJ (RES_ID, FRAG, NAME, ECLASS_ID, USER_DATA) VALUES (?, ?, ?, ?, ?)");
+			objStmt = conn
+					.prepare("INSERT INTO OBJ (RES_ID, SEQ_NR, FRAG, NAME, ECLASS_ID, USER_DATA) VALUES (?, ?, ?, ?, ?, ?)");
 			refStmt = conn
 					.prepare("INSERT INTO REF (RES_ID, SRC_FRAG, CONT_FRAG, TGT_RES_ID, TGT_FRAG, EREF_ID, IDX) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
 			for (IResourceDescription res : resourceDescriptions) {
 				Integer resId = resourceIdMap.get(res.getURI());
+				int seqNr = 1;
 				for (IEObjectDescription obj : res.getExportedObjects()) {
 					objStmt.setInt(1, resId);
-					objStmt.setString(2, obj.getEObjectURI().fragment());
-					objStmt.setString(3, convertQualifiedNameToString(obj.getName()));
-					objStmt.setInt(4, packageRegistry.getEClassId(obj.getEClass()));
-					objStmt.setObject(5, ImmutableEObjectDescription.getUserDataArray(obj));
+					objStmt.setInt(2, seqNr++);
+					objStmt.setString(3, obj.getEObjectURI().fragment());
+					objStmt.setString(4, convertQualifiedNameToString(obj.getName()));
+					objStmt.setInt(5, packageRegistry.getEClassId(obj.getEClass()));
+					objStmt.setObject(6, ImmutableEObjectDescription.getUserDataArray(obj));
 					objStmt.addBatch();
 				}
 				for (IReferenceDescription ref : res.getReferenceDescriptions()) {
@@ -381,7 +385,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				@Override
 				protected PreparedStatement createPreparedStatement() throws SQLException {
 					PreparedStatement stmt = conn
-							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID");
+							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID ORDER BY SEQ_NR");
 					stmt.setObject(1, idArray);
 					return stmt;
 				}
@@ -633,7 +637,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 
 				PreparedStatement stmt = conn
-						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ?");
+						.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O WHERE O.RES_ID = ? ORDER BY O.SEQ_NR");
 				stmt.setInt(1, resId);
 				return stmt;
 			}
