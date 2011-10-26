@@ -215,6 +215,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	private void resetOldResourceMap() {
 		PreparedStatement insStmt = null;
+		PreparedStatement refStmt = null;
 		try {
 			Statement stmt = conn.getConnection().createStatement();
 			stmt.execute("TRUNCATE TABLE OLD_RES_MAP");
@@ -224,12 +225,16 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			stmt.execute("DELETE FROM REF WHERE RES_ID < 0");
 			stmt.close();
 
-			insStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT RES_ID FROM RES_MAP");
+			insStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SORTED SELECT RES_ID FROM RES_MAP");
 			insStmt.execute();
+
+			refStmt = conn.prepare("DELETE FROM REF R WHERE NOT EXISTS (SELECT NULL FROM RES WHERE ID = R.TGT_RES_ID)");
+			refStmt.execute();
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
 			conn.close(insStmt);
+			conn.close(refStmt);
 		}
 	}
 
@@ -572,7 +577,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			}
 
 			if (!resourcesToStash.isEmpty()) {
-				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SELECT -ID FROM WORK_SET");
+				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SORTED SELECT -ID FROM WORK_SET");
 				refUpdStmt = conn.prepare("UPDATE REF SET RES_ID = -RES_ID WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
 				objUpdStmt = conn.prepare("UPDATE OBJ SET RES_ID = -RES_ID WHERE RES_ID IN (SELECT ID FROM WORK_SET)");
 				resNamesUpdStmt = conn
@@ -1076,13 +1081,11 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		if (!inTransaction) {
 			throw new IllegalStateException("Trying to commit changes before invocation of beginChanges()");
 		}
-		PreparedStatement refStmt = null;
-		PreparedStatement resStmt = null;
 		Connection c = conn.getConnection();
 		try {
-			refStmt = conn.prepare("DELETE FROM REF R WHERE NOT EXISTS (SELECT NULL FROM RES WHERE ID = R.TGT_RES_ID)");
-			refStmt.execute();
-
+			Statement stmt = c.createStatement();
+			stmt.execute("ANALYZE");
+			stmt.close();
 			c.commit();
 		} catch (SQLException e) {
 			try {
@@ -1094,8 +1097,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			}
 			throw new DBException(e);
 		} finally {
-			conn.close(refStmt);
-			conn.close(resStmt);
 			inTransaction = false;
 			reloadCaches();
 		}
