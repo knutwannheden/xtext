@@ -523,15 +523,18 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			resMapStmt = conn.prepare("DELETE FROM RES_MAP WHERE RES_ID = ?");
 
-			refUpdStmt = conn.prepare("UPDATE REF SET RES_ID = -RES_ID WHERE RES_ID = ?");
-			objUpdStmt = conn.prepare("UPDATE OBJ SET RES_ID = -RES_ID WHERE RES_ID = ?");
-			resNamesUpdStmt = conn.prepare("UPDATE RES_NAMES SET RES_ID = -RES_ID WHERE RES_ID = ?");
-			resUpdStmt = conn.prepare("UPDATE RES SET ID = -ID WHERE ID = ?");
-
 			refDelStmt = conn.prepare("DELETE FROM REF WHERE RES_ID = ?");
 			objDelStmt = conn.prepare("DELETE FROM OBJ WHERE RES_ID = ?");
 			resNamesDelStmt = conn.prepare("DELETE FROM RES_NAMES WHERE RES_ID = ?");
 			resDelStmt = conn.prepare("DELETE FROM RES WHERE ID = ?");
+
+			// TODO should we also stash references and imported names ?
+			// refUpdStmt = conn.prepare("UPDATE REF SET RES_ID = -RES_ID WHERE RES_ID = ?");
+			refUpdStmt = refDelStmt;
+			objUpdStmt = conn.prepare("UPDATE OBJ SET RES_ID = -RES_ID WHERE RES_ID = ?");
+			// resNamesUpdStmt = conn.prepare("UPDATE RES_NAMES SET RES_ID = -RES_ID WHERE RES_ID = ?");
+			resNamesUpdStmt = resNamesDelStmt;
+			resUpdStmt = conn.prepare("UPDATE RES SET ID = -ID WHERE ID = ?");
 
 			Set<Integer> stashed = resourceMap.stashAll(uris);
 			for (URI uri : uris) {
@@ -561,9 +564,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 			}
 
-			refUpdStmt.executeBatch();
+			// refUpdStmt.executeBatch();
 			objUpdStmt.executeBatch();
-			resNamesUpdStmt.executeBatch();
+			// resNamesUpdStmt.executeBatch();
 			resUpdStmt.executeBatch();
 			resMapStmt.executeBatch();
 
@@ -575,9 +578,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
-			conn.close(refUpdStmt);
+			// conn.close(refUpdStmt);
 			conn.close(objUpdStmt);
-			conn.close(resNamesUpdStmt);
+			// conn.close(resNamesUpdStmt);
 			conn.close(resUpdStmt);
 			conn.close(refDelStmt);
 			conn.close(objDelStmt);
@@ -603,11 +606,18 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	// TODO don't return external resources
 	public Iterable<IResourceDescription> getAllResourceDescriptions() {
-		return Iterables.transform(resourceMap.getAllURIs(), new Function<URI, IResourceDescription>() {
-			public IResourceDescription apply(URI from) {
-				return new DBBasedResourceDescription(DBBasedBuilderState.this, from);
+		return Sets.newHashSet(new ClosingResultSetIterable<IResourceDescription>() {
+			@Override
+			protected PreparedStatement createPreparedStatement() throws SQLException {
+				ensureInitialized();
+				return conn.prepare("SELECT R.ID FROM RES R JOIN " + resourceMap.getTable()
+						+ " M ON M.RES_ID = R.ID WHERE R.EXTERNAL = FALSE");
+			}
+
+			@Override
+			protected IResourceDescription computeNext(final ResultSet resultSet) throws SQLException {
+				return new DBBasedResourceDescription(DBBasedBuilderState.this, resourceMap.getURI(resultSet.getInt(1)));
 			}
 		});
 	}
