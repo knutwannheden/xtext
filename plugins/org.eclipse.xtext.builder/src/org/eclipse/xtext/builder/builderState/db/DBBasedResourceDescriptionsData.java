@@ -302,10 +302,9 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		ensureInitialized();
 
 		DBBasedBuilderState indexCopy = index.copy();
-		Map<URI, IResourceDescription> cacheCopy = new MapMaker().concurrencyLevel(1).softValues().makeMap();
-		cacheCopy.putAll(cache);
 		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs),
-				Maps.newHashMap(lookupMap), cacheCopy);
+				Maps.newHashMap(lookupMap), cache);
+		cache = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 		return copy;
 	}
 

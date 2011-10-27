@@ -11,12 +11,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
@@ -26,41 +28,46 @@ public class DBResourceMap {
 	private final ConnectionWrapper conn;
 
 	private String resMapTable = "RES_MAP";
-	private final BiMap<URI, Integer> resourceIdMap;
+	private final BiMap<URI, Integer> idMap;
+	private Set<URI> stashedResources = Sets.newHashSet();
+
+	private DBResourceMap oldMap;
 
 	public DBResourceMap(ConnectionWrapper conn) {
 		this.conn = conn;
-		this.resourceIdMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
+		this.idMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
 	}
 
-	protected DBResourceMap(ConnectionWrapper conn, BiMap<URI, Integer> resourceIdMap) {
-		this.conn = conn;
-		this.resourceIdMap = resourceIdMap;
+	protected DBResourceMap(DBResourceMap oldMap) {
+		this.oldMap = oldMap;
+		this.conn = oldMap.conn;
+		this.idMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(oldMap.idMap));
 	}
 
 	public DBResourceMap copy() {
 		resetOldResourceMap();
-		return new DBResourceMap(conn, Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(resourceIdMap)));
+		resMapTable = "OLD_RES_MAP";
+		return new DBResourceMap(this);
 	}
 
 	public Iterable<URI> getAllURIs() {
-		return resourceIdMap.keySet();
+		return idMap.keySet();
 	}
 
 	public URI getURI(int id) {
-		return resourceIdMap.inverse().get(id);
+		return idMap.inverse().get(id);
 	}
 
 	public boolean contains(URI uri) {
-		return resourceIdMap.containsKey(uri);
+		return idMap.containsKey(uri);
 	}
 
 	public Integer getId(URI uri) {
-		return resourceIdMap.get(uri);
+		return idMap.get(uri);
 	}
 
 	public void register(URI uri, Integer resId) {
-		resourceIdMap.put(uri, resId);
+		idMap.put(uri, resId);
 	}
 
 	public void resetOldResourceMap() {
@@ -96,7 +103,7 @@ public class DBResourceMap {
 			resStmt.execute();
 			ResultSet rs = resStmt.getResultSet();
 			while (rs.next()) {
-				resourceIdMap.put(URI.createURI(rs.getString(2)), rs.getInt(1));
+				idMap.put(URI.createURI(rs.getString(2)), rs.getInt(1));
 			}
 		} catch (SQLException e) {
 			throw new DBException(e);
@@ -106,15 +113,55 @@ public class DBResourceMap {
 	}
 
 	public void clear() {
-		resourceIdMap.clear();
+		idMap.clear();
 	}
 
 	public String getTable() {
 		return resMapTable;
 	}
 
-	public void setTable(String string) {
-		resMapTable = "OLD_RES_MAP";
+	public Integer stash(URI uri) {
+		Integer id = idMap.get(uri);
+		if (stashedResources.add(uri) && id != null) {
+			PreparedStatement insStmt = null;
+			try {
+				insStmt = conn.prepare("INSERT INTO OLD_RES_MAP(RES_ID) VALUES(?)");
+				insStmt.setInt(1, -id);
+				insStmt.execute();
+				if (oldMap != null)
+					oldMap.register(uri, -id);
+				return id;
+			} catch (SQLException e) {
+				throw new DBException(e);
+			} finally {
+				conn.close(insStmt);
+			}
+		}
+		return null;
+	}
+
+	public Set<Integer> stashAll(Iterable<URI> uris) {
+		Set<Integer> result = Sets.newHashSet();
+		PreparedStatement insStmt = null;
+		try {
+			insStmt = conn.prepare("INSERT INTO OLD_RES_MAP(RES_ID) VALUES(?)");
+			for (URI uri : uris) {
+				Integer id = idMap.get(uri);
+				if (stashedResources.add(uri) && id != null) {
+					insStmt.setInt(1, -id);
+					insStmt.addBatch();
+					result.add(id);
+					if (oldMap != null)
+						oldMap.register(uri, -id);
+				}
+			}
+			insStmt.executeBatch();
+		} catch (SQLException e) {
+			throw new DBException(e);
+		} finally {
+			conn.close(insStmt);
+		}
+		return result;
 	}
 
 }

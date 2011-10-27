@@ -83,7 +83,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	public DBBasedBuilderState copy() {
 		DBResourceMap resourceMapCopy = resourceMap.copy();
-		resourceMap.setTable("OLD_RES_MAP");
 		return new DBBasedBuilderState(conn, resourceMapCopy, packageRegistry);
 	}
 
@@ -123,7 +122,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private void reloadCaches() {
 		synchronized (resourceMap) {
 			clearCaches();
-			packageRegistry.reloadCaches();
+			packageRegistry.reload();
 			resourceMap.reload();
 		}
 	}
@@ -132,7 +131,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		conn.clearCaches();
 		resourceMap.clear();
 		stashedResources.clear();
-		packageRegistry.clearCaches();
+		packageRegistry.clear();
 	}
 
 	public void open() {
@@ -222,11 +221,11 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				if (resId == null) {
 					rs.next();
 					resId = rs.getInt(1);
+					resourceMap.register(uri, resId);
 				}
 
 				resMapStmt.setInt(1, resId);
 				resMapStmt.addBatch();
-				resourceMap.register(uri, resId);
 
 				resInsStmt.setInt(1, resId);
 				resInsStmt.setString(2, uri.toString());
@@ -450,27 +449,23 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement resDelStmt = null;
 
 		PreparedStatement resMapStmt = null;
-		PreparedStatement oldResMapStmt = null;
 
 		try {
 
 			Integer id = resourceMap.getId(uri);
-			if (stashedResources.add(uri) && id != null) {
-				oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP(RES_ID) VALUES(?)");
+			if (resourceMap.stash(uri) != null) {
 				refUpdStmt = conn.prepare("UPDATE REF SET RES_ID = -RES_ID WHERE RES_ID = ?");
 				objUpdStmt = conn.prepare("UPDATE OBJ SET RES_ID = -RES_ID WHERE RES_ID = ?");
 				resNamesUpdStmt = conn.prepare("UPDATE RES_NAMES SET RES_ID = -RES_ID WHERE RES_ID = ?");
 				resUpdStmt = conn.prepare("UPDATE RES SET ID = -ID WHERE ID = ?");
 				resMapStmt = conn.prepare("DELETE FROM RES_MAP WHERE RES_ID = ?");
 
-				oldResMapStmt.setInt(1, -id);
 				refUpdStmt.setInt(1, id);
 				objUpdStmt.setInt(1, id);
 				resNamesUpdStmt.setInt(1, id);
 				resUpdStmt.setInt(1, id);
 				resMapStmt.setInt(1, id);
 
-				oldResMapStmt.execute();
 				refUpdStmt.execute();
 				objUpdStmt.execute();
 				resNamesUpdStmt.execute();
@@ -508,7 +503,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			conn.close(resNamesDelStmt);
 			conn.close(resDelStmt);
 			conn.close(resMapStmt);
-			conn.close(oldResMapStmt);
 		}
 	}
 
@@ -524,11 +518,9 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement resDelStmt = null;
 
 		PreparedStatement resMapStmt = null;
-		PreparedStatement oldResMapStmt = null;
 
 		try {
 
-			oldResMapStmt = conn.prepare("INSERT INTO OLD_RES_MAP(RES_ID) VALUES(?)");
 			resMapStmt = conn.prepare("DELETE FROM RES_MAP WHERE RES_ID = ?");
 
 			refUpdStmt = conn.prepare("UPDATE REF SET RES_ID = -RES_ID WHERE RES_ID = ?");
@@ -541,11 +533,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			resNamesDelStmt = conn.prepare("DELETE FROM RES_NAMES WHERE RES_ID = ?");
 			resDelStmt = conn.prepare("DELETE FROM RES WHERE ID = ?");
 
+			Set<Integer> stashed = resourceMap.stashAll(uris);
 			for (URI uri : uris) {
 				Integer id = resourceMap.getId(uri);
-				if (stashedResources.add(uri) && id != null) {
-					oldResMapStmt.setInt(1, -id);
-					oldResMapStmt.addBatch();
+				if (id != null && stashed.contains(id)) {
 					refUpdStmt.setInt(1, id);
 					refUpdStmt.addBatch();
 					objUpdStmt.setInt(1, id);
@@ -570,7 +561,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				}
 			}
 
-			oldResMapStmt.executeBatch();
 			refUpdStmt.executeBatch();
 			objUpdStmt.executeBatch();
 			resNamesUpdStmt.executeBatch();
@@ -594,25 +584,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			conn.close(resNamesDelStmt);
 			conn.close(resDelStmt);
 			conn.close(resMapStmt);
-			conn.close(oldResMapStmt);
 		}
 	}
-
-	//	private void resetWorkSet(List<Integer> ids) throws SQLException {
-	//		PreparedStatement delStmt = null;
-	//		PreparedStatement insStmt = null;
-	//		try {
-	//			delStmt = conn.prepare("DELETE FROM WORK_SET");
-	//			delStmt.execute();
-	//
-	//			insStmt = conn.prepare("INSERT INTO WORK_SET DIRECT SELECT ID FROM TABLE(ID INT=?)");
-	//			insStmt.setObject(1, ids.toArray(new Object[ids.size()]));
-	//			insStmt.execute();
-	//		} finally {
-	//			conn.close(delStmt);
-	//			conn.close(insStmt);
-	//		}
-	//	}
 
 	public boolean isEmpty() {
 		ensureInitialized();

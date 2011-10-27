@@ -107,8 +107,8 @@ public class DBEPackageRegistry {
 		}
 	}
 
-	public void reloadCaches() {
-		clearCaches();
+	public void reload() {
+		clear();
 
 		PreparedStatement eclassStmt = null;
 		PreparedStatement erefStmt = null;
@@ -147,7 +147,7 @@ public class DBEPackageRegistry {
 		referenceIdMap.put(eReference, id);
 	}
 
-	public void clearCaches() {
+	public void clear() {
 		classIdMap.clear();
 		referenceIdMap.clear();
 	}
