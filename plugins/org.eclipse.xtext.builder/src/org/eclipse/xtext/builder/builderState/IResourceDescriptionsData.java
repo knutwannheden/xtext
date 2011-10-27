@@ -21,7 +21,7 @@ public interface IResourceDescriptionsData extends IResourceDescriptions, IResou
 
 	Set<URI> getAllURIs();
 
-	IResourceDescriptionsData copy();
+	IResourceDescriptionsData copy(boolean keepOldState);
 
 	void addDescription(URI uri, IResourceDescription newDescription);
 	

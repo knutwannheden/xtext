@@ -41,17 +41,20 @@ public class DBResourceMap {
 		this.uriMap = idMap.inverse();
 	}
 
-	protected DBResourceMap(DBResourceMap oldMap) {
+	protected DBResourceMap(DBResourceMap oldMap, boolean keepOldState) {
 		this.oldMap = oldMap;
 		this.conn = oldMap.conn;
 		this.idMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(oldMap.idMap));
 		this.uriMap = idMap.inverse();
+		if (!keepOldState) {
+			stashedResources = Sets.newHashSet(idMap.keySet());
+		}
 	}
 
-	public DBResourceMap copy() {
+	public DBResourceMap copy(boolean keepOldState) {
 		resetOldResourceMap();
 		isOldMap = true;
-		return new DBResourceMap(this);
+		return new DBResourceMap(this, keepOldState);
 	}
 
 	// TODO add method to return only non-external URIs

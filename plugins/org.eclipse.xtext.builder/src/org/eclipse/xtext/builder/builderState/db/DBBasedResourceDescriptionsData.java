@@ -296,12 +296,12 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		index.deleteResources(uris);
 	}
 
-	public DBBasedResourceDescriptionsData copy() {
+	public DBBasedResourceDescriptionsData copy(boolean keepOldState) {
 		if (inTransaction)
 			throw new IllegalStateException("cannot copy a DBBasedResourceDescriptionsData in an open transaction");
 		ensureInitialized();
 
-		DBBasedBuilderState indexCopy = index.copy();
+		DBBasedBuilderState indexCopy = index.copy(keepOldState);
 		DBBasedResourceDescriptionsData copy = new DBBasedResourceDescriptionsData(indexCopy, Sets.newHashSet(allURIs),
 				Maps.newHashMap(lookupMap), cache);
 		cache = new MapMaker().concurrencyLevel(1).softValues().makeMap();

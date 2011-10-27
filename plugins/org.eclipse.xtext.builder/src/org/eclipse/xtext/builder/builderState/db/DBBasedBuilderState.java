@@ -81,8 +81,8 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		this.packageRegistry = packageRegistry;
 	}
 
-	public DBBasedBuilderState copy() {
-		DBResourceMap resourceMapCopy = resourceMap.copy();
+	public DBBasedBuilderState copy(boolean keepOldState) {
+		DBResourceMap resourceMapCopy = resourceMap.copy(keepOldState);
 		return new DBBasedBuilderState(conn, resourceMapCopy, packageRegistry);
 	}
 
