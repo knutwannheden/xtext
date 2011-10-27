@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
@@ -27,8 +28,9 @@ public class DBResourceMap {
 
 	private final ConnectionWrapper conn;
 
-	private String resMapTable = "RES_MAP";
+	private boolean isOldMap;
 	private final BiMap<URI, Integer> idMap;
+	private final Map<Integer, URI> uriMap;
 	private Set<URI> stashedResources = Sets.newHashSet();
 
 	private DBResourceMap oldMap;
@@ -36,26 +38,32 @@ public class DBResourceMap {
 	public DBResourceMap(ConnectionWrapper conn) {
 		this.conn = conn;
 		this.idMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create());
+		this.uriMap = idMap.inverse();
 	}
 
 	protected DBResourceMap(DBResourceMap oldMap) {
 		this.oldMap = oldMap;
 		this.conn = oldMap.conn;
 		this.idMap = Maps.synchronizedBiMap(HashBiMap.<URI, Integer> create(oldMap.idMap));
+		this.uriMap = idMap.inverse();
 	}
 
 	public DBResourceMap copy() {
 		resetOldResourceMap();
-		resMapTable = "OLD_RES_MAP";
+		isOldMap = true;
 		return new DBResourceMap(this);
 	}
 
+	// TODO add method to return only non-external URIs
 	public Iterable<URI> getAllURIs() {
 		return idMap.keySet();
 	}
 
 	public URI getURI(int id) {
-		return idMap.inverse().get(id);
+		// it is possible that the WriteBehindBuffer has replaced the resource...
+		if (isOldMap && uriMap.containsKey(-id))
+			return uriMap.get(-id);
+		return uriMap.get(id);
 	}
 
 	public boolean contains(URI uri) {
@@ -99,7 +107,7 @@ public class DBResourceMap {
 	public synchronized void reload() {
 		PreparedStatement resStmt = null;
 		try {
-			resStmt = conn.prepare("SELECT R.ID, R.URI FROM RES R JOIN " + resMapTable + " M ON M.RES_ID = R.ID");
+			resStmt = conn.prepare("SELECT R.ID, R.URI FROM RES R JOIN " + getTable() + " M ON M.RES_ID = R.ID");
 			resStmt.execute();
 			ResultSet rs = resStmt.getResultSet();
 			while (rs.next()) {
@@ -117,7 +125,7 @@ public class DBResourceMap {
 	}
 
 	public String getTable() {
-		return resMapTable;
+		return isOldMap ? "OLD_RES_MAP" : "RES_MAP";
 	}
 
 	public Integer stash(URI uri) {
