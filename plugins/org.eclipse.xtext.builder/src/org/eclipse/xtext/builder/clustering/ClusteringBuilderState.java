@@ -29,7 +29,6 @@ import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.builder.builderState.AbstractBuilderState;
 import org.eclipse.xtext.builder.builderState.BuilderStateUtil;
 import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
-import org.eclipse.xtext.builder.builderState.impl.ResourceDescriptionImpl;
 import org.eclipse.xtext.builder.impl.BuildData;
 import org.eclipse.xtext.builder.resourceloader.IResourceLoader;
 import org.eclipse.xtext.builder.resourceloader.IResourceLoader.LoadOperation;
@@ -209,7 +208,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                             // Resolve links here!
                             EcoreUtil2.resolveLazyCrossReferences(resource, cancelMonitor);
                             final IResourceDescription description = manager.getResourceDescription(resource);
-                            final IResourceDescription copiedDescription = BuilderStateUtil.create(description);
+                            final IResourceDescription copiedDescription = getIndexableDescriptionCopy(description);
                             newDelta = manager.createDelta(this.getResourceDescription(changedURI), copiedDescription);
                         }
                     } catch (final WrappedException ex) {
@@ -235,7 +234,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                             }
                             final IResourceDescription oldDescription = this.getResourceDescription(changedURI);
                             final IResourceDescription newDesc = newState.getResourceDescription(changedURI);
-                            ResourceDescriptionImpl indexReadyDescription = newDesc != null ? BuilderStateUtil.create(newDesc) : null;
+                            IResourceDescription indexReadyDescription = newDesc != null ? getIndexableDescriptionCopy(newDesc) : null;
                             if ((oldDescription != null || indexReadyDescription != null) && oldDescription != indexReadyDescription) {
                                 newDelta = new DefaultResourceDescriptionDelta(oldDescription, indexReadyDescription);
                             }
@@ -273,6 +272,10 @@ public class ClusteringBuilderState extends AbstractBuilderState {
         }
         return allDeltas;
     }
+
+	protected IResourceDescription getIndexableDescriptionCopy(final IResourceDescription description) {
+		return BuilderStateUtil.create(description);
+	}
 
     /**
      * Create new resource descriptions for a set of resources given by their URIs.

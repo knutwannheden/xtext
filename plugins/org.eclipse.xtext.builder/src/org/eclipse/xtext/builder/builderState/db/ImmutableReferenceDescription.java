@@ -16,38 +16,44 @@ import org.eclipse.xtext.resource.IReferenceDescription;
  */
 public class ImmutableReferenceDescription implements IReferenceDescription {
 
-	  private final URI sourceUri;
-	  private final URI containerUri;
-	  private final URI targetUri;
-	  private final EReference eReference;
-	  private final int indexInList;
+	private final URI sourceUri;
+	private final URI containerUri;
+	private final URI targetUri;
+	private final EReference eReference;
+	private final int indexInList;
 
-	  public ImmutableReferenceDescription(final URI sourceUri, final URI containerUri, final URI targetUri, final EReference eReference, final int indexInList) {
-	    this.sourceUri = sourceUri;
-	    this.containerUri = containerUri;
-	    this.targetUri = targetUri;
-	    this.eReference = eReference;
-	    this.indexInList = indexInList;
-	  }
+	public ImmutableReferenceDescription(final URI sourceUri, final URI containerUri, final URI targetUri,
+			final EReference eReference, final int indexInList) {
+		this.sourceUri = sourceUri;
+		this.containerUri = containerUri;
+		this.targetUri = targetUri;
+		this.eReference = eReference;
+		this.indexInList = indexInList;
+	}
 
-	  public URI getSourceEObjectUri() {
-	    return sourceUri;
-	  }
+	public static IReferenceDescription copyOf(IReferenceDescription from) {
+		return new ImmutableReferenceDescription(from.getSourceEObjectUri(), from.getContainerEObjectURI(),
+				from.getTargetEObjectUri(), from.getEReference(), from.getIndexInList());
+	}
 
-	  public URI getContainerEObjectURI() {
-	    return containerUri;
-	  }
+	public URI getSourceEObjectUri() {
+		return sourceUri;
+	}
 
-	  public URI getTargetEObjectUri() {
-	    return targetUri;
-	  }
+	public URI getContainerEObjectURI() {
+		return containerUri;
+	}
 
-	  public int getIndexInList() {
-	    return indexInList;
-	  }
+	public URI getTargetEObjectUri() {
+		return targetUri;
+	}
 
-	  public EReference getEReference() {
-	    return eReference;
-	  }
+	public int getIndexInList() {
+		return indexInList;
+	}
+
+	public EReference getEReference() {
+		return eReference;
+	}
 
 }

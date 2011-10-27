@@ -18,6 +18,9 @@ import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.impl.EObjectDescriptionLookUp;
 
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 /**
@@ -25,64 +28,83 @@ import com.google.common.collect.Lists;
  */
 public class LoadedResourceDescription implements IResourceDescription {
 
-	  private final URI uri;
+	private final URI uri;
 
-	  private EObjectDescriptionLookUp lookUp;
-	  private List<IEObjectDescription> exportedObjects;
+	private EObjectDescriptionLookUp lookUp;
+	private List<IEObjectDescription> exportedObjects;
 
-	  private List<QualifiedName> importedNames;
-	  private List<IReferenceDescription> referenceDescriptions;
+	private List<QualifiedName> importedNames;
+	private List<IReferenceDescription> referenceDescriptions;
 
-	  public LoadedResourceDescription(final URI uri) {
-	    this.uri = uri;
-	  }
+	public LoadedResourceDescription(final URI uri) {
+		this.uri = uri;
+	}
 
-	  public URI getURI() {
-	    return uri;
-	  }
+	public static LoadedResourceDescription copyOf(IResourceDescription res) {
+		LoadedResourceDescription copy = new LoadedResourceDescription(res.getURI());
+		copy.exportedObjects = ImmutableList.copyOf(Iterables.transform(res.getExportedObjects(),
+				new Function<IEObjectDescription, IEObjectDescription>() {
+					public IEObjectDescription apply(IEObjectDescription from) {
+						return ImmutableEObjectDescription.copyOf(from);
+					}
+				}));
+		copy.importedNames = ImmutableList.copyOf(res.getImportedNames());
+		copy.referenceDescriptions = ImmutableList.copyOf(Iterables.transform(res.getReferenceDescriptions(),
+				new Function<IReferenceDescription, IReferenceDescription>() {
+					public IReferenceDescription apply(IReferenceDescription from) {
+						return ImmutableReferenceDescription.copyOf(from);
+					}
+				}));
+		return copy;
+	}
 
-	  public boolean isEmpty() {
-	    return getLookUp().isEmpty();
-	  }
+	public URI getURI() {
+		return uri;
+	}
 
-	  public Iterable<IEObjectDescription> getExportedObjects(final EClass type, final QualifiedName name, final boolean ignoreCase) {
-	    return getLookUp().getExportedObjects(type, name, ignoreCase);
-	  }
+	public boolean isEmpty() {
+		return getLookUp().isEmpty();
+	}
 
-	  public Iterable<IEObjectDescription> getExportedObjectsByType(final EClass type) {
-	    return getLookUp().getExportedObjectsByType(type);
-	  }
+	public Iterable<IEObjectDescription> getExportedObjects(final EClass type, final QualifiedName name,
+			final boolean ignoreCase) {
+		return getLookUp().getExportedObjects(type, name, ignoreCase);
+	}
 
-	  public Iterable<IEObjectDescription> getExportedObjectsByObject(final EObject object) {
-	    return getLookUp().getExportedObjectsByObject(object);
-	  }
+	public Iterable<IEObjectDescription> getExportedObjectsByType(final EClass type) {
+		return getLookUp().getExportedObjectsByType(type);
+	}
 
-	  public List<IEObjectDescription> getExportedObjects() {
-	    if (exportedObjects == null) {
-	      exportedObjects = Lists.newArrayList();
-	    }
-	    return exportedObjects;
-	  }
+	public Iterable<IEObjectDescription> getExportedObjectsByObject(final EObject object) {
+		return getLookUp().getExportedObjectsByObject(object);
+	}
 
-	  public List<QualifiedName> getImportedNames() {
-	    if (importedNames == null) {
-	      importedNames = Lists.newArrayList();
-	    }
-	    return importedNames;
-	  }
+	public List<IEObjectDescription> getExportedObjects() {
+		if (exportedObjects == null) {
+			exportedObjects = Lists.newArrayList();
+		}
+		return exportedObjects;
+	}
 
-	  public List<IReferenceDescription> getReferenceDescriptions() {
-	    if (referenceDescriptions == null) {
-	      referenceDescriptions = Lists.newArrayList();
-	    }
-	    return referenceDescriptions;
-	  }
+	public List<QualifiedName> getImportedNames() {
+		if (importedNames == null) {
+			importedNames = Lists.newArrayList();
+		}
+		return importedNames;
+	}
 
-	  private EObjectDescriptionLookUp getLookUp() {
-	    if (lookUp == null) {
-	      lookUp = new EObjectDescriptionLookUp(getExportedObjects());
-	    }
-	    return lookUp;
-	  }
+	public List<IReferenceDescription> getReferenceDescriptions() {
+		if (referenceDescriptions == null) {
+			referenceDescriptions = Lists.newArrayList();
+		}
+		return referenceDescriptions;
+	}
+
+	private EObjectDescriptionLookUp getLookUp() {
+		if (lookUp == null) {
+			lookUp = new EObjectDescriptionLookUp(getExportedObjects());
+		}
+		return lookUp;
+	}
 
 }

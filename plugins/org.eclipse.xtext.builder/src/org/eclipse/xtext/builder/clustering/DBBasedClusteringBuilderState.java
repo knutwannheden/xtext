@@ -13,6 +13,7 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.xtext.builder.builderState.IResourceDescriptionsData;
 import org.eclipse.xtext.builder.builderState.db.DBBasedBuilderState;
 import org.eclipse.xtext.builder.builderState.db.DBBasedResourceDescriptionsData;
+import org.eclipse.xtext.resource.IResourceDescription;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -47,6 +48,11 @@ public class DBBasedClusteringBuilderState extends ClusteringBuilderState {
 	protected void rollback(IResourceDescriptionsData newData) {
 		((DBBasedResourceDescriptionsData) newData).rollbackChanges();
 		super.rollback(newData);
+	}
+
+	@Override
+	protected IResourceDescription getIndexableDescriptionCopy(IResourceDescription description) {
+		return super.getIndexableDescriptionCopy(description);
 	}
 
 }
