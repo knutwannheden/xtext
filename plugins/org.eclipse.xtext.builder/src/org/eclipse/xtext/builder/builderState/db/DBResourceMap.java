@@ -54,6 +54,7 @@ public class DBResourceMap {
 	public DBResourceMap copy(boolean keepOldState) {
 		resetOldResourceMap();
 		isOldMap = true;
+		oldMap = null;
 		return new DBResourceMap(this, keepOldState);
 	}
 
