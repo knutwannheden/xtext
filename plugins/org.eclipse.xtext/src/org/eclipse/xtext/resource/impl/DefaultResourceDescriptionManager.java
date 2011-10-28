@@ -68,7 +68,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	private IResourceServiceProvider serviceProvider;
 
 	@Inject(optional = true)
-	private IAllContainersState containersState;
+	private IAllContainersState.Provider containersStateProvider;
 
 	private static final String CACHE_KEY = DefaultResourceDescriptionManager.class.getName()
 			+ "#getResourceDescription";
@@ -220,8 +220,10 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		if (interestingDeltas.isEmpty())
 			return ImmutableSet.of();
 
+		IAllContainersState containersState = getAllContainersState((IResourceDescriptions) context);
+
 		// FIXME this is a hack to support non StateBasedContainerManager implementations
-		if (containersState == null) {
+		if (containersState  == null) {
 			final IResourceDescriptions resourceDescriptions = (IResourceDescriptions) context;
 			return Collections2.filter(candidates, new Predicate<URI>() {
 				public boolean apply(URI input) {
@@ -244,7 +246,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		final Multimap<String, IEObjectDescription> changedOrAddedObjects = ArrayListMultimap.create();
 
 		for (Delta delta : interestingDeltas) {
-			String container = getContainer(delta.getUri());
+			String container = getContainer(delta.getUri(), containersState);
 			if (delta instanceof IResourceDescription.DeltaExtension) {
 				IResourceDescription.DeltaExtension detailedDelta = (IResourceDescription.DeltaExtension) delta;
 				Iterable<IEObjectDescription> changedObjects = detailedDelta.getChangedObjects();
@@ -288,7 +290,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 			for (IResourceDescription res : context.findAllReferencingResources(changedOrAddedResources.get(container),
 					ReferenceMatchPolicy.importedNamesOnly())) {
 				URI uri = res.getURI();
-				if (filter.apply(uri) && isContainerVisible(uri, container)) {
+				if (filter.apply(uri) && isContainerVisible(uri, container, containersState)) {
 					references.add(uri);
 				}
 			}
@@ -297,7 +299,7 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 			for (IResourceDescription res : context.findObjectReferencingResources(changedOrAddedObjects.get(container),
 					ReferenceMatchPolicy.importedNamesOnly())) {
 				URI uri = res.getURI();
-				if (filter.apply(uri) && isContainerVisible(uri, container)) {
+				if (filter.apply(uri) && isContainerVisible(uri, container, containersState)) {
 					references.add(uri);
 				}
 			}
@@ -306,11 +308,20 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		return references;
 	}
 
-	private String getContainer(URI uri) {
+	// FIXME this is a hack to support non StateBasedContainerManager implementations
+	private IAllContainersState getAllContainersState(IResourceDescriptions context) {
+		try {
+			return containersStateProvider.get(context);
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private String getContainer(URI uri, IAllContainersState containersState) {
 	    return containersState.getContainerHandle(uri);
 	}
 
-	private boolean isContainerVisible(URI uri, String container) {
+	private boolean isContainerVisible(URI uri, String container, IAllContainersState containersState) {
 		return containersState.getVisibleContainerHandles(containersState.getContainerHandle(uri)).contains(container);
 	}
 
