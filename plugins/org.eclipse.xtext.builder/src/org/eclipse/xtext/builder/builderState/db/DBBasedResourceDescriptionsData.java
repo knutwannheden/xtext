@@ -263,20 +263,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 	}
 
 	public void removeDescription(final URI uri) {
-		assertInTransaction();
-		allURIs.remove(uri);
-		// TODO check if we can make this faster
-		for (Iterator<Map.Entry<QualifiedName, Collection<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<QualifiedName, Collection<URI>> entry = it.next();
-			Collection<URI> mappedUris = entry.getValue();
-			if (mappedUris.remove(uri)) {
-				if (mappedUris.isEmpty()) {
-					it.remove();
-				}
-			}
-		}
-		cache.remove(uri);
-		index.deleteResource(uri);
+		removeDescriptions(ImmutableSet.of(uri));
 	}
 
 	public void removeDescriptions(Set<URI> uris) {
