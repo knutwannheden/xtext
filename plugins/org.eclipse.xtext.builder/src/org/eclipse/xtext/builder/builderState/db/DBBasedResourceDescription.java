@@ -10,6 +10,7 @@ package org.eclipse.xtext.builder.builderState.db;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.naming.QualifiedName;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IReferenceDescription;
@@ -56,7 +57,8 @@ public class DBBasedResourceDescription implements IResourceDescription {
 	}
 
 	public Iterable<IEObjectDescription> getExportedObjectsByObject(final EObject object) {
-		return index.getExportedObjectsByObject(object);
+		URI base = EcoreUtil.getURI(object).trimFragment();
+		return uri.equals(base) ? index.getExportedObjectsByObject(object) : null;
 	}
 
 	public Iterable<IEObjectDescription> getExportedObjects() {
