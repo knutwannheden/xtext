@@ -20,6 +20,8 @@ import org.eclipse.xtext.resource.IEObjectDescription;
  */
 public class ImmutableEObjectDescription implements IEObjectDescription {
 
+	private static final String[] EMPTY_ARRAY = new String[0];
+
 	private final QualifiedName name;
 	private final URI uri;
 	private final EClass eClass;
@@ -61,6 +63,8 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 	}
 
 	public String getUserData(final String key) {
+		if (userData == null) return null;
+
 		int count = userData.length / 2;
 		for (int i = 0; i < count; i++) {
 			if (userData[i].equals(key)) {
@@ -71,6 +75,8 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 	}
 
 	public String[] getUserDataKeys() {
+		if (userData == null) return EMPTY_ARRAY;
+
 		int count = userData.length / 2;
 		String[] keys = new String[count];
 		System.arraycopy(userData, 0, keys, 0, count);
@@ -84,6 +90,8 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 
 	public static Object[] getUserDataArray(final IEObjectDescription obj) {
 		String[] keys = obj.getUserDataKeys();
+		if (keys.length == 0) return null;
+
 		Object[] result = new String[keys.length * 2];
 		for (int i = 0; i < keys.length; i++) {
 			result[i] = keys[i];
