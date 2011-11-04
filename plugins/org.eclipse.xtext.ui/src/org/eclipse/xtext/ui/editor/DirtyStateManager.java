@@ -120,6 +120,23 @@ public class DirtyStateManager extends AbstractResourceDescriptionChangeEventSou
 		return null;
 	}
 
+	/**
+	 * @since 2.1
+	 */
+	public IResourceDescription getResourceDescription(URI normalizedURI) {
+		return getDirtyResourceDescription(normalizedURI);
+	}
+	
+	/**
+	 * @since 2.1
+	 */
+	public Iterable<IResourceDescription> getAllResourceDescriptions() {
+		return Iterables.transform(managedResources.values(), new Function<IDirtyResource, IResourceDescription>() {
+			public IResourceDescription apply(IDirtyResource from) {
+				return from.getDescription();
+			}});
+	}
+
 	public String getContent(URI uri) {
 		IDirtyResource dirtyResource = managedResources.get(uri);
 		if (dirtyResource != null)
@@ -193,5 +210,5 @@ public class DirtyStateManager extends AbstractResourceDescriptionChangeEventSou
 			}
 		}));
 	}
-	
+
 }
