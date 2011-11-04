@@ -61,6 +61,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		this.allURIs = allURIs;
 		this.lookupMap = lookupMap;
 		this.cache = cache;
+		this.initialized = true;
 	}
 
 	private synchronized void ensureInitialized() {

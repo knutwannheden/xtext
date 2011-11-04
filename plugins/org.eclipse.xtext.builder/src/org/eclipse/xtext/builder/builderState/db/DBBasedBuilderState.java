@@ -144,6 +144,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				Connection c = conn.getConnection();
 				c.rollback();
 				resourceMap.resetOldResourceMap();
+				sweep();
 				Statement stmt = null;
 				try {
 					stmt = c.createStatement();
@@ -161,6 +162,16 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		} finally {
 			clearCaches();
 			initialized = false;
+		}
+	}
+
+	public void sweep() throws SQLException {
+		PreparedStatement refStmt = null;
+		try {
+			refStmt = conn.prepare("DELETE FROM REF R WHERE NOT EXISTS (SELECT NULL FROM RES WHERE ID = R.TGT_RES_ID)");
+			refStmt.execute();
+		} finally {
+			conn.close(refStmt);
 		}
 	}
 

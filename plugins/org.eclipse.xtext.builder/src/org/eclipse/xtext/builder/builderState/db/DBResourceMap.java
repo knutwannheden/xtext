@@ -84,7 +84,6 @@ public class DBResourceMap {
 
 	public void resetOldResourceMap() {
 		PreparedStatement insStmt = null;
-		PreparedStatement refStmt = null;
 		try {
 			Statement stmt = conn.getConnection().createStatement();
 			stmt.addBatch("TRUNCATE TABLE OLD_RES_MAP");
@@ -97,14 +96,10 @@ public class DBResourceMap {
 
 			insStmt = conn.prepare("INSERT INTO OLD_RES_MAP DIRECT SORTED SELECT RES_ID FROM RES_MAP");
 			insStmt.execute();
-
-			refStmt = conn.prepare("DELETE FROM REF R WHERE NOT EXISTS (SELECT NULL FROM RES WHERE ID = R.TGT_RES_ID)");
-			refStmt.execute();
 		} catch (SQLException e) {
 			throw new DBException(e);
 		} finally {
 			conn.close(insStmt);
-			conn.close(refStmt);
 		}
 	}
 
