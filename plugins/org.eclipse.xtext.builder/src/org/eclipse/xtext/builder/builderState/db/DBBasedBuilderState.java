@@ -1028,7 +1028,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				ensureInitialized();
 
 				PreparedStatement stmt = conn
-						.prepare("SELECT R.RES_ID, R.SRC_FRAG, R.CONT_FRAG, R.EREF_ID, R.TGT_RES_ID, R.TGT_FRAG, R.IDX REF R JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (R.TGT_RES_ID = T.ID AND R.TGT_FRAG = T.FRAG)");
+						.prepare("SELECT R.RES_ID, R.SRC_FRAG, R.CONT_FRAG, R.EREF_ID, R.TGT_RES_ID, R.TGT_FRAG, R.IDX FROM REF R JOIN TABLE(ID INT=?, FRAG VARCHAR=?) T ON (R.TGT_RES_ID = T.ID AND R.TGT_FRAG = T.FRAG)");
 				Object[] tgtResIdArray = new Object[Iterables.size(targetObjects)];
 				Object[] tgtFragArray = new Object[tgtResIdArray.length];
 				int idx = 0;
