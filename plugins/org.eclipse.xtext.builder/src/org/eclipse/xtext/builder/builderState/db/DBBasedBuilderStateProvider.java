@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState.db;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -70,7 +71,7 @@ public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState
 	}
 
 	protected String getDbUrl() {
-		return H2_SCHEMA + ":" + getBuilderStateLocation() + ";"
+		return H2_SCHEMA + ":" + getBuilderStateLocation().getAbsolutePath() + ";"
 				+ (DEBUG ? DEBUG_H2_CONFIGURATION : DEFAULT_H2_CONFIGURATION);
 	}
 
@@ -87,16 +88,16 @@ public class DBBasedBuilderStateProvider implements Provider<DBBasedBuilderState
 		}
 	}
 
-	protected String getBuilderStateLocation() {
+	protected File getBuilderStateLocation() {
 		Activator activator = Activator.getDefault();
 		if (activator == null) {
 			if (cachedPath != null)
-				return cachedPath.toFile().getAbsolutePath();
+				return cachedPath.toFile();
 			return null;
 		}
 		IPath path = activator.getStateLocation().append("state");
 		cachedPath = path;
-		return path.toFile().getAbsolutePath();
+		return path.toFile();
 	}
 
 }

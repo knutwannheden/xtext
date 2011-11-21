@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
@@ -103,9 +104,28 @@ public class DBResourceMap {
 		}
 	}
 
+	public void rollbackChanges() {
+		if (oldMap != null) {
+			oldMap.revert();
+			oldMap = null;
+		}
+	}
+
+	private void revert() {
+		if (!isOldMap)
+			throw new IllegalStateException("only old state can be reverted");
+
+		for (Entry<URI, Integer> entry : idMap.entrySet()) {
+			entry.setValue(Math.abs(entry.getValue()));
+		}
+		isOldMap = false;
+	}
+
 	public synchronized void reload() {
 		PreparedStatement resStmt = null;
 		try {
+			clear();
+			isOldMap = false;
 			resStmt = conn.prepare("SELECT R.ID, R.URI FROM RES R JOIN " + getTable() + " M ON M.RES_ID = R.ID");
 			resStmt.execute();
 			ResultSet rs = resStmt.getResultSet();
@@ -121,6 +141,7 @@ public class DBResourceMap {
 
 	public void clear() {
 		idMap.clear();
+		stashedResources.clear();
 	}
 
 	public String getTable() {

@@ -1066,6 +1066,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	public void beginChanges() {
+		ensureInitialized();
 		inTransaction = true;
 	}
 
@@ -1101,6 +1102,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			throw new DBException(e);
 		} finally {
 			inTransaction = false;
+			resourceMap.rollbackChanges();
 			reloadCaches();
 		}
 	}
