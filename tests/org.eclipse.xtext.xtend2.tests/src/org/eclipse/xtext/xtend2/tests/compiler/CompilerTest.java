@@ -26,6 +26,7 @@ import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.ETypedElement;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.EcorePackage;
+import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.junit.util.ParseHelper;
 import org.eclipse.xtext.junit.validation.ValidationTestHelper;
@@ -38,7 +39,6 @@ import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 import org.eclipse.xtext.xtend2.compiler.Xtend2Compiler;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
-import org.eclipse.xtext.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.xtend2.tests.AbstractXtend2TestCase;
 import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
@@ -59,6 +59,136 @@ import com.google.inject.Injector;
  * @author Sebastian Zarnekow
  */
 public class CompilerTest extends AbstractXtend2TestCase {
+
+	public void testBug362236_01() throws Exception {
+		String code = 
+				"import java.util.List\n" +
+				"class Z {\n"+
+				"    def returnClosure() {  \n" + 
+				"      thing(int i|i.toString)\n" + 
+				"    }\n" + 
+				"    def thing(Object o) {" +
+				"      o\n" + 
+				"    }\n" +
+				"}";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		Object closure = class1.getDeclaredMethod("returnClosure").invoke(object);
+		@SuppressWarnings("unchecked")
+		Functions.Function1<Object, Object> castedClosure = (Function1<Object, Object>) closure;
+		assertEquals("123", castedClosure.apply(123));
+	}
+	
+	public void testBug362236_02() throws Exception {
+		String code = 
+				"import java.util.List\n" +
+				"class Z {\n"+
+				"    def returnClosure() {  \n" + 
+				"      thing(Integer i|i.toString)\n" + 
+				"    }\n" + 
+				"    def thing(Object o) {" +
+				"      o\n" + 
+				"    }\n" +
+				"}";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		Object closure = class1.getDeclaredMethod("returnClosure").invoke(object);
+		@SuppressWarnings("unchecked")
+		Functions.Function1<Object, Object> castedClosure = (Function1<Object, Object>) closure;
+		assertEquals("123", castedClosure.apply(123));
+	}
+	
+	public void testBug362236_03() throws Exception {
+		String code = 
+				"import java.util.List\n" +
+				"class Z {\n"+
+				"    def returnClosure() {  \n" + 
+				"      thing(i|i.toString)\n" + 
+				"    }\n" + 
+				"    def thing((Object)=>Object o) {" +
+				"      o\n" + 
+				"    }\n" +
+				"}";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		Object closure = class1.getDeclaredMethod("returnClosure").invoke(object);
+		@SuppressWarnings("unchecked")
+		Functions.Function1<Object, Object> castedClosure = (Function1<Object, Object>) closure;
+		assertEquals("123", castedClosure.apply(123));
+	}
+	
+	public void testBug362236_04() throws Exception {
+		String code = 
+				"import java.util.List\n" +
+						"class Z {\n"+
+						"    def returnListOfClosures() {  \n" + 
+						"      val list = <(String)=>int>newArrayList()" +
+						"      list.add [ length ]" +
+						"      list\n" + 
+						"    }\n" + 
+						"}";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		Object list = class1.getDeclaredMethod("returnListOfClosures").invoke(object);
+		@SuppressWarnings("unchecked")
+		Functions.Function1<String, Integer> castedClosure =  (Function1<String, Integer>)((List<?>)list).get(0);
+		assertEquals(Integer.valueOf(4), castedClosure.apply("4444"));
+	}
+	
+	public void testBug363621() throws Exception {
+		String code = 
+				"import java.util.List\n" +
+				"class Z {\n"+
+				"    def methodOne() {\n" + 
+				"        val strings = newHashSet\n" + 
+				"        strings += \"a\"\n" + 
+				"    }\n" + 
+				"    def methodTwo() {\n" + 
+				"        val List<String> l = null\n" + 
+				"        l.getClass\n" + 
+				"        l.^class\n" + 
+				"    }\n" +
+				"}";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		assertTrue((Boolean)class1.getDeclaredMethod("methodOne").invoke(object));
+	}
+	
+	public void testSneakyThrow() throws Exception {
+		String code = 
+				"class Z {\n" +
+				"	def void test() {\n" +
+				"       throw new java.io.IOException()" + 
+				"	}\n" +
+				"}\n";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		try {
+			class1.getDeclaredMethod("test").invoke(object);
+		} catch (Exception e) {
+			assertTrue(((InvocationTargetException)e).getCause() instanceof IOException);
+		}
+	}
+	
+	public void testBug_362651() throws Exception {
+		String code = 
+				"class Z {\n" +
+				"	def boolean test() {\n" +
+				"       val _class = 'Z'\n" +
+				"		[| this.^class.name == _class.toUpperCase].apply" + 
+				"	}\n" +
+				"}\n";
+		String javaCode = compileToJavaCode(code);
+		Class<?> class1 = javaCompiler.compileToClass("Z", javaCode);
+		Object object = class1.newInstance();
+		assertTrue((Boolean)class1.getDeclaredMethod("test").invoke(object));
+	}
 	
 	public void testReferenceStaticallyImportedFields() throws Exception {
 		String code = 
@@ -1062,48 +1192,7 @@ public class CompilerTest extends AbstractXtend2TestCase {
 			"}";
 		String javaCode = compileToJavaCode(code);
 		javaCompiler.compileToClass("x.Z", javaCode);
-	}
-	
-	public void testRethrownCheckedExceptions_00() throws Exception {
-		Class<?> clazz = compileJavaCode("x.Y",
-				"package x class Y {" +
-				"  def foo() {\n" +
-				"    throw new java.io.IOException()" + 
-				"  }\n" +
-				"  def bar(){\n" +
-				"    foo()" +
-				"  }\n" + 
-				"}");
-		Object instance = clazz.newInstance();
-		Method method = clazz.getDeclaredMethod("bar");
-		try {
-			method.invoke(instance);
-		} catch (InvocationTargetException e) {
-			assertTrue(e.getCause() instanceof IOException);
-		}
-	}
-	
-	public void testRethrownCheckedExceptions_01() throws Exception {
-		Class<?> clazz = compileJavaCode("x.Y",
-				"package x class Y {" +
-				"  def dispatch foo(String x) {\n" +
-				"    throw new java.io.EOFException()" + 
-				"  }\n" +
-				"  def dispatch foo(Object x) {\n" +
-				"    throw new java.io.FileNotFoundException()" + 
-				"  }\n" +
-				"  def bar(){\n" +
-				"    foo('bar')" +
-				"  }\n" + 
-				"}");
-		Object instance = clazz.newInstance();
-		Method method = clazz.getDeclaredMethod("bar");
-		try {
-			method.invoke(instance);
-		} catch (InvocationTargetException e) {
-			assertTrue(e.getCause() instanceof java.io.EOFException);
-		}
-	}
+	}	
 	
 	public void testSuperCall() throws Exception {
 		Class<?> clazz = compileJavaCode("x.Y",
@@ -1211,12 +1300,55 @@ public class CompilerTest extends AbstractXtend2TestCase {
 		assertTrue(iterable instanceof ArrayList);
 		assertEquals(newArrayList("Foo", "Foo"), newArrayList(iterable));
 	}
+	
+	/**
+	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=362868
+	 */
+	public void testCreateExtension_Bug362868() throws Exception {
+		Class<?> clazz = compileJavaCode("x.Y", 
+				"package x " +
+				"import java.util.List " +
+				"import java.util.ArrayList " +
+				"class Y {" +
+				"  def List<String> newArrayList() {\n" +
+				"    return new ArrayList<String>()\n" +
+				"  }\n" +
+				"  def Iterable<String> create this.newArrayList listWith(String s) {" +
+				"   it.add(s)\n" +
+				"   add(s)\n" +
+				"  }" +
+				"}");
+		Object instance = clazz.newInstance();
+		Method method = clazz.getDeclaredMethod("listWith", String.class);
+		@SuppressWarnings("unchecked")
+		Iterable<String> iterable = (Iterable<String>) method.invoke(instance, "Foo");
+		assertSame(iterable, method.invoke(instance, "Foo"));
+		assertTrue(iterable instanceof ArrayList);
+		assertEquals(newArrayList("Foo", "Foo"), newArrayList(iterable));
+	}
+	
+	public void testCreateExtension_Bug362868_1() throws Exception {
+		Class<?> clazz = compileJavaCode("x.Y", 
+				"package x " +
+				"import java.util.List " +
+				"class Y {" +
+				"  def Iterable<String> create list listWith(List<String> list) {" +
+				"  }" +
+				"}");
+		Object instance = clazz.newInstance();
+		Method method = clazz.getDeclaredMethod("listWith", List.class);
+		@SuppressWarnings("unchecked")
+		Iterable<String> iterable = (Iterable<String>) method.invoke(instance, newArrayList("Foo"));
+		assertSame(iterable, method.invoke(instance, newArrayList("Foo")));
+		assertTrue(iterable instanceof ArrayList);
+		assertEquals(newArrayList("Foo"), newArrayList(iterable));
+	}
 
 	public void testCreateExtension_threadSafety() throws Exception {
 		String xtendCode = 
 			"package x " +
 			"class Y {" +
-			"  def create result: {Thread::sleep(10) new StringBuilder()} aBuilder(String x) {" +
+			"  def create result: {Thread::sleep(10) new StringBuilder()} aBuilder(String x) throws InterruptedException {" +
 			"   Thread::sleep(10)" +
 			"   result.append(x)" +
 			"  }" +
@@ -2174,6 +2306,17 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"Hello", "World");
 	}
 	
+	public void testThrowsDeclaration() throws Exception {
+		try {
+			invokeAndExpect2(null, "def foo() throws NoSuchFieldException { throw new NoSuchFieldException(\"foo\") }", "foo");
+		} catch(InvocationTargetException e) {
+			assertTrue(e.getCause() instanceof NoSuchFieldException);
+			assertEquals("foo", e.getCause().getMessage());
+			return;
+		}
+		fail("Expected NoSuchFieldException not thrown");
+	}
+	
 	@Inject
 	private EclipseRuntimeDependentJavaCompiler javaCompiler;
 
@@ -2212,6 +2355,11 @@ public class CompilerTest extends AbstractXtend2TestCase {
 		Class<?> class1 = compileJavaCode("x.Y", "package x class Y {" + xtendclassBody + "}");
 		assertEquals(expectation, apply(class1, methodToInvoke, args));
 	}
+	
+	protected void invokeAndExpectStatic(Object expectation, String xtendclassBody, String methodToInvoke, Object... args) throws Exception {
+		Class<?> class1 = compileJavaCode("x.Y", "package x class Y {" + xtendclassBody + "}");
+		assertEquals(expectation, applyStatic(class1, methodToInvoke, argTypes(args), args));
+	}
 
 	protected void invokeAndExpect3(Object expectation, String xtendclassBody, String methodToInvoke,
 			Class<?>[] parameterTypes, Object... args) throws Exception {
@@ -2235,7 +2383,11 @@ public class CompilerTest extends AbstractXtend2TestCase {
 		assertEquals(expectation, apply(compiledClass,"testEntry",args));
 	}
 	
-	protected Object apply(Class<?> type,String methodName,Object...args) throws Exception {
+	protected Object apply(Class<?> type, String methodName, Object... args) throws Exception {
+		return applyImpl(type, methodName, argTypes(args), args);
+	}
+	
+	protected Class<?>[] argTypes(Object...args) throws Exception {
 		Class<?>[] argTypes = new Class[args.length];
 		for (int i = 0; i < argTypes.length; i++) {
 			if (args[i] == null) {
@@ -2244,8 +2396,9 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				argTypes[i] = args[i].getClass();
 			}
 		}
-		return applyImpl(type, methodName, argTypes, args);
+		return argTypes; 
 	}
+	
 	protected Object applyImpl(Class<?> type,String methodName,Class<?>[] parameterTypes,Object...args) throws Exception {
 		final Injector inj = Guice.createInjector();
 		Object instance = inj.getInstance(type);
@@ -2254,6 +2407,14 @@ public class CompilerTest extends AbstractXtend2TestCase {
 		}
 		Method method = type.getDeclaredMethod(methodName, parameterTypes);
 		return method.invoke(instance,args);
+	}
+	
+	protected Object applyStatic(Class<?> type,String methodName,Class<?>[] parameterTypes,Object...args) throws Exception {
+		if (args==null) {
+			return type.getDeclaredMethod(methodName).invoke(null);
+		}
+		Method method = type.getDeclaredMethod(methodName, parameterTypes);
+		return method.invoke(null, args);
 	}
 
 	protected Class<?> compileJavaCode(String clazzName, String code) {
@@ -2272,11 +2433,40 @@ public class CompilerTest extends AbstractXtend2TestCase {
 			XtendFile file = parseHelper.parse(xtendCode);
 			validationHelper.assertNoErrors(file);
 			JvmGenericType inferredType = associations.getInferredType(file.getXtendClass());
-			StringConcatenation javaCode = generator.generateType(inferredType);
+			CharSequence javaCode = generator.generateType(inferredType);
 			return javaCode.toString();
 		} catch (Exception exc) {
 			throw new RuntimeException("Xtend compilation failed:\n" + xtendCode, exc);
 		}
 	}
+	
+	public void testStaticMethod() throws Exception {
+		invokeAndExpectStatic(42, "def static foo() { 42 }", "foo");
+	}
+	
+	public void testStaticMethodStaticCall() throws Exception {
+		invokeAndExpectStatic(43, "def static foo() { bar() + 1 } def static bar() { 42 }", "foo");
+	}
+	
+	public void testStaticMethodDynamicCall() throws Exception {
+		invokeAndExpect2(43, "def foo() { bar + 1 } def static bar() { 42 }", "foo");
+	}
+	
+	public void testStaticExtensionStaticCall() throws Exception {
+		invokeAndExpectStatic(43, "def static foo() { 42.bar } def static bar(int x) { x + 1 }", "foo");
+	}
+	
+	public void testStaticExtensionDynamicCall() throws Exception {
+		invokeAndExpect2(43, "def foo() { 42.bar } def static bar(int x) { x + 1 }", "foo");
+	}
+	
+	public void testStaticFieldStaticCall() throws Exception {
+		invokeAndExpectStatic(42, "static int bar def static foo() { bar = 42; bar }", "foo");
+	}
+	
+	public void testStaticFieldDynamicCall() throws Exception {
+		invokeAndExpect2(42, "static int bar def foo() { bar = 42; bar }", "foo");
+	}
+
 
 }

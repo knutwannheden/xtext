@@ -18,7 +18,6 @@ import static org.eclipse.xtext.xtend2.xtend2.Xtend2Package.Literals.*;
 
 import java.lang.annotation.ElementType;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +29,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
+import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.CrossReference;
 import org.eclipse.xtext.common.types.JvmAnnotationType;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
@@ -54,7 +54,6 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 import org.eclipse.xtext.util.Pair;
-import org.eclipse.xtext.util.Tuples;
 import org.eclipse.xtext.validation.Check;
 import org.eclipse.xtext.validation.ComposedChecks;
 import org.eclipse.xtext.validation.ValidationMessageAcceptor;
@@ -127,8 +126,11 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 	@Inject
 	private TypeReferences typeReferences;
 
-	@Inject
+	@Inject 
 	private IRawTypeHelper rawTypeHelper;
+	
+	@Inject
+	private OperationSignature.Provider operationSignatureProvider; 
 
 	@Inject
 	private XAnnotationUtil annotationUtil;
@@ -207,11 +209,8 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 
 	@Check
 	public void checkVariableNameShadowing(XtendFunction func) {
-		JvmOperation operation = associations.getDirectlyInferredOperation(func);
-		if (operation != null) {
-			for (JvmFormalParameter p : operation.getParameters()) {
-				super.checkDeclaredVariableName(operation, p, TypesPackage.Literals.JVM_FORMAL_PARAMETER__NAME);
-			}
+		for (XtendParameter p : func.getParameters()) {
+			super.checkDeclaredVariableName(func, p, XTEND_PARAMETER__NAME);
 		}
 	}
 
@@ -278,17 +277,13 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 			error("Xtend requires Java source level 1.5.", clazz, XTEND_CLASS__NAME,
 					IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
-		if (getTypeRefs().findDeclaredType("org.eclipse.xtext.xtend2.lib.StringConcatenation", clazz) == null) {
-			error("Mandatory library bundle 'org.eclipse.xtext.xtend2.lib' not found on the classpath.", clazz,
+		if (getTypeRefs().findDeclaredType("org.eclipse.xtend2.lib.StringConcatenation", clazz) == null) {
+			error("Mandatory library bundle 'org.eclipse.xtend2.lib' not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XTEND_LIB_NOT_ON_CLASSPATH);
 		}
 		if (getTypeRefs().findDeclaredType("org.eclipse.xtext.xbase.lib.ObjectExtensions", clazz) == null) {
 			error("Mandatory library bundle 'org.eclipse.xtext.xbase.lib' not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
-		}
-		if (getTypeRefs().findDeclaredType(Inject.class.getName(), clazz) == null) {
-			error("Mandatory library bundle 'com.google.inject' not found on the classpath.", clazz, XTEND_CLASS__NAME,
-					IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
 	}
 
@@ -360,41 +355,10 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		}
 		return false;
 	}
-
-	protected class Signature {
-
-		private final JvmOperation operation;
-
-		private List<JvmType> erasureParameterTypes;
-
-		protected Signature(JvmOperation operation) {
-			this.operation = operation;
-			if (operation != null) {
-				erasureParameterTypes = Lists.newArrayListWithCapacity(operation.getParameters().size());
-				for (JvmFormalParameter parameter : operation.getParameters()) {
-					List<JvmType> rawTypes = rawTypeHelper.getAllRawTypes(parameter.getParameterType(),
-							operation.eResource());
-					if (rawTypes.isEmpty()) {
-						erasureParameterTypes.add(null);
-					} else {
-						erasureParameterTypes.add(rawTypes.get(0));
-					}
-				}
-			} else {
-				erasureParameterTypes = Collections.emptyList();
-			}
-		}
-
-		protected String getName() {
-			if (operation == null)
-				return "null";
-			return operation.getSimpleName();
-		}
-
-		protected Object getErasureKey() {
-			return Tuples.create(getName(), erasureParameterTypes);
-		}
-
+	
+	@Override
+	protected boolean supportsCheckedExceptions() {
+		return false;
 	}
 
 	@Check
@@ -424,7 +388,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 					});
 			Multimap<Object, JvmOperation> operationsPerErasure = HashMultimap.create();
 			for (JvmOperation operation : inferredType.getDeclaredOperations()) {
-				Signature signature = getSignature(operation);
+				OperationSignature signature = getSignature(operation);
 				operationsPerErasure.put(signature.getErasureKey(), operation);
 			}
 			for (Collection<JvmOperation> operationsWithSameSignature : operationsPerErasure.asMap().values()) {
@@ -456,11 +420,11 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 					}
 				}
 			}
+			List<JvmOperation> operationsMissingImplementation = null;
 			for (JvmOperation operation : filter(
 					featureOverridesService.getAllJvmFeatures(inferredType, typeArgumentContext), JvmOperation.class)) {
 				if (operation.getDeclaringType() != inferredType) {
-					Signature signature = getSignature(operation);
-
+					OperationSignature signature = getSignature(operation);
 					if (operationsPerErasure.containsKey(signature.getErasureKey())) {
 						Collection<JvmOperation> myOperations = operationsPerErasure.get(signature.getErasureKey());
 						if (myOperations.size() == 1) {
@@ -493,24 +457,51 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 							}
 						}
 						if (!overridden) {
-							error("The class "
-									+ inferredType.getSimpleName()
-									+ " must be defined abstract because it does not implement "
-									+ getReadableSignature(operation.getSimpleName(), Lists.transform(
-											operation.getParameters(),
-											new Function<JvmFormalParameter, JvmTypeReference>() {
-												public JvmTypeReference apply(JvmFormalParameter from) {
-													JvmTypeReference parameterType = from.getParameterType();
-													JvmTypeReference result = typeArgumentContext
-															.resolve(parameterType);
-													return result;
-												}
-											})), xtendClass, XTEND_CLASS__NAME, CLASS_MUST_BE_ABSTRACT);
+							if(operationsMissingImplementation == null)
+								operationsMissingImplementation = newArrayList();
+							operationsMissingImplementation.add(operation);
 						}
 					}
 				}
 			}
+			if(operationsMissingImplementation != null) {
+				reportMissingImplementations(xtendClass, typeArgumentContext, operationsMissingImplementation);
+			}
 		}
+	}
+
+	protected void reportMissingImplementations(XtendClass xtendClass, final ITypeArgumentContext typeArgumentContext,
+			List<JvmOperation> operationsMissingImplementation) {
+		StringBuilder errorMsg = new StringBuilder();
+		errorMsg.append("The class ").append(xtendClass.getName())
+			.append(" must be defined abstract because it does not implement ");
+		boolean needsNewLine = operationsMissingImplementation.size() > 1;
+		JvmOperation operation;
+		for(int i=0; i<operationsMissingImplementation.size() && i<3; ++i) {
+			operation = operationsMissingImplementation.get(i);
+			if(needsNewLine)
+				errorMsg.append("\n- ");
+			errorMsg.append(getReadableSignature(operation.getSimpleName(), Lists.transform(
+						operation.getParameters(),
+						new Function<JvmFormalParameter, JvmTypeReference>() {
+							public JvmTypeReference apply(JvmFormalParameter from) {
+								JvmTypeReference parameterType = from.getParameterType();
+								JvmTypeReference result = typeArgumentContext
+										.resolve(parameterType);
+								return result;
+							}
+						})));
+		}
+		int numUnshownOperations = operationsMissingImplementation.size() - 3;
+		if(numUnshownOperations >0)
+			errorMsg.append("\nand " +  numUnshownOperations + " more.");
+		List<String> uris = transform(operationsMissingImplementation, new Function<JvmOperation, String>() {
+			public String apply(JvmOperation from) {
+				return EcoreUtil.getURI(from).toString();
+			}
+		});
+		error(errorMsg.toString(), xtendClass, XTEND_CLASS__NAME, CLASS_MUST_BE_ABSTRACT, 
+						toArray(uris, String.class));
 	}
 
 	@Check
@@ -533,6 +524,9 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 			error("Cannot reduce the visibility of the overridden method " + overriddenOperation.getIdentifier(),
 					function, XTEND_FUNCTION__NAME, OVERRIDE_REDUCES_VISIBILITY);
 		}
+		for(JvmTypeReference unhandledException: findUnhandledExceptions(function, function.getExceptions(),overriddenOperation.getExceptions()))
+			error("Exception " + unhandledException.getSimpleName() + " is not compatible with throws clause in " +
+					overriddenOperation.getIdentifier(), XTEND_FUNCTION__EXCEPTIONS, INCOMPATIBLE_THROWS_CLAUSE);
 		if (function.getReturnType() == null)
 			return;
 		ITypeArgumentContext typeArgumentContext = typeArgumentContextProvider
@@ -586,8 +580,8 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		return (element != null) ? notNull(element.getIdentifier()) : null;
 	}
 
-	protected Signature getSignature(JvmOperation operation) {
-		return new Signature(operation);
+	protected OperationSignature getSignature(JvmOperation operation) {
+		return operationSignatureProvider.get(operation);
 	}
 
 	protected String getReadableSignature(JvmIdentifiableElement element, List<JvmFormalParameter> parameters) {

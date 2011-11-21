@@ -456,13 +456,31 @@ public interface Xtend2Package extends EPackage
 	int XTEND_FUNCTION__VISIBILITY = XTEND_MEMBER_FEATURE_COUNT + 8;
 
 	/**
+	 * The feature id for the '<em><b>Static</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_FUNCTION__STATIC = XTEND_MEMBER_FEATURE_COUNT + 9;
+
+	/**
+	 * The feature id for the '<em><b>Exceptions</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_FUNCTION__EXCEPTIONS = XTEND_MEMBER_FEATURE_COUNT + 10;
+
+	/**
 	 * The number of structural features of the '<em>Xtend Function</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int XTEND_FUNCTION_FEATURE_COUNT = XTEND_MEMBER_FEATURE_COUNT + 9;
+	int XTEND_FUNCTION_FEATURE_COUNT = XTEND_MEMBER_FEATURE_COUNT + 11;
 
 	/**
 	 * The meta object id for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendFieldImpl <em>Xtend Field</em>}' class.
@@ -529,13 +547,22 @@ public interface Xtend2Package extends EPackage
 	int XTEND_FIELD__VISIBILITY = XTEND_MEMBER_FEATURE_COUNT + 3;
 
 	/**
+	 * The feature id for the '<em><b>Static</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_FIELD__STATIC = XTEND_MEMBER_FEATURE_COUNT + 4;
+
+	/**
 	 * The number of structural features of the '<em>Xtend Field</em>' class.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
 	 * @generated
 	 * @ordered
 	 */
-	int XTEND_FIELD_FEATURE_COUNT = XTEND_MEMBER_FEATURE_COUNT + 4;
+	int XTEND_FIELD_FEATURE_COUNT = XTEND_MEMBER_FEATURE_COUNT + 5;
 
 	/**
 	 * The meta object id for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendParameterImpl <em>Xtend Parameter</em>}' class.
@@ -840,6 +867,97 @@ public interface Xtend2Package extends EPackage
 	 * @ordered
 	 */
 	int CREATE_EXTENSION_INFO_FEATURE_COUNT = 2;
+
+	/**
+	 * The meta object id for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendConstructorImpl <em>Xtend Constructor</em>}' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @see org.eclipse.xtext.xtend2.xtend2.impl.XtendConstructorImpl
+	 * @see org.eclipse.xtext.xtend2.xtend2.impl.Xtend2PackageImpl#getXtendConstructor()
+	 * @generated
+	 */
+	int XTEND_CONSTRUCTOR = 15;
+
+	/**
+	 * The feature id for the '<em><b>Annotations</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__ANNOTATIONS = XTEND_MEMBER__ANNOTATIONS;
+
+	/**
+	 * The feature id for the '<em><b>Annotation Info</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__ANNOTATION_INFO = XTEND_MEMBER__ANNOTATION_INFO;
+
+	/**
+	 * The feature id for the '<em><b>Name</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__NAME = XTEND_MEMBER_FEATURE_COUNT + 0;
+
+	/**
+	 * The feature id for the '<em><b>Expression</b></em>' containment reference.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__EXPRESSION = XTEND_MEMBER_FEATURE_COUNT + 1;
+
+	/**
+	 * The feature id for the '<em><b>Parameters</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__PARAMETERS = XTEND_MEMBER_FEATURE_COUNT + 2;
+
+	/**
+	 * The feature id for the '<em><b>Type Parameters</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__TYPE_PARAMETERS = XTEND_MEMBER_FEATURE_COUNT + 3;
+
+	/**
+	 * The feature id for the '<em><b>Visibility</b></em>' attribute.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__VISIBILITY = XTEND_MEMBER_FEATURE_COUNT + 4;
+
+	/**
+	 * The feature id for the '<em><b>Exceptions</b></em>' containment reference list.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR__EXCEPTIONS = XTEND_MEMBER_FEATURE_COUNT + 5;
+
+	/**
+	 * The number of structural features of the '<em>Xtend Constructor</em>' class.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 * @ordered
+	 */
+	int XTEND_CONSTRUCTOR_FEATURE_COUNT = XTEND_MEMBER_FEATURE_COUNT + 6;
 
 
 	/**
@@ -1199,6 +1317,28 @@ public interface Xtend2Package extends EPackage
 	EAttribute getXtendFunction_Visibility();
 
 	/**
+	 * Returns the meta object for the attribute '{@link org.eclipse.xtext.xtend2.xtend2.XtendFunction#isStatic <em>Static</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Static</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendFunction#isStatic()
+	 * @see #getXtendFunction()
+	 * @generated
+	 */
+	EAttribute getXtendFunction_Static();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link org.eclipse.xtext.xtend2.xtend2.XtendFunction#getExceptions <em>Exceptions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Exceptions</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendFunction#getExceptions()
+	 * @see #getXtendFunction()
+	 * @generated
+	 */
+	EReference getXtendFunction_Exceptions();
+
+	/**
 	 * Returns the meta object for class '{@link org.eclipse.xtext.xtend2.xtend2.XtendField <em>Xtend Field</em>}'.
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
@@ -1251,6 +1391,17 @@ public interface Xtend2Package extends EPackage
 	 * @generated
 	 */
 	EAttribute getXtendField_Visibility();
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.eclipse.xtext.xtend2.xtend2.XtendField#isStatic <em>Static</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Static</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendField#isStatic()
+	 * @see #getXtendField()
+	 * @generated
+	 */
+	EAttribute getXtendField_Static();
 
 	/**
 	 * Returns the meta object for class '{@link org.eclipse.xtext.xtend2.xtend2.XtendParameter <em>Xtend Parameter</em>}'.
@@ -1464,6 +1615,82 @@ public interface Xtend2Package extends EPackage
 	 * @generated
 	 */
 	EAttribute getCreateExtensionInfo_Name();
+
+	/**
+	 * Returns the meta object for class '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor <em>Xtend Constructor</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for class '<em>Xtend Constructor</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor
+	 * @generated
+	 */
+	EClass getXtendConstructor();
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getName <em>Name</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Name</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getName()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EAttribute getXtendConstructor_Name();
+
+	/**
+	 * Returns the meta object for the containment reference '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getExpression <em>Expression</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference '<em>Expression</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getExpression()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EReference getXtendConstructor_Expression();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getParameters <em>Parameters</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Parameters</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getParameters()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EReference getXtendConstructor_Parameters();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getTypeParameters <em>Type Parameters</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Type Parameters</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getTypeParameters()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EReference getXtendConstructor_TypeParameters();
+
+	/**
+	 * Returns the meta object for the attribute '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getVisibility <em>Visibility</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the attribute '<em>Visibility</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getVisibility()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EAttribute getXtendConstructor_Visibility();
+
+	/**
+	 * Returns the meta object for the containment reference list '{@link org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getExceptions <em>Exceptions</em>}'.
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @return the meta object for the containment reference list '<em>Exceptions</em>'.
+	 * @see org.eclipse.xtext.xtend2.xtend2.XtendConstructor#getExceptions()
+	 * @see #getXtendConstructor()
+	 * @generated
+	 */
+	EReference getXtendConstructor_Exceptions();
 
 	/**
 	 * Returns the factory that creates the instances of the model.
@@ -1767,6 +1994,22 @@ public interface Xtend2Package extends EPackage
 		EAttribute XTEND_FUNCTION__VISIBILITY = eINSTANCE.getXtendFunction_Visibility();
 
 		/**
+		 * The meta object literal for the '<em><b>Static</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute XTEND_FUNCTION__STATIC = eINSTANCE.getXtendFunction_Static();
+
+		/**
+		 * The meta object literal for the '<em><b>Exceptions</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference XTEND_FUNCTION__EXCEPTIONS = eINSTANCE.getXtendFunction_Exceptions();
+
+		/**
 		 * The meta object literal for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendFieldImpl <em>Xtend Field</em>}' class.
 		 * <!-- begin-user-doc -->
 		 * <!-- end-user-doc -->
@@ -1807,6 +2050,14 @@ public interface Xtend2Package extends EPackage
 		 * @generated
 		 */
 		EAttribute XTEND_FIELD__VISIBILITY = eINSTANCE.getXtendField_Visibility();
+
+		/**
+		 * The meta object literal for the '<em><b>Static</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute XTEND_FIELD__STATIC = eINSTANCE.getXtendField_Static();
 
 		/**
 		 * The meta object literal for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendParameterImpl <em>Xtend Parameter</em>}' class.
@@ -1981,6 +2232,64 @@ public interface Xtend2Package extends EPackage
 		 * @generated
 		 */
 		EAttribute CREATE_EXTENSION_INFO__NAME = eINSTANCE.getCreateExtensionInfo_Name();
+
+		/**
+		 * The meta object literal for the '{@link org.eclipse.xtext.xtend2.xtend2.impl.XtendConstructorImpl <em>Xtend Constructor</em>}' class.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @see org.eclipse.xtext.xtend2.xtend2.impl.XtendConstructorImpl
+		 * @see org.eclipse.xtext.xtend2.xtend2.impl.Xtend2PackageImpl#getXtendConstructor()
+		 * @generated
+		 */
+		EClass XTEND_CONSTRUCTOR = eINSTANCE.getXtendConstructor();
+
+		/**
+		 * The meta object literal for the '<em><b>Name</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute XTEND_CONSTRUCTOR__NAME = eINSTANCE.getXtendConstructor_Name();
+
+		/**
+		 * The meta object literal for the '<em><b>Expression</b></em>' containment reference feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference XTEND_CONSTRUCTOR__EXPRESSION = eINSTANCE.getXtendConstructor_Expression();
+
+		/**
+		 * The meta object literal for the '<em><b>Parameters</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference XTEND_CONSTRUCTOR__PARAMETERS = eINSTANCE.getXtendConstructor_Parameters();
+
+		/**
+		 * The meta object literal for the '<em><b>Type Parameters</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference XTEND_CONSTRUCTOR__TYPE_PARAMETERS = eINSTANCE.getXtendConstructor_TypeParameters();
+
+		/**
+		 * The meta object literal for the '<em><b>Visibility</b></em>' attribute feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EAttribute XTEND_CONSTRUCTOR__VISIBILITY = eINSTANCE.getXtendConstructor_Visibility();
+
+		/**
+		 * The meta object literal for the '<em><b>Exceptions</b></em>' containment reference list feature.
+		 * <!-- begin-user-doc -->
+		 * <!-- end-user-doc -->
+		 * @generated
+		 */
+		EReference XTEND_CONSTRUCTOR__EXCEPTIONS = eINSTANCE.getXtendConstructor_Exceptions();
 
 	}
 

@@ -31,9 +31,29 @@ public class ValidationTests extends AbstractXbaseTestCase {
 	@Inject
 	protected ValidationTestHelper helper;
 	
-	public void testToLittleTypeInformation() throws Exception {
+	public void testToLittleTypeInformation_01() throws Exception {
 		XExpression expr = expression("{ val x = [e | e.toString()] }");
 		helper.assertError(expr, XCLOSURE, TOO_LITTLE_TYPE_INFORMATION);
+	}
+	
+	public void testToLittleTypeInformation_02() throws Exception {
+		XExpression expr = expression("{ <Object>newArrayList().add(e | e.toString()) }");
+		helper.assertError(expr, XCLOSURE, TOO_LITTLE_TYPE_INFORMATION);
+	}
+	
+	public void testToLittleTypeInformation_03() throws Exception {
+		XExpression expr = expression("{ newArrayList().add(e | e.toString()) }");
+		helper.assertNoErrors(expr);
+	}
+	
+	public void testToLittleTypeInformation_04() throws Exception {
+		XExpression expr = expression("{ <(String)=>int>newArrayList().add(s | s.length) }");
+		helper.assertNoErrors(expr);
+	}
+	
+	public void testToLittleTypeInformation_05() throws Exception {
+		XExpression expr = expression("{ <(String)=>int>newArrayList().add [ length ] }");
+		helper.assertNoErrors(expr);
 	}
 	
 	public void testNoWildCardsInTypeArgs() throws Exception {
@@ -213,6 +233,31 @@ public class ValidationTests extends AbstractXbaseTestCase {
 	public void testReturnExpressionInClosure_07() throws Exception {
 		XExpression expression = expression("{val func = [Integer i| i]}");
 		helper.assertNoErrors(expression);
+	}
+	
+	public void testExceptionInClosure_00() throws Exception {
+		XExpression expression = expression("{val func = [Integer i| throw new RuntimeException()]}");
+		helper.assertNoErrors(expression);
+	}
+	
+	public void testExceptionInClosure_01() throws Exception {
+		XExpression expression = expression("{val func = [Integer i| throw new Exception() ]}");
+		helper.assertError(expression, XTHROW_EXPRESSION, UNHANDLED_EXCEPTION);
+	}
+	
+	public void testExceptionInClosure_02() throws Exception {
+		XExpression expression = expression("{val func = [Integer i| try { throw new Exception() } catch(Exception e) {} i]}");
+		helper.assertNoErrors(expression);
+	}
+	
+	public void testExceptionInClosure_03() throws Exception {
+		XExpression expression = expression("{val func = [Integer i| try { throw new Exception() } catch(NoSuchFieldException e) {} i]}");
+		helper.assertError(expression, XTHROW_EXPRESSION, UNHANDLED_EXCEPTION);
+	}
+
+	public void testExceptionInClosure_04() throws Exception {
+		XExpression expression = expression("{val func = [Integer i| while(i==1) { throw new Exception() } i]}");
+		helper.assertError(expression, XTHROW_EXPRESSION, UNHANDLED_EXCEPTION);
 	}
 	
 	public void testInCompatibleRightOperand() throws Exception {

@@ -21,6 +21,7 @@ import org.eclipse.jface.text.Region;
 import org.eclipse.ltk.core.refactoring.FileStatusContext;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusContext;
+import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.resource.ILocationInFileProvider;
 import org.eclipse.xtext.util.ITextRegion;
@@ -62,6 +63,8 @@ public class StatusWrapper {
 		if (textRegion != null)
 			region = new Region(textRegion.getOffset(), textRegion.getLength());
 		IFile file = projectUtil.findFileStorage(EcoreUtil2.getNormalizedURI(eObject), false);
+		if(file == null)
+			return null;
 		return new FileStatusContext(file, region);
 	}
 
@@ -113,29 +116,29 @@ public class StatusWrapper {
 	}
 
 	public void add(int severity, String message, URI uri, ResourceSet resourceSet) {
-		status.addError(format(message, uri), createContext(uri, resourceSet));
+		status.addEntry(new RefactoringStatusEntry(severity, format(message, uri), createContext(uri, resourceSet)));
 	}
 
 	public void add(int severity, String message, URI resourceUri) {
-		status.addError(format(message, resourceUri), createContext(resourceUri, null));
+		status.addEntry(new RefactoringStatusEntry(severity, format(message, resourceUri), createContext(resourceUri, null)));
 	}
 
 	public void add(int severity, String message, EObject element) {
-		status.addError(format(message, element), createContext(element));
+		status.addEntry(new RefactoringStatusEntry(severity, format(message, element), createContext(element)));
 	}
 
 	public void add(int severity, String message, EObject element, ITextRegion region) {
-		status.addError(message, createContext(element, region));
+		status.addEntry(new RefactoringStatusEntry(severity, message, createContext(element, region)));
 	}
 
 	public void add(int severity, String message, Exception exc, Logger log) {
 		String formatted = format(message, exc);
-		status.addError(formatted + ".\nSee log for details.");
+		status.addEntry(new RefactoringStatusEntry(severity, formatted + ".\nSee log for details."));
 		log.error(formatted, exc);
 	}
 
 	public void add(int severity, String message, Object... params) {
-		status.addError(format(message, params));
+		status.addEntry(new RefactoringStatusEntry(severity, format(message, params)));
 	}
 
 	public void merge(RefactoringStatus status) {
@@ -145,5 +148,4 @@ public class StatusWrapper {
 	public void merge(StatusWrapper status) {
 		this.status.merge(status.getRefactoringStatus());
 	}
-
 }

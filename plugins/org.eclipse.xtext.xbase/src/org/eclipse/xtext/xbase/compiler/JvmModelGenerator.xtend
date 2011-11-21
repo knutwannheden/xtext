@@ -29,6 +29,7 @@ import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.xbase.XExpression
 import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider
 import org.eclipse.xtext.xbase.typing.ITypeProvider
+import org.eclipse.xtend2.lib.StringConcatenation
 
 class JvmModelGenerator implements IGenerator {
 	
@@ -168,13 +169,8 @@ class JvmModelGenerator implements IGenerator {
 	}
 	
 	def generateThrowsClause(JvmExecutable it, ImportManager importManager) '''«
-		FOR exc: it.checkedExceptions BEFORE ' throws ' SEPARATOR ', '»«exc.serialize(importManager)»«ENDFOR
+		FOR exc: it.exceptions BEFORE ' throws ' SEPARATOR ', '»«exc.serialize(importManager)»«ENDFOR
 	»'''
-
-	def checkedExceptions(JvmExecutable it) {
-		it.thrownExceptionForIdentifiable.filter [it.isInstanceOf(typeof(Exception)) && !it.isInstanceOf(typeof(RuntimeException))]
-			.toSet.sortBy [ identifier ]
-	}
 
 	def generateParameter(JvmFormalParameter it, ImportManager importManager) {
 		"final " + parameterType.serialize(importManager) + " " + simpleName
@@ -193,8 +189,8 @@ class JvmModelGenerator implements IGenerator {
 				val returnType = switch(op) { 
 					JvmOperation: op.returnType 
 					default: null
-				}; 
-				compiler.compile(expression, appendable, returnType)
+				};
+				compiler.compile(expression, appendable, returnType, op.exceptions.toSet)
 				return removeSurroundingCurlies(appendable.toString)
 			} else {
 				return '''throw new UnsupportedOperationException("«op.simpleName» is not implemented");'''
@@ -214,7 +210,7 @@ class JvmModelGenerator implements IGenerator {
 	def generateJavaDoc(EObject it) {
 		val adapter = it.eAdapters.filter(typeof(DocumentationAdapter)).head
 		if(!adapter?.documentation.nullOrEmpty) {
-			val doc = '''/**''';
+			val doc = '''/**''' as StringConcatenation;
 			doc.newLine
 			doc.append(" * ")
 			doc.append(adapter.documentation, " * ")

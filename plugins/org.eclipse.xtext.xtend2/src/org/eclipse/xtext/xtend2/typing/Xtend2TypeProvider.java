@@ -7,12 +7,6 @@
  *******************************************************************************/
 package org.eclipse.xtext.xtend2.typing;
 
-import static com.google.common.collect.Iterables.*;
-
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -20,7 +14,6 @@ import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.common.types.JvmAnyTypeReference;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
-import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmType;
 import org.eclipse.xtext.common.types.JvmTypeReference;
@@ -31,7 +24,6 @@ import org.eclipse.xtext.xbase.XForLoopExpression;
 import org.eclipse.xtext.xbase.annotations.typing.XbaseWithAnnotationsTypeProvider;
 import org.eclipse.xtext.xbase.controlflow.IEarlyExitComputer;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
-import org.eclipse.xtext.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.xtend2.resource.Xtend2Resource;
 import org.eclipse.xtext.xtend2.xtend2.CreateExtensionInfo;
 import org.eclipse.xtext.xtend2.xtend2.RichString;
@@ -45,9 +37,6 @@ import org.eclipse.xtext.xtend2.xtend2.XtendClassSuperCallReferable;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
 import org.eclipse.xtext.xtend2.xtend2.XtendParameter;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
@@ -60,9 +49,6 @@ public class Xtend2TypeProvider extends XbaseWithAnnotationsTypeProvider {
 	@Inject
 	private IXtend2JvmAssociations xtend2jvmAssociations;
 
-//	@Inject
-//	private XtendOverridesService overridesService;
-//	
 	@Inject
 	private IEarlyExitComputer earlyExitComputer;
 	
@@ -139,9 +125,6 @@ public class Xtend2TypeProvider extends XbaseWithAnnotationsTypeProvider {
 		return null;
 	}
 	
-	
-	
-	
 	protected JvmTypeReference _expectedType(CreateExtensionInfo info, EReference reference, int index, boolean rawType) {
 		if (reference == Xtend2Package.Literals.CREATE_EXTENSION_INFO__CREATE_EXPRESSION) {
 			XtendFunction function = EcoreUtil2.getContainerOfType(info, XtendFunction.class);
@@ -175,33 +158,33 @@ public class Xtend2TypeProvider extends XbaseWithAnnotationsTypeProvider {
 	}
 	
 	protected JvmTypeReference _type(RichString richString, JvmTypeReference rawExpectation, boolean rawType) {
-		return getTypeReferences().getTypeForName(StringConcatenation.class, richString);
+		return getTypeReferences().getTypeForName(CharSequence.class, richString);
 	}
 
 	protected JvmTypeReference _type(RichStringLiteral stringLiteral, JvmTypeReference rawExpectation, boolean rawType) {
-		return getTypeReferences().getTypeForName(String.class, stringLiteral);
+		return getTypeReferences().getTypeForName(CharSequence.class, stringLiteral);
 	}
 	
 	protected JvmTypeReference _type(RichStringIf richStringIf, JvmTypeReference rawExpectation, boolean rawType) {
-		return getTypeReferences().getTypeForName(StringConcatenation.class, richStringIf);
+		return getTypeReferences().getTypeForName(CharSequence.class, richStringIf);
 	}
 	
 	protected JvmTypeReference _type(RichStringForLoop richStringFor, JvmTypeReference rawExpectation, boolean rawType) {
-		return getTypeReferences().getTypeForName(StringConcatenation.class, richStringFor);
+		return getTypeReferences().getTypeForName(CharSequence.class, richStringFor);
 	}
 	
 	protected JvmTypeReference _expectedType(RichStringIf container, EReference reference, int index, boolean rawType) {
 		if (reference == Xtend2Package.Literals.RICH_STRING_IF__IF) {
 			return getTypeReferences().getTypeForName(Boolean.TYPE, container);
 		}
-		return getTypeReferences().getTypeForName(StringConcatenation.class, container);
+		return getTypeReferences().getTypeForName(CharSequence.class, container);
 	}
 	
 	protected JvmTypeReference _expectedType(RichStringElseIf container, EReference reference, int index, boolean rawType) {
 		if (reference == Xtend2Package.Literals.RICH_STRING_ELSE_IF__IF) {
 			return getTypeReferences().getTypeForName(Boolean.TYPE, container);
 		}
-		return getTypeReferences().getTypeForName(StringConcatenation.class, container);
+		return getTypeReferences().getTypeForName(CharSequence.class, container);
 	}
 
 	protected JvmTypeReference _expectedType(RichStringForLoop expr, EReference reference, int index, boolean rawType) {
@@ -233,49 +216,6 @@ public class Xtend2TypeProvider extends XbaseWithAnnotationsTypeProvider {
 			return superType;
 		}
 		return getTypeReferences().getTypeForName(Object.class, xtendClass);
-	}
-	
-	private final ThreadLocal<Map<JvmIdentifiableElement, Collection<JvmTypeReference>>> ongoingExceptionComputations = new ThreadLocal<Map<JvmIdentifiableElement, Collection<JvmTypeReference>>>() {
-		@Override
-		protected Map<JvmIdentifiableElement, Collection<JvmTypeReference>> initialValue() {
-			return Maps.newHashMap();
-		}
-	};
-	
-	@Override
-	public Iterable<JvmTypeReference> getThrownExceptionForIdentifiable(JvmIdentifiableElement identifiable) {
-		if (identifiable instanceof JvmOperation) {
-			final Set<EObject> associatedElements = xtend2jvmAssociations.getSourceElements(identifiable);
-			if (associatedElements == null || associatedElements.isEmpty()) {
-				return super.getThrownExceptionForIdentifiable(identifiable);
-			}
-			Map<JvmIdentifiableElement, Collection<JvmTypeReference>> computations = ongoingExceptionComputations.get();
-			Collection<JvmTypeReference> intermediateResult = computations.get(identifiable);
-			if (intermediateResult != null)
-				return intermediateResult;
-			try {
-				intermediateResult = Sets.newLinkedHashSet();
-				computations.put(identifiable, intermediateResult);
-				for (EObject associatedElement : associatedElements) {
-					final XtendFunction xtendFunction = (XtendFunction) associatedElement;
-					final Iterable<JvmTypeReference> thrownExceptions = getThrownExceptions(xtendFunction);
-					Iterables.addAll(intermediateResult, thrownExceptions);
-				}
-				return intermediateResult;
-			} finally {
-				computations.remove(identifiable);
-			}
-		}
-		return super.getThrownExceptionForIdentifiable(identifiable);
-	}
-
-	protected Iterable<JvmTypeReference> getThrownExceptions(final XtendFunction xtendFunction) {
-		Iterable<JvmTypeReference> thrownExceptionTypes = getThrownExceptionTypes(xtendFunction.getExpression());
-		if (xtendFunction.getCreateExtensionInfo()==null) {
-			return thrownExceptionTypes;
-		}
-		Iterable<JvmTypeReference> thrownExceptionTypesInCreateExpression = getThrownExceptionTypes(xtendFunction.getCreateExtensionInfo().getCreateExpression());
-		return concat(thrownExceptionTypes,thrownExceptionTypesInCreateExpression);
 	}
 	
 }

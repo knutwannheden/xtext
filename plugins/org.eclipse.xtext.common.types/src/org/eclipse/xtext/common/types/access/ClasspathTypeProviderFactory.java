@@ -18,7 +18,7 @@ import com.google.inject.Inject;
 public class ClasspathTypeProviderFactory extends AbstractTypeProviderFactory {
 
 	private final ClassLoader classLoader;
-
+	
 	@Inject
 	public ClasspathTypeProviderFactory(ClassLoader classLoader) {
 		this.classLoader = classLoader;
@@ -32,7 +32,7 @@ public class ClasspathTypeProviderFactory extends AbstractTypeProviderFactory {
 	}
 
 	protected ClasspathTypeProvider createClasspathTypeProvider(ResourceSet resourceSet) {
-		return new ClasspathTypeProvider(classLoader, resourceSet);
+		return new ClasspathTypeProvider(classLoader, resourceSet, getIndexedJvmTypeAccess());
 	}
 	
 	public ClassLoader getClassLoader() {

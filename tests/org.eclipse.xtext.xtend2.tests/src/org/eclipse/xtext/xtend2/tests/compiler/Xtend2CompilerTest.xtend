@@ -29,6 +29,60 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			}
 		''')
 	}
+	
+	def testSneakyThrow() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				def void doStuff() {
+					throw new java.io.IOException()
+				}
+			}
+		''', '''
+			package foo;
+
+			import java.io.IOException;
+			import org.eclipse.xtext.xbase.lib.Exceptions;
+			
+			@SuppressWarnings("all")
+			public class Bar {
+			  public void doStuff() {
+			    try {
+			      IOException _iOException = new IOException();
+			      throw _iOException;
+			    } catch (Exception _e) {
+			      throw Exceptions.sneakyThrow(_e);
+			    }
+			  }
+			}
+		''')
+	}
+	
+	def testSneakyThrow_01() { 
+		assertCompilesTo('''
+			package foo
+			
+			import java.io.IOException
+			
+			class Bar {
+				def void doStuff() throws IOException {
+					throw new IOException()
+				}
+			}
+		''', '''
+			package foo;
+
+			import java.io.IOException;
+			
+			@SuppressWarnings("all")
+			public class Bar {
+			  public void doStuff() throws IOException {
+			    IOException _iOException = new IOException();
+			    throw _iOException;
+			  }
+			}
+		''')
+	}
 
 	def testSimple() { 
 		assertCompilesTo('''
@@ -429,6 +483,40 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			   * really!
 			   */
 			  private int bar;
+			}
+			''');
+	}
+	
+	def testStaticMethod() {
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				def static foo() { 42 }
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  public static int foo() {
+			    return 42;
+			  }
+			}
+			''');
+	}
+	
+	def testStaticField() {
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				static int foo
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  private static int foo;
 			}
 			''');
 	}
