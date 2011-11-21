@@ -102,6 +102,31 @@ public class DBBasedBuilderStateTest extends TestCase {
 		assertEmpty(state);
 	}
 
+	public void testCopy() {
+		IResourceDescription oldResource = createDescription("foo.bar");
+		state.beginChanges();
+		state.updateResources(ImmutableList.of(oldResource));
+		state.commitChanges();
+
+		IResourceDescription newResource = createDescription("foo2.bar");
+		DBBasedBuilderState newState = state.copy(true);
+
+		newState.beginChanges();
+		assertOnlyContains(ImmutableList.of(oldResource), newState);
+
+		newState.updateResources(ImmutableList.of(newResource));
+		assertOnlyContains(ImmutableList.of(oldResource), state);
+		assertOnlyContains(ImmutableList.of(oldResource, newResource), newState);
+
+		newState.deleteResources(ImmutableSet.of(oldResource.getURI()));
+		assertOnlyContains(ImmutableList.of(oldResource), state);
+		assertOnlyContains(ImmutableList.of(newResource), newState);
+
+		newState.commitChanges();
+		assertOnlyContains(ImmutableList.of(oldResource), state);
+		assertOnlyContains(ImmutableList.of(newResource), newState);
+	}
+
 	public void assertEmpty(DBBasedBuilderState state) {
 		assertEquals(0, state.getAllURIs().size());
 		assertEquals(0, Iterables.size(state.getAllResourceDescriptions()));
