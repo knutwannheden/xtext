@@ -29,7 +29,7 @@ import com.google.common.collect.Sets;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
- * @since 2.1
+ * @since 2.2
  */
 public class ExtendedResourceDescriptionDelta implements IResourceDescription.Delta, IResourceDescription.DeltaExtension {
 
@@ -119,7 +119,7 @@ public class ExtendedResourceDescriptionDelta implements IResourceDescription.De
 		String[] newKeys = newObj.getUserDataKeys();
 		if (oldKeys.length != newKeys.length)
 			return false;
-		Set<String> newKeySet = ImmutableSet.of(newKeys);
+		Set<String> newKeySet = ImmutableSet.copyOf(newKeys);
 		for (String key : oldKeys) {
 			if (!newKeySet.contains(key))
 				return false;

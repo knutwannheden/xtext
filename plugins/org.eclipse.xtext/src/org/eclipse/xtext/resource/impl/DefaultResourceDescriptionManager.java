@@ -194,21 +194,21 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	}
 
 	/**
-	 * @since 2.1
+	 * @since 2.2
 	 */
 	protected boolean isManagerFor(URI uri) {
 		return serviceProvider.canHandle(uri);
 	}
 
 	/**
-	 * @since 2.1
+	 * @since 2.2
 	 */
 	protected boolean isInterestedIn(Delta delta) {
 		return delta.haveEObjectDescriptionsChanged();
 	}
 
 	/**
-	 * @since 2.1
+	 * @since 2.2
 	 */
 	public Collection<URI> getAffectedResources(Collection<Delta> deltas, final Collection<URI> candidates,
 			IResourceDescriptionsExtension context) {

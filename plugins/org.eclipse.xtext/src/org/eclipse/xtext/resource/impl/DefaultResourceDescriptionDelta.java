@@ -91,7 +91,7 @@ public class DefaultResourceDescriptionDelta implements IResourceDescription.Del
 		String[] newKeys = newObj.getUserDataKeys();
 		if (oldKeys.length != newKeys.length)
 			return false;
-		Set<String> newKeySet = ImmutableSet.of(newKeys);
+		Set<String> newKeySet = ImmutableSet.copyOf(newKeys);
 		for (String key : oldKeys) {
 			if (!newKeySet.contains(key))
 				return false;

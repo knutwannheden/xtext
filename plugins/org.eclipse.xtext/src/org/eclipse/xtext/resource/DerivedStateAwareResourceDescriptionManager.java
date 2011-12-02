@@ -10,7 +10,12 @@ package org.eclipse.xtext.resource;
 import static com.google.common.collect.Lists.*;
 
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.xtext.resource.impl.DefaultResourceDescription;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionManager;
+import org.eclipse.xtext.resource.impl.EObjectDescriptionLookUp;
+import org.eclipse.xtext.util.IResourceScopeCache;
+
+import com.google.inject.Inject;
 
 /**
  * 
@@ -21,6 +26,9 @@ import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionManager;
  */
 public class DerivedStateAwareResourceDescriptionManager extends DefaultResourceDescriptionManager {
 	
+	@Inject
+	private IResourceScopeCache cache = IResourceScopeCache.NullImpl.INSTANCE;
+
 	@Override
 	protected IResourceDescription internalGetResourceDescription(final Resource resource,
 			IDefaultResourceDescriptionStrategy strategy) {
@@ -31,7 +39,7 @@ public class DerivedStateAwareResourceDescriptionManager extends DefaultResource
 				res.eSetDeliver(false);
 				res.installDerivedState(true);
 			}
-			IResourceDescription description = super.internalGetResourceDescription(resource, strategy);
+			IResourceDescription description = createResourceDescription(resource, strategy);
 			if (!isInitialized) {
 				// make sure the eobject descriptions are being built.
 				newArrayList(description.getExportedObjects());
@@ -45,4 +53,14 @@ public class DerivedStateAwareResourceDescriptionManager extends DefaultResource
 		}
 	}
 	
+	protected IResourceDescription createResourceDescription(Resource resource, IDefaultResourceDescriptionStrategy strategy) {
+		return new DefaultResourceDescription(resource, strategy, cache) {
+			@Override
+			protected EObjectDescriptionLookUp getLookUp() {
+				if (lookup == null)
+					lookup = new EObjectDescriptionLookUp(computeExportedObjects());
+				return lookup;
+			}
+		};
+	}
 }

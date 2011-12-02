@@ -121,14 +121,14 @@ public class DirtyStateManager extends AbstractResourceDescriptionChangeEventSou
 	}
 
 	/**
-	 * @since 2.1
+	 * @since 2.2
 	 */
 	public IResourceDescription getResourceDescription(URI normalizedURI) {
 		return getDirtyResourceDescription(normalizedURI);
 	}
 	
 	/**
-	 * @since 2.1
+	 * @since 2.2
 	 */
 	public Iterable<IResourceDescription> getAllResourceDescriptions() {
 		return Iterables.transform(managedResources.values(), new Function<IDirtyResource, IResourceDescription>() {
