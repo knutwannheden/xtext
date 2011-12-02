@@ -12,9 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
-import org.eclipse.xtext.xbase.lib.IterableExtensions.FunctionDelegate;
+import org.eclipse.xtext.xbase.lib.internal.FunctionDelegate;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 /**
@@ -95,10 +94,10 @@ public class ListExtensions {
 	 * 
 	 * @param list
 	 *            the list whose elements should be traversed in reverse. May not be <code>null</code>.
-	 * @return an iterable with the same elements as the list, in reverse
+	 * @return a list with the same elements as the given list, in reverse
 	 */
-	public static <T> Iterable<T> reverseView(List<T> list) {
-		return Iterables.reverse(list);
+	public static <T> List<T> reverseView(List<T> list) {
+		return Lists.reverse(list);
 	}
 
 	/**
@@ -117,13 +116,13 @@ public class ListExtensions {
 
 	/**
 	 * Returns a list that performs the given {@code transformation} for each element of {@code original} when
-	 * requested. The mapping is done lazily. That is, subsequent iterations of the elements in the iterable will
+	 * requested. The mapping is done lazily. That is, subsequent iterations of the elements in the list will
 	 * repeatedly apply the transformation. The returned list is a transformed view of {@code original}; changes to
-	 * {@code original} will be reflected in the returned list and vice versa.
+	 * {@code original} will be reflected in the returned list and vice versa (e.g. invocations of {@link List#remove(int)}).
 	 * 
 	 * 
 	 * @param original
-	 *            the original iterable. May not be <code>null</code>.
+	 *            the original list. May not be <code>null</code>.
 	 * @param transformation
 	 *            the transformation. May not be <code>null</code>.
 	 * @return a list that effectively contains the results of the transformation. Never <code>null</code>.

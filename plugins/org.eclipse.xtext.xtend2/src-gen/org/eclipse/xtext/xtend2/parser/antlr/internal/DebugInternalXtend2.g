@@ -45,7 +45,9 @@ ruleMember :
 		ruleVisibility? (
 			'extension' ruleJvmTypeReference ruleValidID? |
 			'static'? ruleJvmTypeReference ruleValidID
-		) |
+		) (
+			'=' ruleXExpression
+		)? |
 		(
 			'def' |
 			'override'
@@ -82,7 +84,11 @@ ruleMember :
 			ruleXBlockExpression |
 			ruleRichString
 		)? |
-		ruleVisibility? 'new' '(' (
+		ruleVisibility? 'new' (
+			'<' ruleJvmTypeParameter (
+				',' ruleJvmTypeParameter
+			)* '>'
+		)? '(' (
 			ruleParameter (
 				',' ruleParameter
 			)*
@@ -730,9 +736,11 @@ ruleJvmTypeReference :
 // Rule XFunctionTypeRef
 ruleXFunctionTypeRef :
 	(
-		'(' ruleJvmTypeReference (
-			',' ruleJvmTypeReference
-		)* ')'
+		'(' (
+			ruleJvmTypeReference (
+				',' ruleJvmTypeReference
+			)*
+		)? ')'
 	)? '=>' ruleJvmTypeReference
 ;
 

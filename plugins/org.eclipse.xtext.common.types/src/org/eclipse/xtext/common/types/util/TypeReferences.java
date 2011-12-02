@@ -9,7 +9,6 @@ package org.eclipse.xtext.common.types.util;
 
 import static com.google.common.collect.Lists.*;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +21,7 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.common.types.JvmAnyTypeReference;
 import org.eclipse.xtext.common.types.JvmArrayType;
+import org.eclipse.xtext.common.types.JvmDelegateTypeReference;
 import org.eclipse.xtext.common.types.JvmGenericArrayTypeReference;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmMultiTypeReference;
@@ -66,7 +66,9 @@ public class TypeReferences {
 	public JvmMultiTypeReference createMultiTypeReference(EObject context, JvmTypeReference... references) {
 		 JvmMultiTypeReference result = factory.createJvmMultiTypeReference();
 		 if (references != null && references.length != 0) {
-			 result.getReferences().addAll(Arrays.asList(references));
+			 for(JvmTypeReference reference: references) {
+				 result.getReferences().add(createDelegateTypeReference(reference));
+			 }
 		 }
 		 result.setType(findDeclaredType(Object.class, context));
 		 return result;
@@ -101,6 +103,12 @@ public class TypeReferences {
 		if (!typeReferences.isEmpty())
 			reference.getArguments().addAll(typeReferences);
 		return reference;
+	}
+	
+	public JvmDelegateTypeReference createDelegateTypeReference(JvmTypeReference typeRef) {
+		JvmDelegateTypeReference delegate = factory.createJvmDelegateTypeReference();
+		delegate.setDelegate(typeRef);
+		return delegate;
 	}
 
 	public JvmTypeReference getArgument(JvmTypeReference left, int index) {

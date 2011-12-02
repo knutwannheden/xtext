@@ -208,12 +208,11 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 		jvmTypesBuilder.setBody(result, compileStrategies.forDispatcher(result, sortedOperations));
 		JvmVisibility commonVisibility = null;
 		boolean isFirst = true;
+		boolean allStatic = true;
 		for (JvmOperation jvmOperation : sortedOperations) {
-			Iterable<XtendFunction> xtendFunctions = filter(associations.getSourceElements(jvmOperation),
-					XtendFunction.class);
+			Iterable<XtendFunction> xtendFunctions = filter(associations.getSourceElements(jvmOperation), XtendFunction.class);
 			for (XtendFunction func : xtendFunctions) {
-				JvmVisibility xtendVisibility = func.eIsSet(Xtend2Package.Literals.XTEND_FUNCTION__VISIBILITY) ? func
-						.getVisibility() : null;
+				JvmVisibility xtendVisibility = func.eIsSet(Xtend2Package.Literals.XTEND_FUNCTION__VISIBILITY) ? func.getVisibility() : null;
 				if (isFirst) {
 					commonVisibility = xtendVisibility;
 					isFirst = false;
@@ -221,12 +220,15 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 					commonVisibility = null;
 				}
 				associator.associate(func, result);
+				if(!func.isStatic())
+					allStatic = false;
 			}
 		}
 		if (commonVisibility == null)
 			result.setVisibility(JvmVisibility.PUBLIC);
 		else
 			result.setVisibility(commonVisibility);
+		result.setStatic(allStatic);
 		return result;
 	}
 
@@ -299,7 +301,7 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 			
 			JvmField cacheVar = jvmTypesBuilder.toField(source, CREATE_CHACHE_VARIABLE_PREFIX + source.getName(), hashMap);
 			cacheVar.setFinal(true);
-			jvmTypesBuilder.initialization(cacheVar, compileStrategies.forCacheVariable(container));
+			jvmTypesBuilder.setInitializer(cacheVar, compileStrategies.forCacheVariable(container));
 			container.getMembers().add(cacheVar);
 			
 			JvmOperation initializer = typesFactory.createJvmOperation();
@@ -372,6 +374,7 @@ public class Xtend2JvmModelInferrer implements IJvmModelInferrer {
 			field.setType(cloneWithProxies(source.getType()));
 			jvmTypesBuilder.translateAnnotationsTo(source.getAnnotationInfo().getAnnotations(), field);
 			jvmTypesBuilder.setDocumentation(field, jvmTypesBuilder.getDocumentation(source));
+			jvmTypesBuilder.setInitializer(field, source.getInitialValue());
 		} 
 	}
 

@@ -14,9 +14,6 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.xtext.EcoreUtil2;
-import org.eclipse.xtext.common.types.JvmFeature;
-import org.eclipse.xtext.common.types.JvmGenericType;
-import org.eclipse.xtext.common.types.util.VisibilityService;
 import org.eclipse.xtext.formatting.IIndentationInformation;
 import org.eclipse.xtext.naming.IQualifiedNameConverter;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
@@ -28,12 +25,15 @@ import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.compiler.ImportManager;
 import org.eclipse.xtext.xbase.compiler.StringBuilderBasedAppendable;
 import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
+import org.eclipse.xtext.xbase.scoping.featurecalls.IValidatedEObjectDescription;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
+import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
 import org.eclipse.xtext.xtend2.xtend2.XtendImport;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 
 /**
  * An {@link org.eclipse.xtext.xbase.compiler.IAppendable} to insert text into an Xtend document. Takes imports and
@@ -43,8 +43,9 @@ import com.google.inject.Inject;
  */
 public class ReplacingAppendable extends StringBuilderBasedAppendable {
 
+	private static final Logger LOG = Logger.getLogger(ReplacingAppendable.class);
+
 	public static class Factory {
-		private static final Logger LOG = Logger.getLogger(ReplacingAppendable.class);
 
 		@Inject
 		private IIndentationInformation indentation;
@@ -59,14 +60,14 @@ public class ReplacingAppendable extends StringBuilderBasedAppendable {
 		private IXtend2JvmAssociations associations;
 
 		@Inject
-		private VisibilityService visibilityService;
+		private Provider<WhitespaceHelper> whitespaceHelperProvider;
 
 		public ReplacingAppendable get(IXtextDocument document, EObject context, int offset, int length) {
-			return get(document, context, offset, length, false);
+			return get(document, context, offset, length, getIndentationLevelAtOffset(offset, document), false);
 		}
 
 		public ReplacingAppendable get(IXtextDocument document, EObject context, int offset, int length,
-				boolean ignoreIndentAtOffset) {
+				int indentationLevel, boolean ensureEmptyLinesAround) {
 			try {
 				XtendFile xtendFile = EcoreUtil2.getContainerOfType(context, XtendFile.class);
 				if (xtendFile != null) {
@@ -76,24 +77,19 @@ public class ReplacingAppendable extends StringBuilderBasedAppendable {
 							importManager.addImportFor(xImport.getImportedType());
 						}
 					}
+					WhitespaceHelper whitespaceHelper = whitespaceHelperProvider.get();
+					whitespaceHelper.initialize(document, offset, length, ensureEmptyLinesAround);
 					ReplacingAppendable appendable = new ReplacingAppendable(importManager,
-							indentation.getIndentString(), document, xtendFile, offset, length);
-					IScope scope = scopeProvider.createSimpleFeatureCallScope(context,
+							indentation.getIndentString(), document, xtendFile, whitespaceHelper);
+					IScope scope = scopeProvider.createSimpleFeatureCallScope(getLocalVariableScopeContext(context),
 							XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, context.eResource(), true, -1);
-					appendable.openScope();
-					for (IEObjectDescription feature : scope.getAllElements())
-						appendable.declareVariable(feature, converter.toString(feature.getName()));
-					if (context instanceof XtendClass) {
-						JvmGenericType inferredType = associations.getInferredType((XtendClass) context);
-						for (JvmFeature feature : inferredType.getAllFeatures()) {
-							if (visibilityService.isVisible(feature, inferredType))
-								appendable.declareVariable(feature, feature.getSimpleName());
-						}
+					for (IEObjectDescription feature : scope.getAllElements()) {
+						if (feature instanceof IValidatedEObjectDescription
+								&& ((IValidatedEObjectDescription) feature).isVisible())
+							appendable.declareVariable(feature, converter.toString(feature.getName()));
 					}
-					if (!ignoreIndentAtOffset) {
-						for (int i = 0; i < getIndentationLevelAtOffset(offset, document); ++i)
-							appendable.increaseIndentation();
-					}
+					for (int i = 0; i < indentationLevel; ++i)
+						appendable.increaseIndentation();
 					return appendable;
 				}
 			} catch (Exception exc) {
@@ -102,21 +98,35 @@ public class ReplacingAppendable extends StringBuilderBasedAppendable {
 			return null;
 		}
 
-		protected int getIndentationLevelAtOffset(int offset, IDocument document) throws BadLocationException {
-			if (offset <= 0)
-				return 0;
-			int currentOffset = offset - 1;
-			char currentChr = document.getChar(currentOffset);
-			int indentationOffset = 0;
-			while (currentChr != '\n' && currentChr != '\r' && currentOffset > 0) {
-				if (Character.isWhitespace(currentChr))
-					++indentationOffset;
-				else
-					indentationOffset = 0;
-				--currentOffset;
-				currentChr = document.getChar(currentOffset);
+		protected EObject getLocalVariableScopeContext(EObject context) {
+			if (context instanceof XtendClass)
+				return associations.getInferredType((XtendClass) context);
+			else if (context instanceof XtendFunction) {
+				return associations.getDirectlyInferredOperation((XtendFunction) context);
 			}
-			return indentationOffset / indentation.getIndentString().length();
+			return context;
+		}
+
+		protected int getIndentationLevelAtOffset(int offset, IDocument document) {
+			try {
+				if (offset <= 0)
+					return 0;
+				int currentOffset = offset - 1;
+				char currentChr = document.getChar(currentOffset);
+				int indentationOffset = 0;
+				while (currentChr != '\n' && currentChr != '\r' && currentOffset > 0) {
+					if (Character.isWhitespace(currentChr))
+						++indentationOffset;
+					else
+						indentationOffset = 0;
+					--currentOffset;
+					currentChr = document.getChar(currentOffset);
+				}
+				return indentationOffset / indentation.getIndentString().length();
+			} catch (BadLocationException e) {
+				LOG.error("Error calculating indentation at offset", e);
+			}
+			return 0;
 		}
 	}
 
@@ -126,22 +136,30 @@ public class ReplacingAppendable extends StringBuilderBasedAppendable {
 
 	private XtendFile xtendFile;
 
-	private final int length;
-
-	private final int offset;
+	private final WhitespaceHelper whitespaceHelper;
 
 	public ReplacingAppendable(ImportManager importManager, String indentString, IXtextDocument document,
-			XtendFile xtendFile, int offset, int length) {
+			XtendFile xtendFile, WhitespaceHelper whitespaceHelper) {
 		super(importManager, indentString);
 		this.document = document;
 		this.xtendFile = xtendFile;
-		this.offset = offset;
-		this.length = length;
+		this.whitespaceHelper = whitespaceHelper;
 		existingImports = importManager.getImports();
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder b = new StringBuilder();
+		if (whitespaceHelper.getPrefix() != null)
+			b.append(whitespaceHelper.getPrefix().replace("\n", getIndentationString()));
+		b.append(super.toString());
+		if (whitespaceHelper.getSuffix() != null)
+			b.append(whitespaceHelper.getSuffix().replace("\n", getIndentationString()));
+		return b.toString();
+	}
+
 	public void commitChanges() throws BadLocationException {
-		document.replace(offset, length, toString());
+		document.replace(whitespaceHelper.getTotalOffset(), whitespaceHelper.getTotalLength(), toString());
 		insertNewImports();
 	}
 

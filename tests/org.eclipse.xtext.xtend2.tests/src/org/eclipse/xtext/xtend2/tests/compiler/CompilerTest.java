@@ -59,7 +59,104 @@ import com.google.inject.Injector;
  * @author Sebastian Zarnekow
  */
 public class CompilerTest extends AbstractXtend2TestCase {
+	
+	public void testClosuresAndExceptions() throws Exception {
+		String code = "" +
+				"def test() {\n" +
+				"  newArrayList('foo').map( s | throwing(s) ).head\n" +
+				"}\n" +
+				"def String throwing(String s) throws java.io.IOException {\n" +
+				"  s\n" +
+				"}\n";
+		invokeAndExpect2("foo", code, "test");
+	}
+	
+	public void testFunctionTypes() throws Exception {
+		String code = "" +
+				"def String test() {\n" +
+				"  newArrayList('fo','bar').maxBy[length]" +
+				"}\n" +
+				"" +
+				"def <A,B extends Comparable<? super B>> A maxBy(Iterable<A> iterable, (A)=>B maxOn) {\n" + 
+				"  iterable.sortBy(maxOn).last\n" + 
+				"}";
+		invokeAndExpect2("bar", code, "test");
+	}
 
+	public void testFieldInitialization_01() throws Exception {
+		String code =
+				"String field = if (true) newArrayList('a', 'b').join(',') else ''\n" +
+				"def getField() {\n" + 
+				"  field" + 
+				"}";
+		String expectation = "a,b";
+		invokeAndExpect2(expectation, code, "getField");
+	}
+	
+	public void testFieldInitialization_02() throws Exception {
+		String code =
+				"String field = return 123.toString\n" +
+				"def getField() {\n" + 
+				"  field" + 
+				"}";
+		invokeAndExpect2("123", code, "getField");
+	}
+	
+	public void testFieldInitialization_03() throws Exception {
+		String code =
+				"int other = 12\n" + 
+				"int field = other + 1\n" +
+				"def getField() {\n" + 
+				"  field" + 
+				"}";
+		invokeAndExpect2(Integer.valueOf(13), code, "getField");
+	}
+	
+	public void testDeclaredConstructor_01() throws Exception {
+		String code = "class Z { new() { this(1) } new(int a) { super() } }";
+		compileJavaCode("Z", code);
+	}
+	
+	public void testDeclaredConstructor_02() throws Exception {
+		String code = "class Z { new() { super() } new(int a) { this() } }";
+		compileJavaCode("Z", code);
+	}
+	
+	public void testDeclaredConstructor_03() throws Exception {
+		String code = "class Z { new() { this(1) } new(int i) {} }";
+		compileJavaCode("Z", code);
+	}
+	
+	public void testDeclaredConstructor_04() throws Exception {
+		String code = 
+				"  static int j " +
+				"  int i " +
+				"  new() { this(j) } " +
+				"  new(int i) { this.i = i } " +
+				"  def static invokeMe() { j = 47 new Y().i }";
+		invokeAndExpectStatic(Integer.valueOf(47), code, "invokeMe");
+	}
+	
+	public void testDeclaredConstructor_05() throws Exception {
+		String code = "class Z { new() { this(null as Object) } new(Object o) {} }";
+		compileJavaCode("Z", code);
+	}
+	
+	public void testDeclaredConstructor_06() throws Exception {
+		String code = "class Z { new(Object o) { this(o as String) } new(String o) {} }";
+		compileJavaCode("Z", code);
+	}
+	
+	public void testDeclaredConstructor_07() throws Exception {
+		String code = 
+				"  static int j " +
+				"  int i " +
+				"  new() { this(1 + j * 2 - 1) } " +
+				"  new(int i) { this.i = i } " +
+				"  def static invokeMe() { j = 47 new Y().i }";
+		invokeAndExpectStatic(Integer.valueOf(94), code, "invokeMe");
+	}
+	
 	public void testBug362236_01() throws Exception {
 		String code = 
 				"import java.util.List\n" +
@@ -2317,6 +2414,13 @@ public class CompilerTest extends AbstractXtend2TestCase {
 		fail("Expected NoSuchFieldException not thrown");
 	}
 	
+	public void testRichStringAndSwitch() throws Exception {
+		invokeAndExpect2(
+				"foo", 
+				"def x() { runTest().toString() } def runTest() '''«switch x : '''test''' { CharSequence : '''foo''' }»'''", 
+				"x");
+	}
+	
 	@Inject
 	private EclipseRuntimeDependentJavaCompiler javaCompiler;
 
@@ -2450,14 +2554,6 @@ public class CompilerTest extends AbstractXtend2TestCase {
 	
 	public void testStaticMethodDynamicCall() throws Exception {
 		invokeAndExpect2(43, "def foo() { bar + 1 } def static bar() { 42 }", "foo");
-	}
-	
-	public void testStaticExtensionStaticCall() throws Exception {
-		invokeAndExpectStatic(43, "def static foo() { 42.bar } def static bar(int x) { x + 1 }", "foo");
-	}
-	
-	public void testStaticExtensionDynamicCall() throws Exception {
-		invokeAndExpect2(43, "def foo() { 42.bar } def static bar(int x) { x + 1 }", "foo");
 	}
 	
 	public void testStaticFieldStaticCall() throws Exception {

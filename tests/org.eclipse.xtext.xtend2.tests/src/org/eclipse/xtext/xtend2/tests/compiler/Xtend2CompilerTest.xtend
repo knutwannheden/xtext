@@ -30,6 +30,252 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 		''')
 	}
 	
+	def testTryCatch() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				def void doStuff(java.lang.reflect.Method m) {
+					try {
+						// do nothing
+					} catch (java.io.IOException e) {
+						throw e
+					} catch (Exception e) {
+						throw e
+					} finally {
+						// do nothing
+					}
+				}
+			}
+		''', '''
+			package foo;
+			
+			import java.io.IOException;
+			import java.lang.reflect.Method;
+			import org.eclipse.xtext.xbase.lib.Exceptions;
+			
+			@SuppressWarnings("all")
+			public class Bar {
+			  public void doStuff(final Method m) {
+			    try {
+			      try {
+			      } catch (final Throwable _t) {
+			        if (_t instanceof IOException) {
+			          final IOException e = (IOException)_t;
+			          throw e;
+			        } else if (_t instanceof Exception) {
+			          final Exception e_1 = (Exception)_t;
+			          throw e_1;
+			        } else {
+			          throw Exceptions.sneakyThrow(_t);
+			        }
+			      } finally {
+			      }
+			    } catch (Exception _e) {
+			      throw Exceptions.sneakyThrow(_e);
+			    }
+			  }
+			}
+		''')
+	}
+	
+//	see  
+//	def testClosureSneakyThrow() {
+//		assertCompilesTo('''
+//		import java.io.File
+//		import java.io.IOException
+//		import java.util.Collections
+//		
+//		class Foo  {     
+//		   def bar() {               
+//		       try {       
+//		           newArrayList("file1.ext").map(f| new File(f).canonicalFile) 
+//		       } catch(IOException o) {  
+//		           Collections::<File>emptyList
+//		       } 
+//		   }
+//		}
+//		''','''
+//		''')
+//	}
+	
+	
+	def testFieldInitialization_01() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				String s1 = null
+				protected String s2 = ''
+				public String s3 = s2
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  private String s1 = null;
+			  
+			  protected String s2 = "";
+			  
+			  public String s3 = this.s2;
+			}
+		''')
+	}
+	
+	def testFieldInitialization_02() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				String s0 = s1
+				static String s1 = null
+				protected static String s2 = ''
+				public static String s3 = s2
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  private String s0 = Bar.s1;
+			  
+			  private static String s1 = null;
+			  
+			  protected static String s2 = "";
+			  
+			  public static String s3 = Bar.s2;
+			}
+		''')
+	}
+	
+	def testFieldInitialization_03() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				String s = newArrayList.toString
+			}
+		''', '''
+			package foo;
+			
+			import java.util.ArrayList;
+			import org.eclipse.xtext.xbase.lib.CollectionLiterals;
+			import org.eclipse.xtext.xbase.lib.Functions.Function0;
+			
+			@SuppressWarnings("all")
+			public class Bar {
+			  private String s = new Function0<String>() {
+			    public String apply() {
+			      ArrayList _newArrayList = CollectionLiterals.<Object>newArrayList();
+			      String _string = _newArrayList.toString();
+			      return _string;
+			    }
+			  }.apply();
+			}
+		''')
+	}
+	
+	def testFieldInitialization_04() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				String s = toString + super.toString
+			}
+		''', '''
+			package foo;
+
+			import org.eclipse.xtext.xbase.lib.Functions.Function0;
+			import org.eclipse.xtext.xbase.lib.StringExtensions;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  private String s = new Function0<String>() {
+			    public String apply() {
+			      String _string = Bar.this.toString();
+			      String _string_1 = Bar.super.toString();
+			      String _operator_plus = StringExtensions.operator_plus(_string, _string_1);
+			      return _operator_plus;
+			    }
+			  }.apply();
+			}
+		''')
+	}
+	
+	def testConstructorDeclaration_01() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				new() {
+					super()
+				}
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  public Bar() {
+			    super();
+			  }
+			}
+		''')
+	}
+	
+	def testConstructorDeclaration_02() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				new() {
+					this(123)
+				}
+				new(int a) {
+					super()
+				}
+			}
+		''', '''
+			package foo;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  public Bar() {
+			    this(123);
+			  }
+			  
+			  public Bar(final int a) {
+			    super();
+			  }
+			}
+		''')
+	}
+	
+	def testConstructorDeclaration_03() { 
+		assertCompilesTo('''
+			package foo
+			class Bar {
+				new() {
+					this(123.toString)
+				}
+				new(String s) {}
+			}
+		''', '''
+			package foo;
+			
+			import org.eclipse.xtext.xbase.lib.Functions.Function0;
+
+			@SuppressWarnings("all")
+			public class Bar {
+			  public Bar() {
+			    this(new Function0<String>() {
+			      public String apply() {
+			        String _string = ((Integer)123).toString();
+			        return _string;
+			      }
+			    }.apply());
+			  }
+			  
+			  public Bar(final String s) {
+			  }
+			}
+		''')
+	}
+	
 	def testSneakyThrow() { 
 		assertCompilesTo('''
 			package foo
@@ -519,6 +765,75 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			  private static int foo;
 			}
 			''');
+	}
+	
+	def testNestedClosureWithIt() {
+		assertCompilesTo('''
+			class X {
+				def foo() {
+					val (String)=>String function = [ [String it | it].apply(it) ]
+					function.apply('foo')
+				}
+			}
+		''','''
+			import org.eclipse.xtext.xbase.lib.Functions.Function1;
+			
+			@SuppressWarnings("all")
+			public class X {
+			  public String foo() {
+			    String _xblockexpression = null;
+			    {
+			      final Function1<String,String> _function = new Function1<String,String>() {
+			          public String apply(final String it) {
+			            final Function1<String,String> _function = new Function1<String,String>() {
+			                public String apply(final String it) {
+			                  return it;
+			                }
+			              };
+			            String _apply = _function.apply(it);
+			            return _apply;
+			          }
+			        };
+			      final Function1<? super String,? extends String> function = _function;
+			      String _apply = function.apply("foo");
+			      _xblockexpression = (_apply);
+			    }
+			    return _xblockexpression;
+			  }
+			}
+		''')
+	}
+	
+	def testNestedClosureSuperCall() {
+		assertCompilesTo('''
+			class X {
+				def foo() {
+					[| [| super.toString ].apply ].apply
+				}
+			}
+		''','''
+			import org.eclipse.xtext.xbase.lib.Functions.Function0;
+			
+			@SuppressWarnings("all")
+			public class X {
+			  public String foo() {
+			    final Function0<String> _function = new Function0<String>() {
+			        public String apply() {
+			          final Function0<String> _function = new Function0<String>() {
+			              public String apply() {
+			                String _string = X.super.toString();
+			                return _string;
+			              }
+			            };
+			          String _apply = _function.apply();
+			          return _apply;
+			        }
+			      };
+			    String _apply = _function.apply();
+			    return _apply;
+			  }
+			}
+		''')
 	}
 
 	def assertCompilesTo(CharSequence input, CharSequence expected) {

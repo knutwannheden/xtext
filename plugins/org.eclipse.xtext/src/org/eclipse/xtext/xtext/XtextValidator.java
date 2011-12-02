@@ -421,6 +421,7 @@ public class XtextValidator extends AbstractDeclarativeValidator {
 							nsURI);
 					return;
 				}
+				return;
 			}
 		}
 		checkExternalPackage(metamodel, text);
@@ -890,6 +891,8 @@ public class XtextValidator extends AbstractDeclarativeValidator {
 
 				@Override
 				public Boolean caseRuleCall(RuleCall object) {
+					if (object.getRule() == null)
+						return assignedActionAllowed;
 					assignedActionAllowed = assignedActionAllowed || doSwitch(object.getRule())
 							&& !GrammarUtil.isOptionalCardinality(object);
 					return assignedActionAllowed;

@@ -10,6 +10,7 @@ import junit.framework.TestCase;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.xtext.diagnostics.Severity;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.resource.XtextResourceSet;
 import org.eclipse.xtext.util.CancelIndicator;
@@ -21,9 +22,13 @@ import org.eclipse.xtext.xtend2.Xtend2StandaloneSetup;
 import org.eclipse.xtext.xtend2.validation.ClasspathBasedChecks;
 import org.eclipse.xtext.xtend2.xtend2.Xtend2Factory;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
+import org.eclipse.xtext.xtend2.xtend2.XtendConstructor;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
 
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
@@ -94,8 +99,12 @@ public abstract class AbstractXtend2TestCase extends TestCase {
 		resource.load(new StringInputStream(string), null);
 		assertEquals(resource.getErrors().toString(), 0, resource.getErrors().size());
 		if (validate) {
-			List<Issue> issues = ((XtextResource) resource).getResourceServiceProvider().getResourceValidator()
-					.validate(resource, CheckMode.ALL, CancelIndicator.NullImpl);
+			List<Issue> issues = Lists.newArrayList(Iterables.filter(((XtextResource) resource).getResourceServiceProvider().getResourceValidator()
+					.validate(resource, CheckMode.ALL, CancelIndicator.NullImpl), new Predicate<Issue>() {
+						public boolean apply(Issue issue) {
+							return issue.getSeverity() == Severity.ERROR;
+						}
+					}));
 			assertTrue("Resource contained errors : " + issues.toString(), issues.isEmpty());
 		}
 		XtendFile file = (XtendFile) resource.getContents().get(0);
@@ -143,6 +152,11 @@ public abstract class AbstractXtend2TestCase extends TestCase {
 	protected XtendFunction function(String string) throws Exception {
 		XtendClass clazz = clazz("class Foo { " + string + "}");
 		return (XtendFunction) clazz.getMembers().get(0);
+	}
+	
+	protected XtendConstructor constructor(String string) throws Exception {
+		XtendClass clazz = clazz("class Foo { " + string + "}");
+		return (XtendConstructor) clazz.getMembers().get(0);
 	}
 
 }

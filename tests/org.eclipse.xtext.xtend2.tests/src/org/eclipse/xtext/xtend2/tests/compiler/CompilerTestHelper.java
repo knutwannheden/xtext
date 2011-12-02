@@ -59,6 +59,7 @@ public class CompilerTestHelper {
 		javaCompiler.addClassPathOfClass(Functions.class);
 		javaCompiler.addClassPathOfClass(StringConcatenation.class);
 		javaCompiler.addClassPathOfClass(Provider.class);
+		javaCompiler.addClassPathOfClass(javax.inject.Provider.class);
 		javaCompiler.addClassPathOfClass(Supplier.class);
 		javaCompiler.addClassPathOfClass(Notifier.class);
 		javaCompiler.addClassPathOfClass(EcorePackage.class);
@@ -90,8 +91,8 @@ public class CompilerTestHelper {
 			} catch (Exception e) {
 				throw new WrappedException(e);
 			}
-			apply(compile);
-			Assert.fail("expected exception " + class1.getCanonicalName() + ". Java code was " + compileToJavaCode(string));
+			Object result = apply(compile);
+			Assert.fail("expected exception " + class1.getCanonicalName() + " but was "+result+". Java code was " + compileToJavaCode(string));
 		} catch (InvocationTargetException e) {
 			final boolean isExpected = class1.isInstance(e.getTargetException());
 			if (!isExpected)

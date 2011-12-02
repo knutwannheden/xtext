@@ -51,6 +51,10 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 		assertEvaluatesTo(newArrayList("a","bb","ccc"), "newArrayList('bb','a','ccc').sortBy([length])");
 	}
 	
+	@Test public void testBug362725() throws Exception {
+		assertEvaluatesTo(Boolean.TRUE, "{ val =>int closure = null closure == null }");
+	}
+	
 	@Test public void testBuilderSyntax_01() throws Exception {
 		assertEvaluatesTo(newArrayList("a","bb","ccc"), "newArrayList('a','bb','ccc').sortBy [length]");
 	}
@@ -888,7 +892,7 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 	
 	@Test public void testSwitchExpression_11() throws Exception {
-		assertEvaluatesTo(3, "switch new java.util.ArrayList<String>() { java.util.Set<String> : 5 java.util.List<Object>: 3 }");
+		assertEvaluatesTo(3, "switch new java.util.ArrayList<String>() { java.util.Set<String> : 5 java.util.List<String>: 3 }");
 	}
 	
 	@Test public void testSwitchExpression_12() throws Exception {
@@ -897,6 +901,14 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	
 	@Test public void testSwitchExpression_13() throws Exception {
 		assertEvaluatesTo("bar", "switch 'foo' { case 'bar' : 'foo' default : return 'bar' }");
+	}
+	
+	@Test public void testSwitchExpression_14() throws Exception {
+		assertEvaluatesTo("bar", "{ val _string = 'foo' switch _string { String : 'bar' default : 'foo'} }");
+	}
+	
+	@Test public void testSwitchExpression_15() throws Exception {
+		assertEvaluatesTo("bar", "switch x : 'foo' { String : switch x { String : 'bar' default : 'other' } default : 'foo'}");
 	}
 	
 	@Test public void testCastedExpression_01() throws Exception {

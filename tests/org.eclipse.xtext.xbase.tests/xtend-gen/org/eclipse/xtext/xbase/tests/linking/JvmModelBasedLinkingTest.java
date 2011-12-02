@@ -50,8 +50,8 @@ public class JvmModelBasedLinkingTest extends AbstractXbaseTestCase {
                   public void apply(final JvmOperation it) {
                     {
                       EList<JvmFormalParameter> _parameters = it.getParameters();
-                      JvmTypeReference _stringType_1 = JvmModelBasedLinkingTest.this.stringType(expr);
-                      JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "x", _stringType_1);
+                      JvmTypeReference _stringType = JvmModelBasedLinkingTest.this.stringType(expr);
+                      JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "x", _stringType);
                       CollectionExtensions.<JvmFormalParameter>operator_add(_parameters, _parameter);
                       JvmModelBasedLinkingTest.this._jvmTypesBuilder.setBody(it, expr);
                     }
@@ -92,8 +92,8 @@ public class JvmModelBasedLinkingTest extends AbstractXbaseTestCase {
                     public void apply(final JvmOperation it) {
                       {
                         EList<JvmFormalParameter> _parameters = it.getParameters();
-                        JvmTypeReference _stringType_2 = JvmModelBasedLinkingTest.this.stringType(expr);
-                        JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "x", _stringType_2);
+                        JvmTypeReference _stringType = JvmModelBasedLinkingTest.this.stringType(expr);
+                        JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "x", _stringType);
                         CollectionExtensions.<JvmFormalParameter>operator_add(_parameters, _parameter);
                         JvmModelBasedLinkingTest.this._jvmTypesBuilder.setBody(it, expr);
                       }
@@ -137,8 +137,8 @@ public class JvmModelBasedLinkingTest extends AbstractXbaseTestCase {
                     public void apply(final JvmOperation it) {
                       {
                         EList<JvmFormalParameter> _parameters = it.getParameters();
-                        JvmTypeReference _stringType_2 = JvmModelBasedLinkingTest.this.stringType(expr);
-                        JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "y", _stringType_2);
+                        JvmTypeReference _stringType = JvmModelBasedLinkingTest.this.stringType(expr);
+                        JvmFormalParameter _parameter = JvmModelBasedLinkingTest.this._jvmTypesBuilder.toParameter(expr, "y", _stringType);
                         CollectionExtensions.<JvmFormalParameter>operator_add(_parameters, _parameter);
                         JvmModelBasedLinkingTest.this._jvmTypesBuilder.setBody(it, expr);
                       }

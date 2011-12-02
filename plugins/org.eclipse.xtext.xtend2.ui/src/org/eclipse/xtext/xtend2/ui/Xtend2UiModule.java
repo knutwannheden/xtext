@@ -6,11 +6,15 @@ package org.eclipse.xtext.xtend2.ui;
 import org.eclipse.jface.text.rules.ITokenScanner;
 import org.eclipse.jface.text.source.DefaultCharacterPairMatcher;
 import org.eclipse.jface.text.source.ICharacterPairMatcher;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2;
-import org.eclipse.xtext.builder.JDTAwareEclipseResourceFileSystemAccess2;
+import org.eclipse.xtext.builder.IXtextBuilderParticipant;
+import org.eclipse.xtext.builder.navigation.IDerivedMemberAwareEditorOpener;
 import org.eclipse.xtext.common.types.xtext.ui.ITypesProposalProvider;
+import org.eclipse.xtext.ui.LanguageSpecific;
+import org.eclipse.xtext.ui.editor.IURIEditorOpener;
 import org.eclipse.xtext.ui.editor.IXtextEditorCallback;
 import org.eclipse.xtext.ui.editor.XtextEditor;
 import org.eclipse.xtext.ui.editor.XtextSourceViewer;
@@ -26,6 +30,7 @@ import org.eclipse.xtext.ui.editor.hyperlinking.IHyperlinkHelper;
 import org.eclipse.xtext.ui.editor.model.ITokenTypeToPartitionTypeMapper;
 import org.eclipse.xtext.ui.editor.occurrences.IOccurrenceComputer;
 import org.eclipse.xtext.ui.editor.outline.impl.OutlineFilterAndSorter.IComparator;
+import org.eclipse.xtext.ui.editor.outline.quickoutline.QuickOutlineFilterAndSorter;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.AbstractAntlrTokenToAttributeIdMapper;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingConfiguration;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.ISemanticHighlightingCalculator;
@@ -34,8 +39,11 @@ import org.eclipse.xtext.ui.editor.toggleComments.ToggleSLCommentAction;
 import org.eclipse.xtext.ui.refactoring.IRenameStrategy;
 import org.eclipse.xtext.ui.refactoring.impl.RenameElementProcessor;
 import org.eclipse.xtext.ui.resource.IResourceUIServiceProvider;
+import org.eclipse.xtext.xbase.ui.jvmmodel.navigation.DerivedMemberAwareEditorOpener;
 import org.eclipse.xtext.xtend2.ui.autoedit.AutoEditStrategyProvider;
 import org.eclipse.xtext.xtend2.ui.autoedit.TokenTypeToPartitionMapper;
+import org.eclipse.xtext.xtend2.ui.builder.SourceRelativeFileSystemAccess;
+import org.eclipse.xtext.xtend2.ui.builder.XtendBuilderParticipant;
 import org.eclipse.xtext.xtend2.ui.contentassist.ImportingTypesProposalProvider;
 import org.eclipse.xtext.xtend2.ui.editor.InitiallyCollapsableAwareFoldingStructureProvider;
 import org.eclipse.xtext.xtend2.ui.editor.OccurrenceComputer;
@@ -54,6 +62,7 @@ import org.eclipse.xtext.xtend2.ui.hover.XtendHoverProvider;
 import org.eclipse.xtext.xtend2.ui.hyperlinking.XtendHyperlinkHelper;
 import org.eclipse.xtext.xtend2.ui.outline.Xtend2OutlineNodeComparator;
 import org.eclipse.xtext.xtend2.ui.outline.Xtend2OutlinePage;
+import org.eclipse.xtext.xtend2.ui.outline.Xtend2QuickOutlineFilterAndSorter;
 import org.eclipse.xtext.xtend2.ui.refactoring.Xtend2RenameElementProcessor;
 import org.eclipse.xtext.xtend2.ui.refactoring.Xtend2RenameStrategy;
 
@@ -76,6 +85,8 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 		// matches ID of org.eclipse.ui.contexts extension registered in plugin.xml
 		binder.bindConstant().annotatedWith(Names.named(XtextEditor.KEY_BINDING_SCOPE)).to("org.eclipse.xtext.xtend2.ui.XtendEditorScope");
 	}
+	
+	
 
 	@Override
 	public Class<? extends IHighlightingConfiguration> bindIHighlightingConfiguration() {
@@ -120,6 +131,10 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 		return Xtend2OutlineNodeComparator.class;
 	}
 
+	public Class<? extends QuickOutlineFilterAndSorter> bindQuickOutlineFilterAndSorter() {
+		return Xtend2QuickOutlineFilterAndSorter.class;
+	}
+
 	public Class<? extends IFoldingRegionProvider> bindIFoldingRegionProvider() {
 		return Xtend2FoldingRegionProvider.class;
 	}
@@ -145,7 +160,12 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 	}
 	
 	public Class<? extends EclipseResourceFileSystemAccess2> bindEclipseResourceFileSystemAccess2() {
-		return JDTAwareEclipseResourceFileSystemAccess2.class;
+		return SourceRelativeFileSystemAccess.class;
+	}
+	
+	@Override
+	public Class<? extends IXtextBuilderParticipant> bindIXtextBuilderParticipant() {
+		return XtendBuilderParticipant.class;
 	}
 	
 	@Override
@@ -197,6 +217,14 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 	public Class<? extends IRenameStrategy> bindIRenameStrategy() {
 		return Xtend2RenameStrategy.class;
 	}
-	
+
+	@Override
+	public void configureLanguageSpecificURIEditorOpener(Binder binder) {
+		if (PlatformUI.isWorkbenchRunning()) {
+			binder.bind(IURIEditorOpener.class).annotatedWith(LanguageSpecific.class)
+					.to(DerivedMemberAwareEditorOpener.class);
+			binder.bind(IDerivedMemberAwareEditorOpener.class).to(DerivedMemberAwareEditorOpener.class);
+		}
+	}
 	
 }

@@ -4,8 +4,10 @@
 package org.eclipse.xtext.xtend2.ui.labeling;
 
 import org.eclipse.emf.edit.ui.provider.AdapterFactoryLabelProvider;
+import org.eclipse.jface.viewers.StyledString;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.xtext.common.types.JvmAnyTypeReference;
+import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
@@ -16,6 +18,7 @@ import org.eclipse.xtext.xbase.typing.ITypeProvider;
 import org.eclipse.xtext.xbase.validation.UIStrings;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
+import org.eclipse.xtext.xtend2.xtend2.XtendConstructor;
 import org.eclipse.xtext.xtend2.xtend2.XtendField;
 import org.eclipse.xtext.xtend2.xtend2.XtendFile;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
@@ -62,16 +65,29 @@ public class Xtend2LabelProvider extends DefaultEObjectLabelProvider {
 
 	public Image image(XtendFunction element) {
 		JvmOperation inferredOperation = associations.getDirectlyInferredOperation(element);
-		return images.forFunction(inferredOperation.getVisibility());
+		return images.forFunction(inferredOperation.getVisibility(), inferredOperation.isStatic());
 	}
 
 	public Image image(JvmOperation element) {
-		return images.forDispatcherFunction(element.getVisibility());
+		return images.forDispatcherFunction(element.getVisibility(), element.isStatic());
 	}
 	
+	public Image image(XtendConstructor element) {
+		JvmConstructor inferredConstructor = associations.getInferredConstructor(element);
+		return images.forConstructor(inferredConstructor.getVisibility());
+	}
+
+	public Image image(JvmConstructor element) {
+		return images.forConstructor(element.getVisibility());
+	}
+
 	public Image image(XtendField element) {
 		JvmField inferredField = associations.getJvmField(element);
-		return images.forField(inferredField.getVisibility(), element.isExtension());
+		return images.forField(inferredField.getVisibility(), inferredField.isStatic(), element.isExtension());
+	}
+
+	public Image image(JvmField element) {
+		return images.forField(element.getVisibility(), element.isStatic(), false);
 	}
 
 	public String text(XtendFile element) {
@@ -86,8 +102,20 @@ public class Xtend2LabelProvider extends DefaultEObjectLabelProvider {
 		return element.getName() + ((element.getTypeParameters().isEmpty()) ? "" : uiStrings.typeParameters(element.getTypeParameters()));
 	}
 
-	public String text(XtendFunction element) {
+	public String text(XtendConstructor element) {
+		return "new" + uiStrings.parameters(associations.getInferredConstructor(element));
+	}
+	
+	public String text(JvmConstructor element) {
+		return "new" + uiStrings.parameters(element);
+	}
+	
+	public Object text(XtendFunction element) {
 		return signature(element.getName(), associations.getDirectlyInferredOperation(element));
+	}
+	
+	public Object text(JvmOperation element) {
+		return signature(element.getSimpleName(), element);
 	}
 	
 	public String text(XtendField element) {
@@ -96,11 +124,11 @@ public class Xtend2LabelProvider extends DefaultEObjectLabelProvider {
 		return element.getName() +" : " +element.getType().getSimpleName();
 	}
 
-	public String text(JvmOperation element) {
-		return signature(element.getSimpleName(), element);
+	public String text(JvmField element) {
+		return element.getSimpleName() +" : " + element.getType().getSimpleName();
 	}
-
-	protected String signature(String simpleName, JvmIdentifiableElement element) {
+	
+	protected StyledString signature(String simpleName, JvmIdentifiableElement element) {
 		JvmTypeReference returnType = typeProvider.getTypeForIdentifiable(element);
 		String returnTypeString = "void";
 		if (returnType != null) {
@@ -110,7 +138,7 @@ public class Xtend2LabelProvider extends DefaultEObjectLabelProvider {
 				returnTypeString = returnType.getSimpleName();
 			}
 		}
-		return simpleName + uiStrings.parameters(element) + " : " + returnTypeString;
+		return new StyledString(simpleName + uiStrings.parameters(element)).append(new StyledString(" : " + returnTypeString,StyledString.DECORATIONS_STYLER));
 	}
 
 }

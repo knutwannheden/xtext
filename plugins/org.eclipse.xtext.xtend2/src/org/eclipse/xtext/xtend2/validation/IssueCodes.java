@@ -23,7 +23,10 @@ public final class IssueCodes {
 	public static final String DISPATCH_FUNC_WITHOUT_PARAMS = ISSUE_CODE_PREFIX + "case_function_without_params";
 	public static final String DISPATCH_FUNC_WITH_TYPE_PARAMS = ISSUE_CODE_PREFIX + "case_function_with_type_params";
 	public static final String DISPATCH_FUNC_NAME_STARTS_WITH_UNDERSCORE = ISSUE_CODE_PREFIX + "case_func_name_starts_with_underscore";
-	public static final String DISPATCH_FUNCTIONS_WITH_DIFFERENT_VISIBILITY = "dispatch_fuctions_with_different_visibility";
+	public static final String DISPATCH_FUNCTIONS_WITH_DIFFERENT_VISIBILITY = "dispatch_functions_with_different_visibility";
+	public static final String DISPATCH_FUNCTIONS_MIXED_STATIC_AND_NON_STATIC = "dispatch_functions_mixed_static_and_non_static";
+	public static final String DISPATCH_FUNCTIONS_STATIC_EXPECTED = "dispatch_functions_static_expected";
+	public static final String DISPATCH_FUNCTIONS_NON_STATIC_EXPECTED = "dispatch_functions_non_static_expected";
 	public static final String SINGLE_DISPATCH_FUNCTION = ISSUE_CODE_PREFIX + "single_case_function";
 	public static final String WRONG_PACKAGE = ISSUE_CODE_PREFIX + "wrong_package";
 	public static final String WRONG_FILE = ISSUE_CODE_PREFIX + "wrong_file";
@@ -50,6 +53,14 @@ public final class IssueCodes {
 	public static final String IMPORT_WILDCARD_DEPRECATED = ISSUE_CODE_PREFIX + "import_wildcard_deprecated";
 	public static final String IMPORT_DUPLICATE = ISSUE_CODE_PREFIX + "import_duplicate";
 	public static final String IMPORT_UNUSED = ISSUE_CODE_PREFIX + "import_unsued";
+	public static final String FIELD_LOCALLY_NEVER_READ = "field_locally_never_read";
+	public static final String FUNCTION_LOCALLY_NEVER_USED = "function_locally_never_used";
+	public static final String EXCEPTION_NOT_THROWABLE = "exception_not_throwable";
+	public static final String EXCEPTION_DECLARED_TWICE = "exception_declared_twice";
 	
-
+	public static final String MISSING_CONSTRUCTOR = ISSUE_CODE_PREFIX + "missing_constructor";
+	public static final String MUST_INVOKE_SUPER_CONSTRUCTOR = ISSUE_CODE_PREFIX + "must_invoke_super_constructor";
+	
+	public static final String INVALID_USE_OF_STATIC = ISSUE_CODE_PREFIX + "invalid_use_of_static";
+	public static final String INVALID_USE_OF_TYPEPARAMS = ISSUE_CODE_PREFIX + "invalid_use_of_typeParams";
 }

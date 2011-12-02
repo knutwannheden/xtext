@@ -15,21 +15,28 @@ import org.eclipse.xtext.xtend2.xtend2.Xtend2Package;
 public class Xtend2OutlineNodeComparator extends SortOutlineContribution.DefaultComparator {
 	@Override
 	public int getCategory(IOutlineNode node) {
-		if(node instanceof EStructuralFeatureNode) {
+		if (node instanceof EStructuralFeatureNode) {
 			EStructuralFeature feature = ((EStructuralFeatureNode) node).getEStructuralFeature();
-			if(feature == Xtend2Package.Literals.XTEND_FILE__PACKAGE)
+			if (feature == Xtend2Package.Literals.XTEND_FILE__PACKAGE)
 				return 0;
-			else 
+			else
 				return 10;
 		}
+		boolean isStatic = node instanceof XtendFeatureNode && ((XtendFeatureNode) node).isStatic();
 		if (node instanceof EObjectNode) {
 			EClass eClass = ((EObjectNode) node).getEClass();
-			if(eClass == Xtend2Package.Literals.XTEND_CLASS)
+			if (eClass == Xtend2Package.Literals.XTEND_CLASS)
 				return 20;
-			else if(eClass == TypesPackage.Literals.JVM_OPERATION)
-				return 30;
-			else if(eClass == Xtend2Package.Literals.XTEND_FUNCTION)
-				return 40;
+			if (eClass == Xtend2Package.Literals.XTEND_FIELD || eClass == TypesPackage.Literals.JVM_FIELD) 
+				return isStatic ? 30 : 50;
+			if (eClass == Xtend2Package.Literals.XTEND_CONSTRUCTOR || eClass == TypesPackage.Literals.JVM_CONSTRUCTOR)
+				return 60;
+			if (eClass == Xtend2Package.Literals.XTEND_FUNCTION || eClass == TypesPackage.Literals.JVM_OPERATION) {
+				if(isStatic) 
+					return 40; 
+				else 
+					return (node instanceof XtendFeatureNode && ((XtendFeatureNode) node).isDispatch()) ? 70 : 80;
+			}
 		}
 		return Integer.MAX_VALUE;
 	}

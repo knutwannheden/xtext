@@ -20,6 +20,7 @@ import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.xbase.jvmmodel.IJvmModelAssociations;
 import org.eclipse.xtext.xbase.jvmmodel.JvmModelAssociator;
 import org.eclipse.xtext.xtend2.xtend2.XtendClass;
+import org.eclipse.xtext.xtend2.xtend2.XtendConstructor;
 import org.eclipse.xtext.xtend2.xtend2.XtendField;
 import org.eclipse.xtext.xtend2.xtend2.XtendFunction;
 
@@ -34,6 +35,8 @@ public interface IXtend2JvmAssociations extends IJvmModelAssociations {
 	JvmGenericType getInferredType(XtendClass xtendClass);
 	
 	JvmConstructor getInferredConstructor(XtendClass xtendClass);
+
+	JvmConstructor getInferredConstructor(XtendConstructor xtendConstructor);
 	
 	JvmOperation getDirectlyInferredOperation(XtendFunction xtendFunction);
 	
@@ -44,6 +47,8 @@ public interface IXtend2JvmAssociations extends IJvmModelAssociations {
 	XtendClass getXtendClass(JvmGenericType jvmType);
 	
 	XtendFunction getXtendFunction(JvmOperation jvmOperation);
+
+	XtendConstructor getXtendConstructor(JvmConstructor jvmConstructor);
 	
 	static class Impl extends JvmModelAssociator implements IXtend2JvmAssociations {
 
@@ -54,6 +59,11 @@ public interface IXtend2JvmAssociations extends IJvmModelAssociations {
 
 		public JvmConstructor getInferredConstructor(XtendClass xtendClass) {
 			final JvmConstructor firstOrNull = getFirstOrNull(getJvmElements(xtendClass), JvmConstructor.class);
+			return firstOrNull;
+		}
+
+		public JvmConstructor getInferredConstructor(XtendConstructor xtendConstructor) {
+			final JvmConstructor firstOrNull = getFirstOrNull(getJvmElements(xtendConstructor), JvmConstructor.class);
 			return firstOrNull;
 		}
 
@@ -92,6 +102,11 @@ public interface IXtend2JvmAssociations extends IJvmModelAssociations {
 
 		public XtendFunction getXtendFunction(JvmOperation jvmOperation) {
 			return (XtendFunction) getPrimarySourceElement(jvmOperation);
+		}
+
+		public XtendConstructor getXtendConstructor(JvmConstructor jvmConstructor) {
+			EObject primarySourceElement = getPrimarySourceElement(jvmConstructor);
+			return primarySourceElement instanceof XtendConstructor ? (XtendConstructor) primarySourceElement : null;
 		}
 
 		protected <T> T getFirstOrNull(Iterable<EObject> elements, Class<T> type) {

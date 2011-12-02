@@ -18,7 +18,6 @@ import org.eclipse.xtext.RuleCall;
 import org.eclipse.xtext.generator.grammarAccess.GrammarAccess;
 import org.eclipse.xtext.generator.serializer.GeneratedFile;
 import org.eclipse.xtext.generator.serializer.JavaFile;
-import org.eclipse.xtext.generator.serializer.SyntacticSequencer;
 import org.eclipse.xtext.generator.serializer.SyntacticSequencerUtil;
 import org.eclipse.xtext.serializer.analysis.GrammarAlias.AbstractElementAlias;
 import org.eclipse.xtext.util.Pair;
@@ -39,9 +38,6 @@ public class AbstractSyntacticSequencer extends GeneratedFile {
   
   @Inject
   private GrammarAccess grammarAccess;
-  
-  @Inject
-  private SyntacticSequencer sequencer;
   
   @Inject
   private SyntacticSequencerUtil util;
@@ -233,8 +229,8 @@ public class AbstractSyntacticSequencer extends GeneratedFile {
                   return ((Boolean)_operator_and);
                 }
               };
-            Iterable<RuleCall> _filter_1 = IterableExtensions.<RuleCall>filter(_containedRuleCalls, _function);
-            return _filter_1;
+            Iterable<RuleCall> _filter = IterableExtensions.<RuleCall>filter(_containedRuleCalls, _function);
+            return _filter;
           }
         };
       Iterable<Iterable<RuleCall>> _map = IterableExtensions.<AbstractRule, Iterable<RuleCall>>map(rules, _function_1);
@@ -277,7 +273,6 @@ public class AbstractSyntacticSequencer extends GeneratedFile {
   
   public String defaultValue(final AbstractElement ele, final Set<AbstractElement> visited) {
     String _switchResult = null;
-    final AbstractElement ele_1 = ele;
     boolean matched = false;
     if (!matched) {
       boolean _add = visited.add(ele);
@@ -295,47 +290,47 @@ public class AbstractSyntacticSequencer extends GeneratedFile {
       }
     }
     if (!matched) {
-      if (ele_1 instanceof Alternatives) {
-        final Alternatives ele_2 = (Alternatives) ele_1;
+      if (ele instanceof Alternatives) {
+        final Alternatives _alternatives = (Alternatives)ele;
         matched=true;
-        EList<AbstractElement> _elements = ele_2.getElements();
+        EList<AbstractElement> _elements = _alternatives.getElements();
         AbstractElement _head = IterableExtensions.<AbstractElement>head(_elements);
         String _defaultValue = this.defaultValue(_head, visited);
         _switchResult = _defaultValue;
       }
     }
     if (!matched) {
-      if (ele_1 instanceof Group) {
-        final Group ele_3 = (Group) ele_1;
+      if (ele instanceof Group) {
+        final Group _group = (Group)ele;
         matched=true;
-        EList<AbstractElement> _elements_1 = ele_3.getElements();
+        EList<AbstractElement> _elements = _group.getElements();
         final Function1<AbstractElement,String> _function = new Function1<AbstractElement,String>() {
             public String apply(final AbstractElement e) {
-              String _defaultValue_1 = AbstractSyntacticSequencer.this.defaultValue(e, visited);
-              return _defaultValue_1;
+              String _defaultValue = AbstractSyntacticSequencer.this.defaultValue(e, visited);
+              return _defaultValue;
             }
           };
-        List<String> _map = ListExtensions.<AbstractElement, String>map(_elements_1, _function);
+        List<String> _map = ListExtensions.<AbstractElement, String>map(_elements, _function);
         String _join = IterableExtensions.join(_map);
         _switchResult = _join;
       }
     }
     if (!matched) {
-      if (ele_1 instanceof Keyword) {
-        final Keyword ele_4 = (Keyword) ele_1;
+      if (ele instanceof Keyword) {
+        final Keyword _keyword = (Keyword)ele;
         matched=true;
-        String _value = ele_4.getValue();
+        String _value = _keyword.getValue();
         _switchResult = _value;
       }
     }
     if (!matched) {
-      if (ele_1 instanceof RuleCall) {
-        final RuleCall ele_5 = (RuleCall) ele_1;
+      if (ele instanceof RuleCall) {
+        final RuleCall _ruleCall = (RuleCall)ele;
         matched=true;
-        AbstractRule _rule = ele_5.getRule();
+        AbstractRule _rule = _ruleCall.getRule();
         AbstractElement _alternatives = _rule.getAlternatives();
-        String _defaultValue_1 = this.defaultValue(_alternatives, visited);
-        _switchResult = _defaultValue_1;
+        String _defaultValue = this.defaultValue(_alternatives, visited);
+        _switchResult = _defaultValue;
       }
     }
     if (!matched) {

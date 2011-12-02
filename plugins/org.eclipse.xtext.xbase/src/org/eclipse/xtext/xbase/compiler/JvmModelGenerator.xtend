@@ -31,11 +31,16 @@ import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider
 import org.eclipse.xtext.xbase.typing.ITypeProvider
 import org.eclipse.xtend2.lib.StringConcatenation
 
+/**
+ * A generator implementation that processes the 
+ * derived {@link org.eclipse.xtext.xbase.jvmmodel.IJvmModelInferrer JVM model}
+ * and produces the respective java code.
+ */
 class JvmModelGenerator implements IGenerator {
 	
 	@Inject extension ILogicalContainerProvider
 	@Inject XbaseCompiler compiler
-	@Inject extension ITypeProvider 
+	@Inject extension ITypeProvider
 	@Inject extension TypeReferences 
 	@Inject TypeReferenceSerializer typeRefSerializer
 	
@@ -139,10 +144,10 @@ class JvmModelGenerator implements IGenerator {
 	'''
 	
 	def dispatch generateMember(JvmConstructor it, ImportManager importManager) {
-		if(!it.parameters.empty || it.associatedExpression != null) '''
+		if(!parameters.empty || associatedExpression != null) '''
 			«it.generateJavaDoc»
 			«IF !annotations.empty»«it.annotations.generateAnnotations(importManager)»«ENDIF»
-			«it.generateModifier» «simpleName»(«it.parameters.map( p | p.generateParameter(importManager)).join(", ")»)«generateThrowsClause(it, importManager)» {
+			«it.generateModifier»«simpleName»(«it.parameters.map( p | p.generateParameter(importManager)).join(", ")»)«generateThrowsClause(it, importManager)» {
 			  «it.generateBody(importManager)»
 			}
 		''' else null
@@ -152,8 +157,16 @@ class JvmModelGenerator implements IGenerator {
 		val adapter = it.eAdapters.filter(typeof(CompilationStrategyAdapter)).head
 		if (adapter != null) 
 			" = " + adapter.compilationStrategy.apply(importManager)			
-		else 
-			""
+		else {
+			val expression = associatedExpression
+			if (expression != null) {
+				val appendable = createAppendable(importManager)
+				compiler.compileAsJavaExpression(expression, appendable, type)
+				return " = " + appendable.toString
+			} else {
+				""
+			}
+		}
 	}
 	
 	def generateTypeParameterDeclaration(List<JvmTypeParameter> typeParameters, ImportManager importManager) {
@@ -187,7 +200,8 @@ class JvmModelGenerator implements IGenerator {
 				for(p: op.parameters) 
 					appendable.declareVariable(p, p.simpleName)
 				val returnType = switch(op) { 
-					JvmOperation: op.returnType 
+					JvmOperation: op.returnType
+					JvmConstructor: Void::TYPE.getTypeForName(op) 
 					default: null
 				};
 				compiler.compile(expression, appendable, returnType, op.exceptions.toSet)

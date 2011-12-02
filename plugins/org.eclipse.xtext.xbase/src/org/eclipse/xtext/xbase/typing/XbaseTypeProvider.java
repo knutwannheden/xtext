@@ -75,7 +75,6 @@ import org.eclipse.xtext.xbase.XTypeLiteral;
 import org.eclipse.xtext.xbase.XVariableDeclaration;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.impl.FeatureCallToJavaMapping;
-import org.eclipse.xtext.xbase.jvmmodel.ILogicalContainerProvider;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
@@ -101,10 +100,7 @@ public class XbaseTypeProvider extends AbstractTypeProvider implements ITypeArgu
 
 	@Inject
 	private SuperTypeCollector collector;
-	
-	@Inject
-	private ILogicalContainerProvider logicalContainerProvider;
-	
+
 	@Override
 	protected JvmTypeReference _expectedType(EObject obj, EReference reference, int index, boolean rawType) {
 		Object ele = obj.eGet(reference);
@@ -112,7 +108,7 @@ public class XbaseTypeProvider extends AbstractTypeProvider implements ITypeArgu
 			ele = ((List<?>)ele).get(index);
 		}
 		if (ele instanceof XExpression) {
-			JvmIdentifiableElement element = logicalContainerProvider.getLogicalContainer((XExpression) ele);
+			JvmIdentifiableElement element = getLogicalContainerProvider().getLogicalContainer((XExpression) ele);
 			if (element instanceof JvmOperation) {
 				return ((JvmOperation) element).getReturnType();
 			}
@@ -148,7 +144,9 @@ public class XbaseTypeProvider extends AbstractTypeProvider implements ITypeArgu
 	
 	@Override
 	protected JvmTypeReference type(XExpression expression, JvmTypeReference rawExpectation, boolean rawType) {
-		if (expression instanceof XAbstractFeatureCall) {
+		if (expression instanceof XFeatureCall) {
+			return _type((XFeatureCall)expression, rawExpectation, rawType);
+		} else if (expression instanceof XAbstractFeatureCall) {
 			return _type((XAbstractFeatureCall)expression, rawExpectation, rawType);
 		} else if (expression instanceof XAbstractWhileExpression) {
 			return _type((XAbstractWhileExpression)expression, rawExpectation, rawType);
@@ -971,19 +969,57 @@ public class XbaseTypeProvider extends AbstractTypeProvider implements ITypeArgu
 	protected JvmTypeReference _type(XTryCatchFinallyExpression object, JvmTypeReference rawExpectation, boolean rawType) {
 		List<JvmTypeReference> returnTypes = newArrayList();
 		final JvmTypeReference getType = getType(object.getExpression(), rawType);
-		returnTypes.add(getType);
+		if(getType != null) 
+			returnTypes.add(getType);
 		for (XCatchClause catchClause : object.getCatchClauses()) {
 			JvmTypeReference type = getType(catchClause.getExpression(), rawType);
-			returnTypes.add(type);
+			if(type != null)
+				returnTypes.add(type);
 		}
 		JvmTypeReference commonSuperType = getCommonType(returnTypes);
 		return commonSuperType;
 	}
 
-	protected JvmTypeReference _type(final XAbstractFeatureCall featureCall, JvmTypeReference rawExpectation, boolean rawType) {
+	protected JvmTypeReference _type(final XFeatureCall featureCall, JvmTypeReference rawExpectation, boolean rawType) {
+		XCasePart typeGuardedXCasePartContainer = findTypeGuardedXCasePartContainer(featureCall, featureCall);
+		JvmTypeReference plainType = _type((XAbstractFeatureCall) featureCall, rawExpectation, rawType);
+  		if (plainType != null && typeGuardedXCasePartContainer != null) {
+			JvmTypeReference typeGuard = typeGuardedXCasePartContainer.getTypeGuard();
+			if(getTypeConformanceComputer().isConformant(plainType, typeGuard))
+				return typeGuard;
+			else if (getTypeConformanceComputer().isConformant(typeGuard, plainType))
+				return plainType;
+			else
+				return getTypeReferences().createMultiTypeReference(typeGuardedXCasePartContainer, typeGuard, plainType);
+		}
+		return plainType;
+	}
+
+	protected XCasePart findTypeGuardedXCasePartContainer(final EObject context, XFeatureCall call) {
+		if (context == null)
+			return null;
+		XCasePart containerCase = EcoreUtil2.getContainerOfType(context, XCasePart.class);
+		if (containerCase == null)
+			return null;
+		if (containerCase.getTypeGuard() != null) {
+			XSwitchExpression containerSwitch = (XSwitchExpression) containerCase.eContainer();
+			XExpression switchExpression = containerSwitch.getSwitch();
+			if (call.getFeature() == containerSwitch
+					|| (switchExpression instanceof XFeatureCall && ((XFeatureCall) switchExpression).getFeature() == call
+							.getFeature()))
+				return containerCase;
+		}
+		return findTypeGuardedXCasePartContainer(containerCase.eContainer(), call);
+	}
+
+	protected JvmTypeReference _type(final XAbstractFeatureCall featureCall, JvmTypeReference rawExpectation,
+			boolean rawType) {
 		final JvmIdentifiableElement feature = getFeature(featureCall);
 		if (feature == null || feature.eIsProxy())
 			return null;
+		if (feature instanceof JvmConstructor) {
+			return getPrimitiveVoid(featureCall);
+		}
 		final JvmTypeReference featureType = getTypeForIdentifiable(feature, rawType);
 		final JvmTypeParameterDeclarator nearestTypeParameterDeclarator = getNearestTypeParameterDeclarator(featureCall);
 		if (isResolved(featureType, nearestTypeParameterDeclarator, rawType)) {
@@ -1284,9 +1320,15 @@ public class XbaseTypeProvider extends AbstractTypeProvider implements ITypeArgu
 			}
 			return null;
 		}
-		JvmIdentifiableElement logicalContainer = logicalContainerProvider.getNearestLogicalContainer(expr);
+		JvmIdentifiableElement logicalContainer = getLogicalContainerProvider().getNearestLogicalContainer(expr);
 		if (logicalContainer instanceof JvmOperation) {
 			return ((JvmOperation) logicalContainer).getReturnType();
+		}
+		if (logicalContainer instanceof JvmConstructor) {
+			return getPrimitiveVoid(expr);
+		}
+		if (logicalContainer instanceof JvmField) {
+			return ((JvmField) logicalContainer).getType();
 		}
 		return null;
 	}

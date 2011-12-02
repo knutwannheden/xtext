@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.eclipse.xtext.xtend2.tests.compiler;
 
+import java.io.IOException;
+
 import org.eclipse.xtext.xbase.junit.evaluation.AbstractXbaseEvaluationTest;
 import org.eclipse.xtext.xtend2.tests.AbstractXtend2TestCase;
 
@@ -26,6 +28,23 @@ public class XbaseIntegrationTest extends AbstractXbaseEvaluationTest {
 		AbstractXtend2TestCase.getInjector().injectMembers(this);
 		testHelper.setUp();
 	}
+	
+	public void testClosure_19() throws Exception {
+		assertEvaluatesWithException(IOException.class, 
+				"{val ()=>void proc = [| throw new java.io.IOException()] proc.apply return null}");
+	}
+	
+	public void testClosure_20() throws Exception {
+		assertEvaluatesWithException(IOException.class, 
+				"{ newArrayList('foo').forEach( s | throw new java.io.IOException() ) return null }");
+	}
+	
+	public void testTryCatch_06() throws Exception {
+		assertEvaluatesTo("", 
+				"try new String() " +
+				"  catch(java.io.IOException e) 'foo'" +
+				"  catch(Exception e) 'bar'");
+	}
 
 	@Override
 	protected void assertEvaluatesTo(Object object, String string) {
@@ -37,4 +56,7 @@ public class XbaseIntegrationTest extends AbstractXbaseEvaluationTest {
 		testHelper.assertEvaluatesWithException(class1, string);
 	}
 
+	public void testIteratorExtensions() throws Exception {
+		assertEvaluatesTo("Foo", "newArrayList('Foo').iterator.toIterable.iterator.next");
+	}
 }
