@@ -37,7 +37,6 @@ import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -113,7 +112,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		CallableStatement initCall = connection.prepareCall("RUNSCRIPT FROM '"
 				+ DBBasedBuilderState.class.getClassLoader().getResource(SCHEMA).toString() + "'");
 		initCall.execute();
-		packageRegistry.registerEClasses(ImmutableList.of(EcorePackage.Literals.EOBJECT));
 		connection.commit();
 		reloadCaches();
 	}
