@@ -10,7 +10,6 @@ package org.eclipse.xtext.builder.builderState.db;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
@@ -25,7 +24,6 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 
 /**
@@ -46,22 +44,19 @@ public class DBEPackageRegistry {
 		this.conn = conn;
 	}
 
-	public void registerEPackages(final Set<EPackage> ePackages) throws SQLException {
+	public void registerEClasses(final Iterable<EClass> eClasses) throws SQLException {
 		Set<EClass> allMissingEClasses = Sets.newHashSet();
-		for (EPackage ePackage : ePackages) {
-			for (EClass eClass : Iterables.filter(ePackage.getEClassifiers(), EClass.class)) {
+		for (EClass eClass : eClasses) {
+			if (!isRegistered(eClass))
 				allMissingEClasses.add(eClass);
-				for (EClass superEClass : eClass.getEAllSuperTypes()) {
+			for (EClass superEClass : eClass.getEAllSuperTypes()) {
+				if (!isRegistered(superEClass))
 					allMissingEClasses.add(superEClass);
-				}
 			}
 		}
-		for (Iterator<EClass> it = allMissingEClasses.iterator(); it.hasNext();) {
-			EClass eClass = it.next();
-			if (!UNKNOWN_ECLASS.equals(getEClassId(eClass))) {
-				it.remove();
-			}
-		}
+
+		if (allMissingEClasses.isEmpty())
+			return;
 
 		PreparedStatement eclassStmt = null;
 		PreparedStatement eclassSupertypesStmt = null;
@@ -105,6 +100,10 @@ public class DBEPackageRegistry {
 			conn.close(eclassSupertypesStmt);
 			conn.close(erefStmt);
 		}
+	}
+
+	public boolean isRegistered(EClass eClass) throws SQLException {
+		return !UNKNOWN_ECLASS.equals(getEClassId(eClass));
 	}
 
 	public void reload() {
@@ -173,7 +172,7 @@ public class DBEPackageRegistry {
 			conn.close(stmt);
 		}
 		if (!UNKNOWN_ECLASS.equals(result)) {
-			classIdMap.put(type, result);
+			addEClassMapping(type, result);
 		}
 		return result;
 	}
@@ -199,7 +198,7 @@ public class DBEPackageRegistry {
 			conn.close(stmt);
 		}
 		if (result != null) {
-			classIdMap.put(result, id);
+			addEClassMapping(result, id);
 		} else {
 			LOGGER.warn("No type found in registry for URI \"" + uri + '\"');
 		}
@@ -230,14 +229,14 @@ public class DBEPackageRegistry {
 					LOGGER.error("Index metadata out of sync for EClass " + EcoreUtil.getURI(ref.getEContainingClass()));
 					return 0;
 				} else {
-					registerEPackages(ImmutableSet.of(ref.getEContainingClass().getEPackage()));
+					registerEClasses(ImmutableSet.of(ref.getEContainingClass()));
 					result = getEReferenceId(ref);
 				}
 			}
 		} finally {
 			conn.close(stmt);
 		}
-		referenceIdMap.put(ref, result);
+		addEReferenceMapping(ref, result);
 		return result;
 	}
 
@@ -264,45 +263,45 @@ public class DBEPackageRegistry {
 			conn.close(stmt);
 		}
 		if (result != null) {
-			referenceIdMap.put(result, id);
+			addEReferenceMapping(result, id);
 		}
 		return result;
 	}
 
 	private EReference getEReference(final URI uri) {
-	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
-	    if (ePackage == null) {
-	      return null;
-	    }
-	    if (ePackage.eResource() != null) {
-	      EObject eObject = ePackage.eResource().getEObject(uri.fragment());
-	      return eObject instanceof EReference ? (EReference) eObject : null; // NOPMD Null assignment
-	    }
-	    for (EClassifier eClassifier : ePackage.getEClassifiers()) {
-	      if (eClassifier instanceof EClass) {
-	        for (EReference ref : ((EClass) eClassifier).getEReferences()) {
-	          if (EcoreUtil.getURI(ref).equals(uri)) {
-	            return ref;
-	          }
-	        }
-	      }
-	    }
-	    return null;
-	  }
+		EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
+		if (ePackage == null) {
+			return null;
+		}
+		if (ePackage.eResource() != null) {
+			EObject eObject = ePackage.eResource().getEObject(uri.fragment());
+			return eObject instanceof EReference ? (EReference) eObject : null; // NOPMD Null assignment
+		}
+		for (EClassifier eClassifier : ePackage.getEClassifiers()) {
+			if (eClassifier instanceof EClass) {
+				for (EReference ref : ((EClass) eClassifier).getEReferences()) {
+					if (EcoreUtil.getURI(ref).equals(uri)) {
+						return ref;
+					}
+				}
+			}
+		}
+		return null;
+	}
 
 	private EClass getEClass(final URI uri) {
-	    EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
-	    if (ePackage != null) {
-	      if (ePackage.eResource() != null) {
-	        return (EClass) ePackage.eResource().getEObject(uri.fragment());
-	      }
-	      for (EClassifier eClassifier : ePackage.getEClassifiers()) {
-	        if (EcoreUtil.getURI(eClassifier).equals(uri) && eClassifier instanceof EClass) {
-	          return (EClass) eClassifier;
-	        }
-	      }
-	    }
-	    return null;
-	  }
+		EPackage ePackage = EPackage.Registry.INSTANCE.getEPackage(uri.trimFragment().toString());
+		if (ePackage != null) {
+			if (ePackage.eResource() != null) {
+				return (EClass) ePackage.eResource().getEObject(uri.fragment());
+			}
+			for (EClassifier eClassifier : ePackage.getEClassifiers()) {
+				if (EcoreUtil.getURI(eClassifier).equals(uri) && eClassifier instanceof EClass) {
+					return (EClass) eClassifier;
+				}
+			}
+		}
+		return null;
+	}
 
 }

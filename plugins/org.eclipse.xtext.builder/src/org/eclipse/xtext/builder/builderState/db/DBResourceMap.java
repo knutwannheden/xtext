@@ -104,6 +104,10 @@ public class DBResourceMap {
 		}
 	}
 
+	public void commitChanges() {
+		oldMap = null;
+	}
+
 	public void rollbackChanges() {
 		if (oldMap != null) {
 			oldMap.revert();
@@ -130,7 +134,7 @@ public class DBResourceMap {
 			resStmt.execute();
 			ResultSet rs = resStmt.getResultSet();
 			while (rs.next()) {
-				idMap.put(URI.createURI(rs.getString(2)), rs.getInt(1));
+				register(URI.createURI(rs.getString(2)), rs.getInt(1));
 			}
 		} catch (SQLException e) {
 			throw new DBException(e);

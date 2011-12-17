@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.util.EcoreUtil;
@@ -38,6 +37,7 @@ import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 
 import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -60,7 +60,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private boolean inTransaction;
 
 	private DBResourceMap resourceMap;
-	private Set<URI> stashedResources = Sets.newHashSet();
 	private final DBEPackageRegistry packageRegistry;
 
 	// TODO should be injected
@@ -114,7 +113,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		CallableStatement initCall = connection.prepareCall("RUNSCRIPT FROM '"
 				+ DBBasedBuilderState.class.getClassLoader().getResource(SCHEMA).toString() + "'");
 		initCall.execute();
-		packageRegistry.registerEPackages(Collections.<EPackage> singleton(EcorePackage.eINSTANCE));
+		packageRegistry.registerEClasses(ImmutableList.of(EcorePackage.Literals.EOBJECT));
 		connection.commit();
 		reloadCaches();
 	}
@@ -130,7 +129,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private void clearCaches() {
 		conn.clearCaches();
 		resourceMap.clear();
-		stashedResources.clear();
 		packageRegistry.clear();
 	}
 
@@ -216,7 +214,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		PreparedStatement refStmt = null;
 
 		try {
-			Set<EPackage> ePackages = Sets.newHashSet();
+			Set<EClass> eClasses = Sets.newHashSet();
 
 			// reserve potentially required resource ids
 			resIdStmt = conn.getConnection().prepareStatement("SELECT NEXT VALUE FOR RES_SEQ FROM SYSTEM_RANGE(1, ?)");
@@ -244,16 +242,13 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 				resInsStmt.addBatch();
 
 				for (IEObjectDescription obj : res.getExportedObjects()) {
-					EPackage ePackage = obj.getEClass().getEPackage();
-					if (ePackage != null) {
-						ePackages.add(ePackage);
-					}
+					eClasses.add(obj.getEClass());
 				}
 			}
 			resMapStmt.executeBatch();
 			resInsStmt.executeBatch();
 
-			packageRegistry.registerEPackages(ePackages);
+			packageRegistry.registerEClasses(eClasses);
 
 			resNamesStmt = conn.prepare("INSERT INTO RES_NAMES (RES_ID, IMPORTED_NAME)" + " VALUES (?, ?)");
 
@@ -1076,6 +1071,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 		Connection c = conn.getConnection();
 		try {
+			resourceMap.commitChanges();
 			c.commit();
 		} catch (SQLException e) {
 			try {
@@ -1088,7 +1084,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			throw new DBException(e);
 		} finally {
 			inTransaction = false;
-			reloadCaches();
 		}
 	}
 
