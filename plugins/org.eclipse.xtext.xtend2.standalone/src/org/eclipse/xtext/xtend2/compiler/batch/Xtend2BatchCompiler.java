@@ -58,41 +58,57 @@ import com.google.inject.Provider;
  * @author Michael Clay - Initial contribution and API
  */
 public class Xtend2BatchCompiler {
+
+	private final static class SeverityFilter implements Predicate<Issue> {
+		private static final SeverityFilter WARNING = new SeverityFilter(Severity.WARNING);
+		private static final SeverityFilter ERROR = new SeverityFilter(Severity.ERROR);
+		private Severity severity;
+
+		private SeverityFilter(Severity severity) {
+			this.severity = severity;
+		}
+
+		public boolean apply(Issue issue) {
+			return this.severity == issue.getSeverity();
+		}
+	}
+
 	private final static Logger log = Logger.getLogger(Xtend2BatchCompiler.class.getName());
 
-	private static final FileFilter ACCEPT_ALL_FILTER = new FileFilter() {
+	protected static final FileFilter ACCEPT_ALL_FILTER = new FileFilter() {
 		public boolean accept(File pathname) {
 			return true;
 		}
 	};
 
 	@Inject
-	private Provider<ResourceSet> resourceSetProvider;
+	protected Provider<ResourceSet> resourceSetProvider;
 	@Inject
-	private Provider<JavaIoFileSystemAccess> javaIoFileSystemAccessProvider;
+	protected Provider<JavaIoFileSystemAccess> javaIoFileSystemAccessProvider;
 	@Inject
-	private FileExtensionProvider fileExtensionProvider;
+	protected FileExtensionProvider fileExtensionProvider;
 	@Inject
-	private Provider<ResourceSetBasedResourceDescriptions> resourceSetDescriptionsProvider;
+	protected Provider<ResourceSetBasedResourceDescriptions> resourceSetDescriptionsProvider;
 	@Inject
-	private JvmModelGenerator generator;
+	protected JvmModelGenerator generator;
 	@Inject
-	private IXtend2JvmAssociations xtend2JvmAssociations;
+	protected IXtend2JvmAssociations xtend2JvmAssociations;
 	@Inject
-	private IQualifiedNameProvider qualifiedNameProvider;
+	protected IQualifiedNameProvider qualifiedNameProvider;
 	@Inject
-	private IndexedJvmTypeAccess indexedJvmTypeAccess;
+	protected IndexedJvmTypeAccess indexedJvmTypeAccess;
 
-	private Writer outputWriter;
-	private Writer errorWriter;
-	private String sourcePath;
-	private String classPath;
-	private String outputPath;
-	private String complianceLevel = "1.5";
-	private boolean verbose = false;
-	private String tempDirectory = System.getProperty("java.io.tmpdir");
-	private boolean deleteTempDirectory = true;
-	private List<File> tempFolders = Lists.newArrayList();
+	protected Writer outputWriter;
+	protected Writer errorWriter;
+	protected String sourcePath;
+	protected String classPath;
+	protected String outputPath;
+	protected String fileEncoding;
+	protected String complianceLevel = "1.5";
+	protected boolean verbose = false;
+	protected String tempDirectory = System.getProperty("java.io.tmpdir");
+	protected boolean deleteTempDirectory = true;
+	protected List<File> tempFolders = Lists.newArrayList();
 
 	public String getTempDirectory() {
 		return tempDirectory;
@@ -117,7 +133,7 @@ public class Xtend2BatchCompiler {
 				public void write(char[] data, int offset, int count) throws IOException {
 					String message = String.copyValueOf(data, offset, count);
 					if (!Strings.isEmpty(message.trim())) {
-						log.info(message);
+						log.debug(message);
 					}
 				}
 
@@ -144,7 +160,7 @@ public class Xtend2BatchCompiler {
 				public void write(char[] data, int offset, int count) throws IOException {
 					String message = String.copyValueOf(data, offset, count);
 					if (!Strings.isEmpty(message.trim())) {
-						log.error(message);
+						log.debug(message);
 					}
 				}
 
@@ -176,7 +192,7 @@ public class Xtend2BatchCompiler {
 		this.sourcePath = sourcePath;
 	}
 
-	private String getComplianceLevel() {
+	protected String getComplianceLevel() {
 		return complianceLevel;
 	}
 
@@ -184,8 +200,16 @@ public class Xtend2BatchCompiler {
 		this.verbose = verbose;
 	}
 
-	private boolean isVerbose() {
+	protected boolean isVerbose() {
 		return verbose;
+	}
+
+	public String getFileEncoding() {
+		return fileEncoding;
+	}
+
+	public void setFileEncoding(String encoding) {
+		this.fileEncoding = encoding;
 	}
 
 	public boolean compile() {
@@ -194,11 +218,14 @@ public class Xtend2BatchCompiler {
 			File sourceDirectory = createStubs(resourceSet);
 			File classDirectory = createTempDir("classes");
 			if (!preCompileStubs(sourceDirectory, classDirectory)) {
-				return false;
+				log.debug("Compilation of stubs and existing Java code had errors. This is expected and usually is not a probblem.");
 			}
 			installJvmTypeProvider(resourceSet, classDirectory);
 			List<Issue> issues = validate(resourceSet);
-			if (reportIssues(issues)) {
+			Iterable<Issue> errors = Iterables.filter(issues, SeverityFilter.ERROR);
+			Iterable<Issue> warnings = Iterables.filter(issues, SeverityFilter.WARNING);
+			reportIssues(Iterables.concat(errors,warnings));
+			if (!Iterables.isEmpty(errors)) {
 				return false;
 			}
 			generateJavaFiles(resourceSet);
@@ -212,6 +239,7 @@ public class Xtend2BatchCompiler {
 
 	protected ResourceSet loadXtendFiles() {
 		final ResourceSet resourceSet = resourceSetProvider.get();
+		resourceSet.getLoadOptions().put(XtextResource.OPTION_ENCODING, getFileEncoding());
 		final NameBasedFilter nameBasedFilter = new NameBasedFilter();
 		nameBasedFilter.setExtension(fileExtensionProvider.getPrimaryFileExtension());
 		PathTraverser pathTraverser = new PathTraverser();
@@ -230,7 +258,7 @@ public class Xtend2BatchCompiler {
 		return resourceSet;
 	}
 
-	private File createStubs(ResourceSet resourceSet) {
+	protected File createStubs(ResourceSet resourceSet) {
 		File outputDirectory = createTempDir("stubs");
 		JavaIoFileSystemAccess fileSystemAccess = javaIoFileSystemAccessProvider.get();
 		fileSystemAccess.setOutputPath(outputDirectory.toString());
@@ -240,8 +268,10 @@ public class Xtend2BatchCompiler {
 				continue;
 			}
 			StringBuilder classSignatureBuilder = new StringBuilder();
-			classSignatureBuilder.append("package " + xtendClass.getPackageName() + ";");
-			classSignatureBuilder.append("\n");
+			if (!Strings.isEmpty(xtendClass.getPackageName())) {
+				classSignatureBuilder.append("package " + xtendClass.getPackageName() + ";");
+				classSignatureBuilder.append("\n");
+			}
 			classSignatureBuilder.append("public class " + xtendClass.getName() + "{}");
 			if (log.isDebugEnabled()) {
 				log.debug("create java stub '" + getJavaFileName(xtendClass) + "'");
@@ -251,7 +281,7 @@ public class Xtend2BatchCompiler {
 		return outputDirectory;
 	}
 
-	private boolean preCompileStubs(File tmpSourceDirectory, File classDirectory) {
+	protected boolean preCompileStubs(File tmpSourceDirectory, File classDirectory) {
 		List<String> commandLine = Lists.newArrayList();
 		// todo args
 		if (isVerbose()) {
@@ -273,7 +303,7 @@ public class Xtend2BatchCompiler {
 				getErrorWriter()), null);
 	}
 
-	private List<Issue> validate(ResourceSet resourceSet) {
+	protected List<Issue> validate(ResourceSet resourceSet) {
 		List<Issue> issues = Lists.newArrayList();
 		List<Resource> resources = Lists.newArrayList(resourceSet.getResources());
 		for (Resource resource : resources) {
@@ -286,7 +316,7 @@ public class Xtend2BatchCompiler {
 		return issues;
 	}
 
-	private void installJvmTypeProvider(ResourceSet resourceSet, File tmpClassDirectory) {
+	protected void installJvmTypeProvider(ResourceSet resourceSet, File tmpClassDirectory) {
 		Iterable<String> classPathEntries = concat(getClassPathEntries(), getSourcePathDirectories(),
 				asList(tmpClassDirectory.toString()));
 		classPathEntries = filter(classPathEntries, new Predicate<String>() {
@@ -313,23 +343,27 @@ public class Xtend2BatchCompiler {
 		((XtextResourceSet) resourceSet).setClasspathURIContext(urlClassLoader);
 	}
 
-	protected boolean reportIssues(List<Issue> issues) {
-		boolean hasErrorOrWarnings = false;
+	protected void reportIssues(Iterable<Issue> issues) {
 		for (Issue issue : issues) {
-			if (Severity.WARNING == issue.getSeverity() || Severity.ERROR == issue.getSeverity()) {
-				URI resourceUri = issue.getUriToProblem().trimFragment();
-				StringBuilder issueBuilder = new StringBuilder("\n");
-				issueBuilder.append(issue.getSeverity()).append(": \t");
-				issueBuilder.append(resourceUri.lastSegment()).append(" - ");
-				if (resourceUri.isFile()) {
-					issueBuilder.append(resourceUri.toFileString());
-				}
-				issueBuilder.append("\n").append(issue.getLineNumber()).append(": ").append(issue.getMessage());
+			StringBuilder issueBuilder = createIssueMessage(issue);
+			if (Severity.ERROR == issue.getSeverity()) {
 				log.error(issueBuilder.toString());
-				hasErrorOrWarnings = true;
+			} else if (Severity.WARNING == issue.getSeverity()) {
+				log.warn(issueBuilder.toString());
 			}
 		}
-		return hasErrorOrWarnings;
+	}
+
+	private StringBuilder createIssueMessage(Issue issue) {
+		URI resourceUri = issue.getUriToProblem().trimFragment();
+		StringBuilder issueBuilder = new StringBuilder("\n");
+		issueBuilder.append(issue.getSeverity()).append(": \t");
+		issueBuilder.append(resourceUri.lastSegment()).append(" - ");
+		if (resourceUri.isFile()) {
+			issueBuilder.append(resourceUri.toFileString());
+		}
+		issueBuilder.append("\n").append(issue.getLineNumber()).append(": ").append(issue.getMessage());
+		return issueBuilder;
 	}
 
 	protected void generateJavaFiles(ResourceSet resourceSet) {
@@ -406,8 +440,8 @@ public class Xtend2BatchCompiler {
 		});
 	}
 
-	private File createTempDir(String prefix) {
-		File tempDir = new File(getTempDirectory(), prefix);
+	protected File createTempDir(String prefix) {
+		File tempDir = new File(getTempDirectory(), prefix + System.nanoTime());
 		cleanFolder(tempDir, ACCEPT_ALL_FILTER, true, true);
 		if (!tempDir.mkdirs()) {
 			throw new RuntimeException("Error creating temp directory '" + tempDir.getAbsolutePath() + "'");
@@ -416,14 +450,14 @@ public class Xtend2BatchCompiler {
 		return tempDir;
 	}
 
-	private void deleteTmpFolders() {
+	protected void deleteTmpFolders() {
 		for (File file : tempFolders) {
 			cleanFolder(file, ACCEPT_ALL_FILTER, true, true);
 		}
 	}
 
 	// FIXME: use Files#cleanFolder after the maven distro availability of version 2.2.x
-	private static boolean cleanFolder(File parentFolder, FileFilter filter, boolean continueOnError,
+	protected static boolean cleanFolder(File parentFolder, FileFilter filter, boolean continueOnError,
 			boolean deleteParentFolder) {
 		if (!parentFolder.exists()) {
 			return true;

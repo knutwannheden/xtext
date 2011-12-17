@@ -219,13 +219,31 @@ public class XbaseGeneratorFragment extends AbstractGeneratorFragment {
 	}
 	
 	@Override
+	public void addToPluginXmlRt(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToPluginXmlRt(grammar, ctx);
+	}
+	
+	@Override
+	public void addToPluginXmlUi(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToPluginXmlUi(grammar, ctx);
+	}
+	
+	@Override
+	public void addToStandaloneSetup(Grammar grammar, XpandExecutionContext ctx) {
+		if (usesXbaseGrammar(grammar))
+			super.addToStandaloneSetup(grammar, ctx);
+	}
+	
+	@Override
 	protected List<Object> getParameters(Grammar grammar) {
 		return Lists.<Object>newArrayList(useInferredJvmModel, generateXtendInferrer, jdtTypeHierarchy);
 	}
 	
 	@Override
 	public String[] getExportedPackagesRt(Grammar grammar) {
-		if(usesXbaseGrammar(grammar) && (generateXtendInferrer || useInferredJvmModel || jdtTypeHierarchy)) {
+		if(usesXbaseGrammar(grammar) && (generateXtendInferrer || useInferredJvmModel)) {
 			return new String[] { Strings.skipLastToken(getJvmModelInferrerName(grammar, getNaming()), ".") };
 		}
 		return null;

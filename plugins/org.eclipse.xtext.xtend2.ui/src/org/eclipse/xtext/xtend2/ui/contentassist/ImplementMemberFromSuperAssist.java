@@ -36,6 +36,7 @@ import org.eclipse.xtext.common.types.util.VisibilityService;
 import org.eclipse.xtext.ui.editor.contentassist.ContentAssistContext;
 import org.eclipse.xtext.ui.editor.contentassist.ICompletionProposalAcceptor;
 import org.eclipse.xtext.ui.editor.contentassist.IProposalConflictHelper;
+import org.eclipse.xtext.ui.editor.contentassist.PrefixMatcher;
 import org.eclipse.xtext.xbase.validation.UIStrings;
 import org.eclipse.xtext.xtend2.formatting.MemberFromSuperImplementor;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
@@ -139,30 +140,47 @@ public class ImplementMemberFromSuperAssist {
 	}
 
 	protected ICompletionProposal createOverrideMethodProposal(XtendClass model, JvmExecutable overridden,
-			ContentAssistContext context, IProposalConflictHelper conflictHelper) {
+			final ContentAssistContext context, IProposalConflictHelper conflictHelper) {
 		ReplacingAppendable appendable = appendableFactory.get(context.getDocument(), model, context.getReplaceRegion()
 				.getOffset(), context.getReplaceRegion().getLength(), 1, true);
-		if (overridden instanceof JvmOperation)
+		final String simpleName;
+		if (overridden instanceof JvmOperation) {
 			implementor.appendOverrideFunction(model, (JvmOperation) overridden, appendable);
-		else
+			simpleName = overridden.getSimpleName();
+		} else {
 			implementor.appendConstructorFromSuper(model, (JvmConstructor) overridden, appendable);
-		String code = appendable.toString();
-		if (!isValidProposal(code.trim(), context, conflictHelper)
-				&& !isValidProposal(overridden.getSimpleName(), context, conflictHelper))
+			simpleName = "new";
+		}
+		String code = appendable.getCode();
+		if (!isValidProposal(code.trim(), context, conflictHelper) && !isValidProposal(simpleName, context, conflictHelper))
 			return null;
 		ImportOrganizingProposal completionProposal = createCompletionProposal(appendable, context.getReplaceRegion(),
 				getLabel(overridden), images.forFunction(overridden.getVisibility(), false));
 		Matcher matcher = bodyExpressionPattern.matcher(code);
 		if (matcher.find()) {
 			int bodyExpressionLength = matcher.end(1) - matcher.start(1);
+			int bodyExpressionStart = matcher.start(1) + appendable.getTotalOffset() - completionProposal.getReplacementOffset();
 			if (bodyExpressionLength == 0) {
-				completionProposal.setCursorPosition(matcher.start(1));
+				completionProposal.setCursorPosition(bodyExpressionStart);
 			} else {
-				completionProposal.setSelectionStart(completionProposal.getReplacementOffset() + matcher.start(1));
+				completionProposal.setSelectionStart(completionProposal.getReplacementOffset() + bodyExpressionStart);
 				completionProposal.setSelectionLength(bodyExpressionLength);
+				completionProposal.setAutoInsertable(false);
+				completionProposal.setCursorPosition(bodyExpressionStart + bodyExpressionLength);
+				completionProposal.setSimpleLinkedMode(context.getViewer(), '\t');
 			}
 		}
 		completionProposal.setPriority(getPriority(model, overridden, context));
+		completionProposal.setMatcher(new PrefixMatcher() {
+
+			@Override
+			public boolean isCandidateMatchingPrefix(String name, String prefix) {
+				PrefixMatcher delegate = context.getMatcher();
+				boolean result = delegate.isCandidateMatchingPrefix(simpleName, prefix);
+				return result;
+			}
+			
+		});
 		return completionProposal;
 	}
 

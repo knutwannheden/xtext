@@ -59,7 +59,7 @@ public class SourceBasedJdtTypeProviderTest extends AbstractTypeProviderTest {
 		typeProvider = null;
 		super.tearDown();
 	}
-	
+
 	@Override
 	protected IJvmTypeProvider getTypeProvider() {
 		return typeProvider;

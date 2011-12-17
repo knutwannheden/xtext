@@ -49,7 +49,7 @@ public class JdtTypeProviderTest extends AbstractTypeProviderTest {
 		elementFinder = new JavaElementFinder();
 		elementFinder.setProjectProvider(projectProvider);
 	}
-
+	
 	@Override
 	protected void tearDown() throws Exception {
 		resourceSet = null;

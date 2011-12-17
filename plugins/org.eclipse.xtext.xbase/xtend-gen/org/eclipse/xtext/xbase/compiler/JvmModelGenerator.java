@@ -50,7 +50,6 @@ import org.eclipse.xtext.xbase.lib.ListExtensions;
 import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
-import org.eclipse.xtext.xbase.typing.ITypeProvider;
 
 /**
  * A generator implementation that processes the
@@ -63,13 +62,10 @@ public class JvmModelGenerator implements IGenerator {
   private ILogicalContainerProvider _iLogicalContainerProvider;
   
   @Inject
-  private XbaseCompiler compiler;
-  
-  @Inject
-  private ITypeProvider _iTypeProvider;
-  
-  @Inject
   private TypeReferences _typeReferences;
+  
+  @Inject
+  private XbaseCompiler compiler;
   
   @Inject
   private TypeReferenceSerializer typeRefSerializer;
@@ -177,7 +173,7 @@ public class JvmModelGenerator implements IGenerator {
       final Function1<CharSequence,Boolean> _function_1 = new Function1<CharSequence,Boolean>() {
           public Boolean apply(final CharSequence c) {
             boolean _operator_notEquals = ObjectExtensions.operator_notEquals(c, null);
-            return ((Boolean)_operator_notEquals);
+            return Boolean.valueOf(_operator_notEquals);
           }
         };
       Iterable<CharSequence> _filter = IterableExtensions.<CharSequence>filter(_map, _function_1);
@@ -343,7 +339,7 @@ public class JvmModelGenerator implements IGenerator {
               public Boolean apply(final JvmTypeReference typeRef) {
                 String _identifier = typeRef.getIdentifier();
                 boolean _operator_notEquals = ObjectExtensions.operator_notEquals(_identifier, "java.lang.Object");
-                return ((Boolean)_operator_notEquals);
+                return Boolean.valueOf(_operator_notEquals);
               }
             };
           Iterable<JvmTypeReference> _filter = IterableExtensions.<JvmTypeReference>filter(_superTypes_2, _function_1);
@@ -360,7 +356,7 @@ public class JvmModelGenerator implements IGenerator {
                   boolean _operator_not = BooleanExtensions.operator_not(_isInterface);
                   _operator_and = BooleanExtensions.operator_and((_type instanceof JvmGenericType), _operator_not);
                 }
-                return ((Boolean)_operator_and);
+                return Boolean.valueOf(_operator_and);
               }
             };
           Iterable<JvmTypeReference> _filter_1 = IterableExtensions.<JvmTypeReference>filter(withoutObject, _function_2);
@@ -369,7 +365,7 @@ public class JvmModelGenerator implements IGenerator {
           final Function1<JvmTypeReference,Boolean> _function_3 = new Function1<JvmTypeReference,Boolean>() {
               public Boolean apply(final JvmTypeReference typeRef) {
                 boolean _operator_notEquals = ObjectExtensions.operator_notEquals(typeRef, superClazz);
-                return ((Boolean)_operator_notEquals);
+                return Boolean.valueOf(_operator_notEquals);
               }
             };
           Iterable<JvmTypeReference> _filter_2 = IterableExtensions.<JvmTypeReference>filter(withoutObject, _function_3);
@@ -773,7 +769,7 @@ public class JvmModelGenerator implements IGenerator {
       }
       if (_operator_and) {
         int _length = result.length();
-        int _operator_minus = IntegerExtensions.operator_minus(((Integer)_length), ((Integer)1));
+        int _operator_minus = IntegerExtensions.operator_minus(_length, 1);
         String _substring = result.substring(2, _operator_minus);
         return _substring;
       }
@@ -787,7 +783,7 @@ public class JvmModelGenerator implements IGenerator {
       }
       if (_operator_and_1) {
         int _length_1 = result.length();
-        int _operator_minus_1 = IntegerExtensions.operator_minus(((Integer)_length_1), ((Integer)1));
+        int _operator_minus_1 = IntegerExtensions.operator_minus(_length_1, 1);
         String _substring_1 = result.substring(1, _operator_minus_1);
         return _substring_1;
       }
@@ -896,7 +892,7 @@ public class JvmModelGenerator implements IGenerator {
     {
       EList<Short> _values = it.getValues();
       int _size = _values.size();
-      boolean _operator_equals = ObjectExtensions.operator_equals(((Integer)_size), ((Integer)1));
+      boolean _operator_equals = IntegerExtensions.operator_equals(_size, 1);
       if (_operator_equals) {
         EList<Short> _values_1 = it.getValues();
         Short _head = IterableExtensions.<Short>head(_values_1);
@@ -917,7 +913,7 @@ public class JvmModelGenerator implements IGenerator {
     {
       EList<String> _values = it.getValues();
       int _size = _values.size();
-      boolean _operator_equals = ObjectExtensions.operator_equals(((Integer)_size), ((Integer)1));
+      boolean _operator_equals = IntegerExtensions.operator_equals(_size, 1);
       if (_operator_equals) {
         _builder.append("\"");
         EList<String> _values_1 = it.getValues();
@@ -948,7 +944,7 @@ public class JvmModelGenerator implements IGenerator {
     {
       EList<JvmTypeReference> _values = it.getValues();
       int _size = _values.size();
-      boolean _operator_equals = ObjectExtensions.operator_equals(((Integer)_size), ((Integer)1));
+      boolean _operator_equals = IntegerExtensions.operator_equals(_size, 1);
       if (_operator_equals) {
         EList<JvmTypeReference> _values_1 = it.getValues();
         JvmTypeReference _head = IterableExtensions.<JvmTypeReference>head(_values_1);
@@ -979,7 +975,7 @@ public class JvmModelGenerator implements IGenerator {
     {
       EList<Boolean> _values = it.getValues();
       int _size = _values.size();
-      boolean _operator_equals = ObjectExtensions.operator_equals(((Integer)_size), ((Integer)1));
+      boolean _operator_equals = IntegerExtensions.operator_equals(_size, 1);
       if (_operator_equals) {
         EList<Boolean> _values_1 = it.getValues();
         Boolean _head = IterableExtensions.<Boolean>head(_values_1);

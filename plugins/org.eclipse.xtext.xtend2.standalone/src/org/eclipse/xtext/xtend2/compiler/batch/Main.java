@@ -35,6 +35,10 @@ public class Main {
 				xtend2BatchCompiler.setOutputPath(arguments.next().trim());
 			} else if ("-classpath".equals(argument.trim()) || "-cp".equals(argument.trim())) {
 				xtend2BatchCompiler.setClassPath(arguments.next().trim());
+			} else if ("-tempdir".equals(argument.trim()) || "-td".equals(argument.trim())) {
+				xtend2BatchCompiler.setTempDirectory(arguments.next().trim());
+			} else if ("-encoding".equals(argument.trim())) {
+				xtend2BatchCompiler.setFileEncoding(arguments.next().trim());
 			} else {
 				xtend2BatchCompiler.setSourcePath(argument);
 			}
@@ -46,7 +50,9 @@ public class Main {
 		System.out.println("Usage: Xtend2BatchCompiler <options> <source directories>");
 		System.out.println("where possible options include:");
 		System.out.println("-d <directory>             Specify where to place generated xtend files");
+		System.out.println("-tp <path>                 Temp directory to hold generated stubs and classes");
 		System.out.println("-cp <path>                 Specify where to find user class files");
+		System.out.println("-encoding <encoding>       Specify character encoding used by source files");
 	}
 
 }

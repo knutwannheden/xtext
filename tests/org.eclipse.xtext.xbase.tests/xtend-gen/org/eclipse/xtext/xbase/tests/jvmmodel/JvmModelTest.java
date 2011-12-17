@@ -7,14 +7,12 @@ import junit.framework.Assert;
 import org.eclipse.emf.common.util.EList;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.xtext.common.types.util.TypeReferences;
 import org.eclipse.xtext.junit.validation.ValidationTestHelper;
 import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescription.Manager;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.XbasePackage.Literals;
-import org.eclipse.xtext.xbase.jvmmodel.JvmTypesBuilder;
 import org.eclipse.xtext.xbase.lib.CollectionLiterals;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.tests.jvmmodel.AbstractJvmModelTest;
@@ -22,12 +20,6 @@ import org.eclipse.xtext.xbase.validation.IssueCodes;
 
 @SuppressWarnings("all")
 public class JvmModelTest extends AbstractJvmModelTest {
-  @Inject
-  private JvmTypesBuilder builder;
-  
-  @Inject
-  private TypeReferences references;
-  
   @Inject
   private ValidationTestHelper helper;
   
@@ -43,8 +35,6 @@ public class JvmModelTest extends AbstractJvmModelTest {
         EList<EObject> _contents = _eResource.getContents();
         int _size = _contents.size();
         Assert.assertEquals(2, _size);
-        Resource _eResource_1 = expression.eResource();
-        final Resource resource = _eResource_1;
         this.helper.assertNoErrors(expression);
       }
     } catch (Exception _e) {
@@ -61,7 +51,7 @@ public class JvmModelTest extends AbstractJvmModelTest {
         final Field field = _declaredField;
         field.setAccessible(true);
         Object _get = field.get(resource);
-        Assert.assertFalse(((Boolean) _get));
+        Assert.assertFalse((((Boolean) _get)).booleanValue());
         IResourceDescription _resourceDescription = this.manager.getResourceDescription(resource);
         final IResourceDescription desc = _resourceDescription;
         Iterable<IEObjectDescription> _exportedObjects = desc.getExportedObjects();
@@ -70,7 +60,7 @@ public class JvmModelTest extends AbstractJvmModelTest {
         int _size = list.size();
         Assert.assertEquals(1, _size);
         Object _get_1 = field.get(resource);
-        Assert.assertFalse(((Boolean) _get_1));
+        Assert.assertFalse((((Boolean) _get_1)).booleanValue());
       }
     } catch (Exception _e) {
       throw Exceptions.sneakyThrow(_e);

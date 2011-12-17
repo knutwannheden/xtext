@@ -11,6 +11,8 @@ import static com.google.common.collect.Lists.newArrayList;
 import static java.util.Collections.emptyList;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Stack;
 
@@ -1834,6 +1836,39 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"    s\n" +
 				"  'result'" +
 				"}");
+	}
+	
+	@Test public void testBooleanArithmetics() throws Exception {
+		assertEvaluatesTo(false ^ (false || true) && true, "false.xor(false || true) && true");
+	}
+	
+	@Test public void testIntegerArithmetics() throws Exception {
+		assertEvaluatesTo(-1+2*3/4%5, "-1+2*3/4%5"); 
+	}
+	
+	@Test public void testIntegerBitOperations() throws Exception {
+		assertEvaluatesTo(~(1 | 2 & 3), "1.bitwiseOr(2).bitwiseAnd(3).bitwiseNot()");
+	}
+
+	@Test public void testBigIntegerBitOperations() throws Exception {
+		assertEvaluatesTo(new BigInteger("1").or(new BigInteger("2")).and(new BigInteger("3")).not(), 
+				"new java.math.BigInteger('1').or(new java.math.BigInteger('2')).and(new java.math.BigInteger('3')).not()"); 
+	}
+
+	@Test public void testBigIntegerArithmetics() throws Exception {
+		BigInteger x = new BigInteger("2");
+		assertEvaluatesTo(x.negate().add(x.multiply(x).divide(x).mod(x)), 
+				"{ val x=new java.math.BigInteger('2'); -x+x*x/x%x}"); 
+	}
+
+	@Test public void testDoubleArithmetics() throws Exception {
+		assertEvaluatesTo(-(2.+2.*2./2.), "{ val x = Double::parseDouble('2'); -(x+x*x/x) }"); 
+	}
+	
+	@Test public void testBigDecimalArithmetics() throws Exception {
+		BigDecimal x = new BigDecimal("2");
+		assertEvaluatesTo(x.negate().add(x.multiply(x).divide(x)), 
+				"{ val x=new java.math.BigDecimal('2'); -x+x*x/x }"); 
 	}
 	
 	protected void assertEvaluatesTo(Object object, String string) throws Exception {

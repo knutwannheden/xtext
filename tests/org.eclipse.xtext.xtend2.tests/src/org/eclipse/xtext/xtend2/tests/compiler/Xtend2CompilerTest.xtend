@@ -264,7 +264,7 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			  public Bar() {
 			    this(new Function0<String>() {
 			      public String apply() {
-			        String _string = ((Integer)123).toString();
+			        String _string = Integer.valueOf(123).toString();
 			        return _string;
 			      }
 			    }.apply());
@@ -343,7 +343,7 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			public class Bar {
 			  public Integer doStuff(final String x) {
 			    int _length = x.length();
-			    return ((Integer)_length);
+			    return Integer.valueOf(_length);
 			  }
 			}
 		''')
@@ -407,6 +407,8 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 		''', '''
 			package foo;
 
+			import java.util.Arrays;
+
 			@SuppressWarnings("all")
 			public class NoSuchElementException {
 			  protected void _foo(final String s) {
@@ -418,8 +420,11 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			  public void foo(final Object s) {
 			    if (s instanceof String) {
 			      _foo((String)s);
-			    } else {
+			    } else if (s != null) {
 			      _foo(s);
+			    } else {
+			      throw new IllegalArgumentException("Unhandled parameter types: " +
+			        Arrays.<Object>asList(s).toString());
 			    }
 			  }
 			}
@@ -437,6 +442,8 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 		''', '''
 			package foo;
 
+			import java.util.Arrays;
+
 			@SuppressWarnings("all")
 			public class MyType {
 			  protected void _foo(final String s, final CharSequence other) {
@@ -449,14 +456,18 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			  }
 			  
 			  public void foo(final Object s, final Object other) {
-			    if ((s instanceof String)
-			         && (other instanceof CharSequence)) {
+			    if (s instanceof String
+			         && other instanceof CharSequence) {
 			      _foo((String)s, (CharSequence)other);
-			    } else if ((s instanceof String)
-			         && (other == null)) {
+			    } else if (s instanceof String
+			         && other == null) {
 			      _foo((String)s, (Void)null);
-			    } else {
+			    } else if (s != null
+			         && other != null) {
 			      _foo(s, other);
+			    } else {
+			      throw new IllegalArgumentException("Unhandled parameter types: " +
+			        Arrays.<Object>asList(s, other).toString());
 			    }
 			  }
 			}
@@ -474,6 +485,8 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 		''', '''
 			package foo;
 
+			import java.util.Arrays;
+
 			@SuppressWarnings("all")
 			public class MyType {
 			  protected void _foo(final Object s, final Object other) {
@@ -486,14 +499,18 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			  }
 			  
 			  public void foo(final Object s, final Object other) {
-			    if ((s instanceof String)
-			         && (other instanceof CharSequence)) {
+			    if (s instanceof String
+			         && other instanceof CharSequence) {
 			      _foo((String)s, (CharSequence)other);
-			    } else if ((s instanceof String)
-			         && (other == null)) {
+			    } else if (s instanceof String
+			         && other == null) {
 			      _foo((String)s, (Void)null);
-			    } else {
+			    } else if (s != null
+			         && other != null) {
 			      _foo(s, other);
+			    } else {
+			      throw new IllegalArgumentException("Unhandled parameter types: " +
+			        Arrays.<Object>asList(s, other).toString());
 			    }
 			  }
 			}
@@ -831,6 +848,24 @@ class Xtend2CompilerTest extends AbstractXtend2TestCase {
 			      };
 			    String _apply = _function.apply();
 			    return _apply;
+			  }
+			}
+		''')
+	}
+
+	def testExplicitBoxingUnboxing() {
+		assertCompilesTo('''
+			class X {
+				def foo(int p0, Integer p1) {
+					foo(p1,p0)
+				}
+			}
+		''','''
+			@SuppressWarnings("all")
+			public class X {
+			  public Object foo(final int p0, final Integer p1) {
+			    Object _foo = this.foo((p1).intValue(), Integer.valueOf(p0));
+			    return _foo;
 			  }
 			}
 		''')

@@ -31,6 +31,7 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.eclipse.xtend2.lib.StringConcatenation;
 import org.eclipse.xtext.CrossReference;
 import org.eclipse.xtext.common.types.JvmAnnotationType;
 import org.eclipse.xtext.common.types.JvmConstructor;
@@ -73,6 +74,7 @@ import org.eclipse.xtext.xbase.annotations.typing.XAnnotationUtil;
 import org.eclipse.xtext.xbase.annotations.validation.XbaseWithAnnotationsJavaValidator;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotation;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotationsPackage;
+import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.validation.UIStrings;
 import org.eclipse.xtext.xtend2.dispatch.DispatchingSupport;
 import org.eclipse.xtext.xtend2.jvmmodel.IXtend2JvmAssociations;
@@ -278,7 +280,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 			XtendFunction function = (XtendFunction) (param.eContainer() instanceof XtendFunction ? param.eContainer()
 					: null);
 			if (function != null)
-				error("void is an invalid type for the parameter " + param.getName() + " of the function "
+				error("void is an invalid type for the parameter " + param.getName() + " of the method "
 						+ function.getName(), param.getParameterType(), null, INVALID_USE_OF_TYPE);
 			else
 				error("void is an invalid type for the parameter " + param.getName(), param.getParameterType(), null,
@@ -293,12 +295,12 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 			error("Xtend requires Java source level 1.5.", clazz, XTEND_CLASS__NAME,
 					IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
-		if (getTypeRefs().findDeclaredType("org.eclipse.xtend2.lib.StringConcatenation", clazz) == null) {
-			error("Mandatory library bundle 'org.eclipse.xtend2.lib' not found on the classpath.", clazz,
+		if (getTypeRefs().findDeclaredType(StringConcatenation.class, clazz) == null) {
+			error("Mandatory library bundle 'org.eclipse.xtend2.lib' 2.2.0 or higher not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XTEND_LIB_NOT_ON_CLASSPATH);
 		}
-		if (getTypeRefs().findDeclaredType("org.eclipse.xtext.xbase.lib.ObjectExtensions", clazz) == null) {
-			error("Mandatory library bundle 'org.eclipse.xtext.xbase.lib' not found on the classpath.", clazz,
+		if (getTypeRefs().findDeclaredType(Exceptions.class, clazz) == null) {
+			error("Mandatory library bundle 'org.eclipse.xtext.xbase.lib' 2.2.0 or higher not found on the classpath.", clazz,
 					XTEND_CLASS__NAME, IssueCodes.XBASE_LIB_NOT_ON_CLASSPATH);
 		}
 	}
@@ -557,18 +559,19 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		error(errorMsg.toString(), xtendClass, XTEND_CLASS__NAME, CLASS_MUST_BE_ABSTRACT, 
 						toArray(uris, String.class));
 	}
-
+	
 	@Check
 	protected void checkFunctionOverride(XtendFunction function) {
+		JvmOperation operation = associations.getDirectlyInferredOperation(function);
 		JvmOperation overriddenOperation = overridesService.findOverriddenOperation(function);
 		if (overriddenOperation == null) {
 			if (function.isOverride()) {
-				error("Function does not override any function", function, XTEND_FUNCTION__OVERRIDE, OBSOLETE_OVERRIDE);
+				error("The method "+ uiStrings.signature(operation) +" of type "+operation.getDeclaringType().getSimpleName()+" must override a superclass method.", function, XTEND_FUNCTION__OVERRIDE, OBSOLETE_OVERRIDE);
 			}
 			return;
 		}
 		if (!function.isOverride())
-			error("Missing 'override'. Function overrides " + canonicalName(overriddenOperation), function,
+			error("The method " + uiStrings.signature(operation) +" of type "+operation.getDeclaringType().getSimpleName()+" must use override keyword since it actually overrides a supertype method.", function,
 					XTEND_FUNCTION__NAME, MISSING_OVERRIDE);
 		if (overriddenOperation.isFinal())
 			error("Attempt to override final method " + canonicalName(overriddenOperation), function,
@@ -753,11 +756,11 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 	public void dispatchFuncWithTypeParams(XtendFunction func) {
 		if (func.isDispatch()) {
 			if (func.getParameters().isEmpty()) {
-				error("A dispatch function must at least have one parameter declared.", func, XTEND_FUNCTION__DISPATCH,
+				error("A dispatch method must at least have one parameter declared.", func, XTEND_FUNCTION__DISPATCH,
 						IssueCodes.DISPATCH_FUNC_WITHOUT_PARAMS);
 			}
 			if (!func.getTypeParameters().isEmpty()) {
-				error("A dispatch function must not declare any type parameters.", func, XTEND_FUNCTION__DISPATCH,
+				error("A dispatch method must not declare any type parameters.", func, XTEND_FUNCTION__DISPATCH,
 						IssueCodes.DISPATCH_FUNC_WITH_TYPE_PARAMS);
 			}
 			if (func.getName().startsWith("_")) {
@@ -779,7 +782,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 				Boolean expectStatic = null;
 				if(overriddenOperation != null) { 
 					if (isMorePrivateThan(syntheticDispatchMethod.getVisibility(), overriddenOperation.getVisibility())) {
-						String msg = "Synthetic dispatch method reduces visibility of overridden function " + overriddenOperation.getIdentifier();
+						String msg = "Synthetic dispatch method reduces visibility of overridden method " + overriddenOperation.getIdentifier();
 						addDispatchError(type, dispatchOperations, msg, XTEND_FUNCTION__VISIBILITY, OVERRIDE_REDUCES_VISIBILITY);
 					}
 					expectStatic = overriddenOperation.isStatic();
@@ -787,7 +790,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 				if (dispatchOperations.size() == 1) {
 					JvmOperation singleOp = dispatchOperations.iterator().next();
 					XtendFunction function = associations.getXtendFunction(singleOp);
-					warning("Single dispatch function.", function, XTEND_FUNCTION__DISPATCH,
+					warning("Single dispatch method.", function, XTEND_FUNCTION__DISPATCH,
 							IssueCodes.SINGLE_DISPATCH_FUNCTION);
 				} else {
 					Multimap<List<JvmType>, JvmOperation> signatures = HashMultimap.create();
@@ -799,11 +802,11 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 						if(jvmOperation.getDeclaringType() == type) {
 							if(expectStatic != null) {
 								if (expectStatic && !jvmOperation.isStatic()) {
-									String msg = "The dispatch method must be static because the dispatch methods in the super-class are static.";
+									String msg = "The dispatch method must be static because the dispatch methods in the superclass are static.";
 									addDispatchError(jvmOperation, msg, XTEND_FUNCTION__STATIC, DISPATCH_FUNCTIONS_STATIC_EXPECTED);
 								}
 								if (!expectStatic && jvmOperation.isStatic()) {
-									String msg = "The dispatch method must not be static because the dispatch methods in the super-class are not static.";
+									String msg = "The dispatch method must not be static because the dispatch methods in the superclass are not static.";
 									addDispatchError(jvmOperation, msg, XTEND_FUNCTION__STATIC, DISPATCH_FUNCTIONS_NON_STATIC_EXPECTED);
 								}
 							}
@@ -838,11 +841,11 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 						}
 					}
 					if (commonVisibility == null) {
-						addDispatchError(type, dispatchOperations, "All local dispatch functions must have the same visibility.", 
+						addDispatchError(type, dispatchOperations, "All local dispatch methods must have the same visibility.", 
 								XTEND_FUNCTION__VISIBILITY, DISPATCH_FUNCTIONS_WITH_DIFFERENT_VISIBILITY);
 					}
 					if (expectStatic == null && commonStatic == null) {
-						addDispatchError(type, dispatchOperations, "Static and non-static dispatch functions can not be mixed.", 
+						addDispatchError(type, dispatchOperations, "Static and non-static dispatch methods can not be mixed.", 
 								XTEND_FUNCTION__STATIC,	DISPATCH_FUNCTIONS_MIXED_STATIC_AND_NON_STATIC);
 					}
 					for (final List<JvmType> paramTypes : signatures.keySet()) {
@@ -855,7 +858,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 							})) {
 								for (JvmOperation jvmOperation : ops) {
 									XtendFunction function = associations.getXtendFunction(jvmOperation);
-									error("Duplicate dispatch function. Primitives cannot overload their wrapper types in dispatch functions.",
+									error("Duplicate dispatch methods. Primitives cannot overload their wrapper types in dispatch methods.",
 											function, null, DUPLICATE_METHOD);
 								}
 							}
@@ -904,7 +907,7 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		collectReturnExpressions(func.getExpression(), found);
 		for (XReturnExpression ret : found) {
 			if (ret.getExpression() != null) {
-				error("Return with expression is not allowed within an initializer of a create function.", ret, null,
+				error("Return with expression is not allowed within an initializer of a create method.", ret, null,
 						INVALID_EARLY_EXIT);
 			}
 		}
@@ -917,15 +920,15 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 		JvmOperation operation = associations.getDirectlyInferredOperation(func);
 		if (func.getReturnType() == null) {
 			if (getTypeRefs().is(operation.getReturnType(), Void.TYPE)) {
-				error("void is an invalid type for the create function " + func.getName(), func,
+				error("void is an invalid type for the create method " + func.getName(), func,
 						Xtend2Package.Literals.XTEND_FUNCTION__NAME, INVALID_USE_OF_TYPE);
 			}
 		} else if (getTypeRefs().is(func.getReturnType(), Void.TYPE)) {
 			if (func.getReturnType() != null)
-				error("Create function " + func.getName() + " may not declare return type void.", func.getReturnType(),
+				error("Create method " + func.getName() + " may not declare return type void.", func.getReturnType(),
 						null, INVALID_USE_OF_TYPE);
 			else
-				error("The inherited return type void of " + func.getName() + " is invalid for create functions.",
+				error("The inherited return type void of " + func.getName() + " is invalid for create method.",
 						func.getReturnType(), null, INVALID_USE_OF_TYPE);
 		}
 	}
@@ -1055,6 +1058,13 @@ public class Xtend2JavaValidator extends XbaseWithAnnotationsJavaValidator {
 	public void checkDeclaredExceptions(XtendConstructor constructor){
 		JvmConstructor jvmType = associations.getInferredConstructor(constructor);
 		checkExceptions(constructor,jvmType.getExceptions(), Xtend2Package.Literals.XTEND_CONSTRUCTOR__EXCEPTIONS);
+	}
+	
+	@Check
+	public void checkTypeParametersAreUnsupported(XtendConstructor constructor){
+		if (!constructor.getTypeParameters().isEmpty()) {
+			error("Type parameters are not supported for constructors", Xtend2Package.Literals.XTEND_CONSTRUCTOR__TYPE_PARAMETERS, INSIGNIFICANT_INDEX, CONSTRUCTOR_TYPE_PARAMS_NOT_SUPPORTED);
+		}
 	}
 	
 	@Check

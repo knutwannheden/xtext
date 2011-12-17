@@ -1834,20 +1834,16 @@ public class CompilerTest extends AbstractXtend2TestCase {
 	}
 	
 	public void testDispatchFunction_07() throws Exception {
-		final String definition = "foo(p1)} " +
+		final String definition = 
+				"def invokeMe(String p1) { foo(p1) }\n" +
 				"def dispatch foo (String string) {\n" + 
 				"    string + string\n" + 
 				"}\n" + 
 				"def dispatch foo (Void nullCase) {\n" + 
-				"    'literal'\n";
-		invokeAndExpect("zonkzonk", definition, "zonk");
-		invokeAndExpect("literal", definition, new Object[]{ null });
-		try {
-			invokeAndExpect(null, definition, Integer.valueOf(1));
-			fail();
-		} catch (InvocationTargetException e) {
-			assertTrue(e.getCause() instanceof IllegalArgumentException);
-		}
+				"    'literal'\n" +
+				"}";
+		invokeAndExpect2("zonkzonk", definition, "invokeMe", "zonk");
+		invokeAndExpect3("literal", definition, "invokeMe", new Class[] { String.class }, new Object[]{ null });
 	}
 	
 	public void testDispatchFunction_08() throws Exception {
@@ -2420,6 +2416,38 @@ public class CompilerTest extends AbstractXtend2TestCase {
 				"def x() { runTest().toString() } def runTest() '''«switch x : '''test''' { CharSequence : '''foo''' }»'''", 
 				"x");
 	}
+	
+	public void testBug366293() throws Exception {
+		invokeAndExpect2("success", 
+				"def String whileLoopTest () {\n" + 
+				"        while (true)\n" + 
+				"            try {\n" + 
+				"                return 'success'\n" + 
+				"            }\n" + 
+				"            catch (Exception ex)\n" + 
+				"            {\n" + 
+				"                throw ex\n" + 
+				"            }    \n" +
+				"		 return 'failure'" + 
+				"    }", "whileLoopTest");
+	}
+	
+	public void testBug366293_related() throws Exception {
+		invokeAndExpect2("success", 
+				"def String whileLoopTest () {\n" + 
+						"        do {\n" + 
+						"            try {\n" + 
+						"                toString()\n" +
+						"                return 'success'\n" + 
+						"            }\n" + 
+						"            catch (Exception ex)\n" + 
+						"            {\n" + 
+						"                throw ex\n" + 
+						"            }\n" +
+						"		  } while (true)" + 
+						"    }", "whileLoopTest");
+	}
+
 	
 	@Inject
 	private EclipseRuntimeDependentJavaCompiler javaCompiler;
