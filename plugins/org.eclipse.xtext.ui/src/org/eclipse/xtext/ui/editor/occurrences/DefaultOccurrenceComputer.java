@@ -13,26 +13,27 @@ import static java.util.Collections.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.SubMonitor;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextSelection;
 import org.eclipse.jface.text.Position;
 import org.eclipse.jface.text.source.Annotation;
+import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.naming.IQualifiedNameProvider;
 import org.eclipse.xtext.resource.EObjectAtOffsetHelper;
 import org.eclipse.xtext.resource.ILocationInFileProvider;
 import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.XtextEditor;
-import org.eclipse.xtext.ui.editor.findrefs.EditorResourceAccess;
-import org.eclipse.xtext.ui.editor.findrefs.FindReferenceQueryDataFactory;
-import org.eclipse.xtext.ui.editor.findrefs.IReferenceFinder;
-import org.eclipse.xtext.ui.editor.findrefs.IReferenceFinder.IQueryData;
+import org.eclipse.xtext.ui.findrefs.IReferenceFinder;
 import org.eclipse.xtext.ui.editor.model.IXtextDocument;
+import org.eclipse.xtext.ui.findrefs.EditorResourceAccess;
 import org.eclipse.xtext.util.IAcceptor;
 import org.eclipse.xtext.util.ITextRegion;
 import org.eclipse.xtext.util.concurrent.IUnitOfWork;
@@ -57,9 +58,6 @@ public class DefaultOccurrenceComputer implements IOccurrenceComputer {
 
 	@Inject
 	private IReferenceFinder referenceFinder;
-	
-	@Inject 
-	private FindReferenceQueryDataFactory queryDataFactory;
 	
 	@Inject
 	private IQualifiedNameProvider qualifiedNameProvider;
@@ -86,20 +84,16 @@ public class DefaultOccurrenceComputer implements IOccurrenceComputer {
 		return document.readOnly(new IUnitOfWork<Map<Annotation, Position>, XtextResource>() {
 			public Map<Annotation, Position> exec(final XtextResource resource) throws Exception {
 				EObject target = eObjectAtOffsetHelper.resolveElementAt(resource, (selection).getOffset());
-				if (target != null) {
+				if (target != null && ! target.eIsProxy()) {
 					monitor.setWorkRemaining(100);
 					final List<IReferenceDescription> references = newArrayList();
-					IQueryData queryData = queryDataFactory.createQueryData(target, resource.getURI());
 					IAcceptor<IReferenceDescription> acceptor = new IAcceptor<IReferenceDescription>() {
 						public void accept(IReferenceDescription reference) {
 							references.add(reference);
 						}
 					};
-					if (target.eResource() == resource) {
-						referenceFinder.findLocalReferences(queryData, editorResourceAccess, acceptor, monitor.newChild(40));
-					} else {
-						referenceFinder.findIndexedReferences(queryData, queryData.getLocalContextResourceURI(), acceptor, monitor.newChild(40));
-					}
+					referenceFinder.findReferences(getTargetURIs(target), 
+							singleton(resource.getURI()), editorResourceAccess, acceptor, monitor.newChild(40));
 					if (monitor.isCanceled())
 						return emptyMap();
 					Map<Annotation, Position> result = newHashMapWithExpectedSize(references.size() + 1);
@@ -127,7 +121,15 @@ public class DefaultOccurrenceComputer implements IOccurrenceComputer {
 				}
 				return emptyMap();
 			}
+
 		});
+	}
+
+	/**
+	 * @since 2.3
+	 */
+	protected Iterable<URI> getTargetURIs(EObject target) {
+		return singleton(EcoreUtil2.getNormalizedURI(target));
 	}
 	
 	/**
