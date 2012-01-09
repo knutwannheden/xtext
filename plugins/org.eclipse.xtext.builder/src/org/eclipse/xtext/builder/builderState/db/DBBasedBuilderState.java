@@ -52,7 +52,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private static final Logger LOGGER = Logger.getLogger(DBBasedBuilderState.class);
 
 	private static final String SCHEMA = "org/eclipse/xtext/builder/builderState/db/default-schema.sql";
-	private static final QualifiedName EMPTY_NAME = QualifiedName.create();
 
 	private final ConnectionWrapper conn;
 	private boolean initialized;
@@ -61,8 +60,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	private DBResourceMap resourceMap;
 	private final DBEPackageRegistry packageRegistry;
 
-	// TODO should be injected
-	private final IQualifiedNameConverter nameConverter = new IQualifiedNameConverter.DefaultImpl();
+	private final IQualifiedNameConverter nameConverter = new DBQualifiedNameConverter();
 
 	public DBBasedBuilderState(final Connection conn) {
 		this(new ConnectionWrapper(conn));
@@ -869,7 +867,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			@Override
 			protected IReferenceDescription computeNext(final ResultSet resultSet) throws SQLException {
-				// FIXME target resource ID may have wrong sign here...
 				return new ImmutableReferenceDescription(resource.appendFragment(resultSet.getString(1)),
 						resource.appendFragment(resultSet.getString(2)), resourceMap.getURI(resultSet.getInt(3))
 								.appendFragment(resultSet.getString(4)), packageRegistry.getEReference(resultSet
@@ -1050,11 +1047,10 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	}
 
 	private QualifiedName createQualifiedNameFromString(final String dotted) {
-		return dotted.length() == 0 ? EMPTY_NAME : nameConverter.toQualifiedName(dotted);
+		return nameConverter.toQualifiedName(dotted);
 	}
 
 	private String convertQualifiedNameToString(final QualifiedName qn) {
-		// FIXME use different delimiter; '.' is not allowed inside a name segment!
 		return nameConverter.toString(qn);
 	}
 

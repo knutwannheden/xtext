@@ -71,8 +71,8 @@ public class DBEPackageRegistry {
 			}
 			eclassStmt.executeBatch();
 
-			eclassSupertypesStmt = conn.prepare("INSERT INTO ECLASS_SUPERTYPES (ECLASS_ID, SUPERTYPE_ECLASS_ID)"
-					+ " VALUES (?, ?)");
+			eclassSupertypesStmt = conn
+					.prepare("INSERT INTO ECLASS_SUPERTYPES (ECLASS_ID, SUPERTYPE_ECLASS_ID) VALUES (?, ?)");
 			for (EClass eClass : allMissingEClasses) {
 				Integer eClassId = getEClassId(eClass);
 				for (EClass superType : eClass.getEAllSuperTypes()) {
@@ -89,9 +89,11 @@ public class DBEPackageRegistry {
 
 			erefStmt = conn.prepare("INSERT INTO EREF (ID, URI) VALUES (NEXTVAL('EREF_SEQ'), ?)");
 			for (EClass eClass : allMissingEClasses) {
-				for (EReference feature : eClass.getEReferences()) {
-					erefStmt.setString(1, EcoreUtil.getURI(feature).toString());
-					erefStmt.addBatch();
+				for (EReference ref : eClass.getEReferences()) {
+					if (!(ref.isContainment() || ref.isContainer())) {
+						erefStmt.setString(1, EcoreUtil.getURI(ref).toString());
+						erefStmt.addBatch();
+					}
 				}
 			}
 			erefStmt.executeBatch();
@@ -104,6 +106,17 @@ public class DBEPackageRegistry {
 
 	public boolean isRegistered(EClass eClass) throws SQLException {
 		return !UNKNOWN_ECLASS.equals(getEClassId(eClass));
+	}
+
+	public void registerEReference(final EReference ref) throws SQLException {
+		PreparedStatement erefStmt = null;
+		try {
+			erefStmt = conn.prepare("INSERT INTO EREF (ID, URI) VALUES (NEXTVAL('EREF_SEQ'), ?)"); //$NON-NLS-1$
+			erefStmt.setString(1, EcoreUtil.getURI(ref).toString());
+			erefStmt.execute();
+		} finally {
+			conn.close(erefStmt);
+		}
 	}
 
 	public void reload() {
@@ -220,18 +233,8 @@ public class DBEPackageRegistry {
 			if (rs.next()) {
 				result = rs.getInt(1);
 			} else {
-				conn.close(stmt);
-				stmt = conn.prepare("SELECT 1 FROM ECLASS WHERE URI = ?");
-				stmt.setString(1, EcoreUtil.getURI(ref.getEContainingClass()).toString());
-				stmt.execute();
-				rs = stmt.getResultSet();
-				if (rs.next()) {
-					LOGGER.error("Index metadata out of sync for EClass " + EcoreUtil.getURI(ref.getEContainingClass()));
-					return 0;
-				} else {
-					registerEClasses(ImmutableSet.of(ref.getEContainingClass()));
-					result = getEReferenceId(ref);
-				}
+				registerEReference(ref);
+				return getEReferenceId(ref);
 			}
 		} finally {
 			conn.close(stmt);
@@ -275,7 +278,7 @@ public class DBEPackageRegistry {
 		}
 		if (ePackage.eResource() != null) {
 			EObject eObject = ePackage.eResource().getEObject(uri.fragment());
-			return eObject instanceof EReference ? (EReference) eObject : null; // NOPMD Null assignment
+			return eObject instanceof EReference ? (EReference) eObject : null;
 		}
 		for (EClassifier eClassifier : ePackage.getEClassifiers()) {
 			if (eClassifier instanceof EClass) {
