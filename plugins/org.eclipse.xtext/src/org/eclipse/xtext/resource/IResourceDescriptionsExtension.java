@@ -12,7 +12,7 @@ import org.eclipse.xtext.util.Arrays;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
- * @since 2.2
+ * @since 2.3
  */
 public interface IResourceDescriptionsExtension {
 

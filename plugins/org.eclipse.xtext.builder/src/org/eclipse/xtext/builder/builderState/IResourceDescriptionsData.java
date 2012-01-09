@@ -15,6 +15,7 @@ import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 
 /**
+ * @since 2.3
  * @author Knut Wannheden - Initial contribution and API
  */
 public interface IResourceDescriptionsData extends IResourceDescriptions, IResourceDescriptionsExtension {
@@ -24,7 +25,7 @@ public interface IResourceDescriptionsData extends IResourceDescriptions, IResou
 	IResourceDescriptionsData copy(boolean keepOldState);
 
 	void addDescription(URI uri, IResourceDescription newDescription);
-	
+
 	void removeDescription(URI uri);
 
 	void removeDescriptions(Set<URI> uris);

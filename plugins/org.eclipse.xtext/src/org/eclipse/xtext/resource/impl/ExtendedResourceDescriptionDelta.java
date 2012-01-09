@@ -29,7 +29,7 @@ import com.google.common.collect.Sets;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
- * @since 2.2
+ * @since 2.3
  */
 public class ExtendedResourceDescriptionDelta implements IResourceDescription.Delta, IResourceDescription.DeltaExtension {
 
