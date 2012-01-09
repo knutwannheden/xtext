@@ -5,13 +5,14 @@ package org.eclipse.xtext.xtend2.ui;
 
 import org.eclipse.jface.text.rules.ITokenScanner;
 import org.eclipse.jface.text.source.DefaultCharacterPairMatcher;
+import org.eclipse.jface.text.source.IAnnotationHover;
 import org.eclipse.jface.text.source.ICharacterPairMatcher;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.xtext.builder.EclipseResourceFileSystemAccess2;
 import org.eclipse.xtext.builder.IXtextBuilderParticipant;
-import org.eclipse.xtext.builder.navigation.IDerivedMemberAwareEditorOpener;
+import org.eclipse.xtext.common.types.ui.navigation.IDerivedMemberAwareEditorOpener;
 import org.eclipse.xtext.common.types.xtext.ui.ITypesProposalProvider;
 import org.eclipse.xtext.ui.LanguageSpecific;
 import org.eclipse.xtext.ui.editor.IURIEditorOpener;
@@ -47,6 +48,8 @@ import org.eclipse.xtext.xtend2.ui.builder.XtendBuilderParticipant;
 import org.eclipse.xtext.xtend2.ui.contentassist.ImportingTypesProposalProvider;
 import org.eclipse.xtext.xtend2.ui.editor.InitiallyCollapsableAwareFoldingStructureProvider;
 import org.eclipse.xtext.xtend2.ui.editor.OccurrenceComputer;
+import org.eclipse.xtext.xtend2.ui.editor.OverrideIndicatorModelListener;
+import org.eclipse.xtext.xtend2.ui.editor.OverrideIndicatorRulerAction;
 import org.eclipse.xtext.xtend2.ui.editor.RichStringAwareSourceViewer;
 import org.eclipse.xtext.xtend2.ui.editor.RichStringAwareToggleCommentAction;
 import org.eclipse.xtext.xtend2.ui.editor.SingleLineCommentHelper;
@@ -58,6 +61,7 @@ import org.eclipse.xtext.xtend2.ui.highlighting.ShowWhitespaceCharactersActionCo
 import org.eclipse.xtext.xtend2.ui.highlighting.TokenToAttributeIdMapper;
 import org.eclipse.xtext.xtend2.ui.highlighting.XtendHighlightingCalculator;
 import org.eclipse.xtext.xtend2.ui.highlighting.XtendHighlightingConfiguration;
+import org.eclipse.xtext.xtend2.ui.hover.XtendAnnotationHover;
 import org.eclipse.xtext.xtend2.ui.hover.XtendHoverProvider;
 import org.eclipse.xtext.xtend2.ui.hyperlinking.XtendHyperlinkHelper;
 import org.eclipse.xtext.xtend2.ui.outline.Xtend2OutlineNodeComparator;
@@ -86,7 +90,17 @@ public class Xtend2UiModule extends org.eclipse.xtext.xtend2.ui.AbstractXtend2Ui
 		binder.bindConstant().annotatedWith(Names.named(XtextEditor.KEY_BINDING_SCOPE)).to("org.eclipse.xtext.xtend2.ui.XtendEditorScope");
 	}
 	
-	
+	public void configureOverrideIndicatorSupport(Binder binder) {
+		binder.bind(IXtextEditorCallback.class).annotatedWith(Names.named("OverrideIndicatorModelListener")) //$NON-NLS-1$
+				.to(OverrideIndicatorModelListener.class);
+		binder.bind(IActionContributor.class).annotatedWith(Names.named("OverrideIndicatorRulerAction")).to( //$NON-NLS-1$
+				OverrideIndicatorRulerAction.class);
+	}
+
+	@Override
+	public Class<? extends IAnnotationHover> bindIAnnotationHover () {
+		return XtendAnnotationHover.class;
+	}
 
 	@Override
 	public Class<? extends IHighlightingConfiguration> bindIHighlightingConfiguration() {

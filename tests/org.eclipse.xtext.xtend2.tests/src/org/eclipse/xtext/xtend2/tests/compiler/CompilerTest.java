@@ -60,6 +60,18 @@ import com.google.inject.Injector;
  */
 public class CompilerTest extends AbstractXtend2TestCase {
 	
+	public void testBug367763() throws Exception {
+		String code = 
+				"  def String foo(Number x) { throw new IllegalArgumentException() }\n" + 
+				"\n" + 
+				"  def foo(Object x) {'Object'}\n" + 
+				"\n" + 
+				"  def test(Object it) {\n" + 
+				"    foo()\n" + 
+				"  }";
+		invokeAndExpect2("Object",code,"test", new Object());
+	}
+	
 	public void testClosuresAndExceptions() throws Exception {
 		String code = "" +
 				"def test() {\n" +
@@ -2447,7 +2459,67 @@ public class CompilerTest extends AbstractXtend2TestCase {
 						"		  } while (true)" + 
 						"    }", "whileLoopTest");
 	}
+	
+	public void testBug366525_0() throws Exception {
+		try {
+			invokeAndExpect2(null, 
+				"  def foo() {\n" +
+				"    return { if(true) throw new Exception(\"Bug366525\") else null }\n" +
+				"  }\n",
+				"foo");
+			fail("Expected Exception(\"Bug366525\")");
+		} catch(InvocationTargetException e) {
+			assertNotNull(e.getCause());
+			assertEquals("Bug366525", e.getCause().getMessage());
+		}
+	}
 
+	public void testBug366525_1() throws Exception {
+		try {
+			String javaCode = compileToJavaCode("class Foo {\n" +
+					"  def foo() {\n" +
+					"    return { if(true) throw new Exception(\"Bug366525\") else null }\n" +
+					"  }\n" +
+					"}");
+			assertTrue(javaCode.contains("Exceptions.sneakyThrow"));
+			javaCompiler.compileToClass("Foo", javaCode);
+		} catch(Exception e) {
+			assertEquals("Bug366525", e.getMessage());
+		}
+	}
+
+	public void testBug366525_2() throws Exception {
+		try {
+			String javaCode = compileToJavaCode("class Foo {\n" +
+					"  def foo() throws Exception {\n" +
+					"    return { if(true) throw new Exception(\"Bug366525\") else null }\n" +
+					"  }\n" +
+					"}");
+			assertFalse(javaCode.contains("Exceptions.sneakyThrow"));
+			javaCompiler.compileToClass("Foo", javaCode);
+		} catch(Exception e) {
+			assertEquals("Bug366525", e.getMessage());
+		}
+	}
+
+	public void testRemoveDuplicateExceptions() throws Exception {
+		Class<?> clazz = compileJavaCode("Foo", "class Foo {\n" +
+				"  def dispatch foo(Object o) throws Exception {}\n" +
+				"  def dispatch foo(Number m) throws Exception {}\n" +
+				"}");
+		Method fooMethod = clazz.getMethod("foo", Object.class);
+		assertEquals(1, fooMethod.getExceptionTypes().length);
+		assertEquals(Exception.class, fooMethod.getExceptionTypes()[0]);
+	}
+	
+	public void testParameterAnnotation() throws Exception {
+		Class<?> clazz = compileJavaCode("Foo", "class Foo {\n" +
+				"  def foo(@Deprecated Object o) {}\n" +
+				"}");
+		Method fooMethod = clazz.getMethod("foo", Object.class);
+		assertEquals(1, fooMethod.getParameterAnnotations()[0].length);
+		assertEquals(Deprecated.class, fooMethod.getParameterAnnotations()[0][0].annotationType());
+	}
 	
 	@Inject
 	private EclipseRuntimeDependentJavaCompiler javaCompiler;

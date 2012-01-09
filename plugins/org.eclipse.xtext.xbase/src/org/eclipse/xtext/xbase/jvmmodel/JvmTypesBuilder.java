@@ -62,7 +62,6 @@ import org.eclipse.xtext.xbase.compiler.CompilationStrategyAdapter;
 import org.eclipse.xtext.xbase.compiler.DocumentationAdapter;
 import org.eclipse.xtext.xbase.compiler.ImportManager;
 import org.eclipse.xtext.xbase.lib.Functions;
-import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
 
 import com.google.inject.Inject;
@@ -412,11 +411,7 @@ public class JvmTypesBuilder {
 	public JvmConstructor toConstructor(EObject sourceElement, String simpleName, Procedure1<JvmConstructor> init) {
 		JvmConstructor constructor = TypesFactory.eINSTANCE.createJvmConstructor();
 		constructor.setSimpleName(nullSaveName(simpleName));
-		setBody(constructor, new Function1<ImportManager, CharSequence>() {
-			public CharSequence apply(ImportManager p) {
-				return "{}";
-			}
-		});
+		constructor.setVisibility(JvmVisibility.PUBLIC);
 		if (init != null && simpleName != null)
 			init.apply(constructor);
 		return associate(sourceElement, constructor);

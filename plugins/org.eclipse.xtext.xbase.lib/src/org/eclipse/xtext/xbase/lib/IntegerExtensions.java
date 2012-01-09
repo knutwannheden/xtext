@@ -16,281 +16,7 @@ import java.util.Iterator;
  * @author Jan Koehnlein - Primitive versions
  */
 public class IntegerExtensions {
-
-	/**
-	 * The unary <code>minus</code> operator. This is the equivalent to the unary java <code>-</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @return <code>-a</code>
-	 */
-	public static int operator_minus(int a) {
-		return -a;
-	}
-
-	/**
-	 * The unary <code>minus</code> operator. This is the equivalent to the unary java <code>-</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @return <code>-a</code>
-	 * @throws NullPointerException
-	 *             if {@code a} is <code>null</code>.
-	 */
-	public static int operator_minus(Integer a) {
-		return -a;
-	}
-
-	/**
-	 * The binary <code>plus</code> operator. This is the equivalent to the java <code>+</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a+b</code>
-	 */
-	public static int operator_plus(int a, int b) {
-		return a + b;
-	}
-
-	/**
-	 * The binary <code>plus</code> operator. This is the equivalent to the java <code>+</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a+b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_plus(Integer a, Number b) {
-		return a + b.intValue();
-	}
-
-	/**
-	 * The binary <code>minus</code> operator. This is the equivalent to the java <code>-</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a-b</code>
-	 */
-	public static int operator_minus(int a, int b) {
-		return a - b;
-	}
-
-	/**
-	 * The binary <code>minus</code> operator. This is the equivalent to the java <code>-</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a-b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_minus(Integer a, Number b) {
-		return a - b.intValue();
-	}
-
-	/**
-	 * The <code>power</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a ** b</code>
-	 */
-	public static int operator_power(int a, int b) {
-		return (int) Math.pow(a, b);
-	}
-
-	/**
-	 * The <code>power</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a ** b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_power(Integer a, Number b) {
-		return (int) Math.pow(a, b.intValue());
-	}
-
-	/**
-	 * The binary <code>times</code> operator. This is the equivalent to the java <code>*</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a*b</code>
-	 */
-	public static int operator_multiply(int a, int b) {
-		return a * b;
-	}
-
-	/**
-	 * The binary <code>times</code> operator. This is the equivalent to the java <code>*</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a*b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_multiply(Integer a, Number b) {
-		return a * b.intValue();
-	}
-
-	/**
-	 * The binary <code>divide</code> operator. This is the equivalent to the java <code>/</code> operator. That is, the
-	 * result will be the integral result of the division, e.g. <code>operator_divide(1, 2)</code> yields <code>0</code>
-	 * .
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a/b</code>
-	 */
-	public static int operator_divide(int a, int b) {
-		return a / b;
-	}
-
-	/**
-	 * The binary <code>divide</code> operator. This is the equivalent to the java <code>/</code> operator. That is, the
-	 * result will be the integral result of the division, e.g. <code>operator_divide(1, 2)</code> yields <code>0</code>
-	 * .
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a/b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_divide(Integer a, Number b) {
-		return a / b.intValue();
-	}
-
-	/**
-	 * The binary <code>modulo</code> operator. This is the equivalent to the java <code>%</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a%b</code>
-	 */
-	public static int operator_modulo(int a, int b) {
-		return a % b;
-	}
-
-	/**
-	 * The binary <code>modulo</code> operator. This is the equivalent to the java <code>%</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a%b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int operator_modulo(Integer a, Number b) {
-		return a % b.intValue();
-	}
-
-	/**
-	 * The binary <code>equals</code> operator. This is the equivalent to the java <code>==</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a==b</code>
-	 */
-	public static boolean operator_equals(int a, int b) {
-		return a == b;
-	}
-
-	/**
-	 * The binary <code>not equals</code> operator. This is the equivalent to the java <code>!=</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a!=b</code>
-	 */
-	public static boolean operator_notEquals(int a, int b) {
-		return a != b;
-	}
-
-	/**
-	 * The binary <code>less than</code> operator. This is the equivalent to the java <code>&lt;</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a&lt;b</code>
-	 */
-	public static boolean operator_lessThan(int a, int b) {
-		return a < b;
-	}
-
-	/**
-	 * The binary <code>less than or equals</code> operator. This is the equivalent to the java <code>&lt;=</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a&lt;=b</code>
-	 */
-	public static boolean operator_lessEqualsThan(int a, int b) {
-		return a <= b;
-	}
-
-	/**
-	 * The binary <code>greater than</code> operator. This is the equivalent to the java <code>&gt;</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a&gt;b</code>
-	 */
-	public static boolean operator_greaterThan(int a, int b) {
-		return a > b;
-	}
-
-	/**
-	 * The binary <code>greater than or equals</code> operator. This is the equivalent to the java <code>&gt;=</code> operator.
-	 * 
-	 * @param a
-	 *            an integer.
-	 * @param b
-	 *            an integer.
-	 * @return <code>a&gt;=b</code>
-	 */
-	public static boolean operator_greaterEqualsThan(int a, int b) {
-		return a >= b;
-	}
-
+	
 	/**
 	 * The <code>upTo</code> operator yields an iterable of integral numbers from {@code a} up to {@code b} if {@code b}
 	 * is larger than {@code a} or otherwise from {@code a} down to {@code b}.
@@ -300,13 +26,9 @@ public class IntegerExtensions {
 	 * @param b
 	 *            a number. May not be <code>null</code>.
 	 * @return an iterable of integral numbers. Never <code>null</code>.
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
-	public static Iterable<Integer> operator_upTo(final Integer a, Number b) {
-		if (a == null)
-			throw new NullPointerException("a");
-		final int upTo = b.intValue() + 1;
+	public static Iterable<Integer> operator_upTo(final int a, int b) {
+		final int upTo = b + 1;
 		return new Iterable<Integer>() {
 			public Iterator<Integer> iterator() {
 				return new IntIterator(a, upTo);
@@ -328,21 +50,6 @@ public class IntegerExtensions {
 	}
 
 	/**
-	 * The bitwise inclusive <code>or</code> operation. This is the equivalent to the java <code>|</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a|b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int bitwiseOr(Integer a, Number b) {
-		return a | b.intValue();
-	}
-	
-	/**
 	 * The bitwise exclusive <code>or</code> operation. This is the equivalent to the java <code>^</code> operator.
 	 * 
 	 * @param a
@@ -353,21 +60,6 @@ public class IntegerExtensions {
 	 */
 	public static int bitwiseXor(int a, int b) {
 		return a ^ b;
-	}
-
-	/**
-	 * The bitwise exclusive <code>or</code> operation. This is the equivalent to the java <code>^</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a^b</code>
-	 * @throws NullPointerException
-	 *             if {@code a} or {@code b} is <code>null</code>.
-	 */
-	public static int bitwiseXor(Integer a, Number b) {
-		return a ^ b.intValue();
 	}
 
 	/**
@@ -384,19 +76,6 @@ public class IntegerExtensions {
 	}
 
 	/**
-	 * The bitwise <code>and</code> operation. This is the equivalent to the java <code>&</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @param b
-	 *            a number. May not be <code>null</code>.
-	 * @return <code>a&b</code>
-	 */
-	public static int bitwiseAnd(Integer a, Number b) {
-		return a & b.intValue();
-	}
-
-	/**
 	 * The bitwise complement operation. This is the equivalent to the java <code>~</code> operator.
 	 * 
 	 * @param a
@@ -404,19 +83,6 @@ public class IntegerExtensions {
 	 * @return the bitwise complement of <code>a</code>.
 	 */
 	public static int bitwiseNot(int a) {
-		return ~a;
-	}
-
-	/**
-	 * The bitwise complement operation. This is the equivalent to the java <code>~</code> operator.
-	 * 
-	 * @param a
-	 *            an integer. May not be <code>null</code>.
-	 * @return the bitwise complement of <code>a</code>.
-	 * @throws NullPointerException
-	 *             if {@code a} is <code>null</code>.
-	 */
-	public static int bitwiseNot(Integer a) {
 		return ~a;
 	}
 
@@ -512,5 +178,944 @@ public class IntegerExtensions {
 			throw new UnsupportedOperationException();
 		}
 	}
+
+	// BEGIN generated code
+	/**
+	 * The unary <code>minus</code> operator. This is the equivalent to the Java's <code>-</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @return   <code>-a</code>
+	 */
+	public static int operator_minus(int a) {
+		return -a;
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a+b</code>
+	 */
+	public static double operator_plus(int a, double b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a-b</code>
+	 */
+	public static double operator_minus(int a, double b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a*b</code>
+	 */
+	public static double operator_multiply(int a, double b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a/b</code>
+	 */
+	public static double operator_divide(int a, double b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a%b</code>
+	 */
+	public static double operator_modulo(int a, double b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, double b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, double b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, double b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, double b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, double b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, double b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a double.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, double b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a+b</code>
+	 */
+	public static float operator_plus(int a, float b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a-b</code>
+	 */
+	public static float operator_minus(int a, float b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a*b</code>
+	 */
+	public static float operator_multiply(int a, float b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a/b</code>
+	 */
+	public static float operator_divide(int a, float b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a%b</code>
+	 */
+	public static float operator_modulo(int a, float b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, float b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, float b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, float b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, float b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, float b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, float b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a float.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, float b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a+b</code>
+	 */
+	public static long operator_plus(int a, long b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a-b</code>
+	 */
+	public static long operator_minus(int a, long b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a*b</code>
+	 */
+	public static long operator_multiply(int a, long b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a/b</code>
+	 */
+	public static long operator_divide(int a, long b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a%b</code>
+	 */
+	public static long operator_modulo(int a, long b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, long b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, long b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, long b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, long b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, long b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, long b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a long.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, long b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a+b</code>
+	 */
+	public static int operator_plus(int a, int b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a-b</code>
+	 */
+	public static int operator_minus(int a, int b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a*b</code>
+	 */
+	public static int operator_multiply(int a, int b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a/b</code>
+	 */
+	public static int operator_divide(int a, int b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a%b</code>
+	 */
+	public static int operator_modulo(int a, int b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, int b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, int b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, int b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, int b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, int b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, int b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  an integer.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, int b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a+b</code>
+	 */
+	public static int operator_plus(int a, char b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a-b</code>
+	 */
+	public static int operator_minus(int a, char b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a*b</code>
+	 */
+	public static int operator_multiply(int a, char b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a/b</code>
+	 */
+	public static int operator_divide(int a, char b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a%b</code>
+	 */
+	public static int operator_modulo(int a, char b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, char b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, char b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, char b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, char b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, char b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, char b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a character.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, char b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a+b</code>
+	 */
+	public static int operator_plus(int a, short b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a-b</code>
+	 */
+	public static int operator_minus(int a, short b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a*b</code>
+	 */
+	public static int operator_multiply(int a, short b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a/b</code>
+	 */
+	public static int operator_divide(int a, short b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a%b</code>
+	 */
+	public static int operator_modulo(int a, short b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, short b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, short b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, short b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, short b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, short b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, short b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a short.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, short b) {
+		return Math.pow(a, b);
+	}
+	
+	/**
+	 * The binary <code>plus</code> operator. This is the equivalent to the Java <code>+</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a+b</code>
+	 */
+	public static int operator_plus(int a, byte b) {
+		return a + b;
+	}
+	
+	/**
+	 * The binary <code>minus</code> operator. This is the equivalent to the Java <code>-</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a-b</code>
+	 */
+	public static int operator_minus(int a, byte b) {
+		return a - b;
+	}
+	
+	/**
+	 * The binary <code>multiply</code> operator. This is the equivalent to the Java <code>*</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a*b</code>
+	 */
+	public static int operator_multiply(int a, byte b) {
+		return a * b;
+	}
+	
+	/**
+	 * The binary <code>divide</code> operator. This is the equivalent to the Java <code>/</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a/b</code>
+	 */
+	public static int operator_divide(int a, byte b) {
+		return a / b;
+	}
+	
+	/**
+	 * The binary <code>modulo</code> operator. This is the equivalent to the Java <code>%</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a%b</code>
+	 */
+	public static int operator_modulo(int a, byte b) {
+		return a % b;
+	}
+	
+	/**
+	 * The binary <code>lessThan</code> operator. This is the equivalent to the Java <code>&lt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a&lt;b</code>
+	 */
+	public static boolean operator_lessThan(int a, byte b) {
+		return a < b;
+	}
+	
+	/**
+	 * The binary <code>lessEqualsThan</code> operator. This is the equivalent to the Java <code>&lt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a&lt;=b</code>
+	 */
+	public static boolean operator_lessEqualsThan(int a, byte b) {
+		return a <= b;
+	}
+	
+	/**
+	 * The binary <code>greaterThan</code> operator. This is the equivalent to the Java <code>&gt;</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a&gt;b</code>
+	 */
+	public static boolean operator_greaterThan(int a, byte b) {
+		return a > b;
+	}
+	
+	/**
+	 * The binary <code>greaterEqualsThan</code> operator. This is the equivalent to the Java <code>&gt;=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a&gt;=b</code>
+	 */
+	public static boolean operator_greaterEqualsThan(int a, byte b) {
+		return a >= b;
+	}
+	
+	/**
+	 * The binary <code>equals</code> operator. This is the equivalent to the Java <code>==</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a==b</code>
+	 */
+	public static boolean operator_equals(int a, byte b) {
+		return a == b;
+	}
+	
+	/**
+	 * The binary <code>notEquals</code> operator. This is the equivalent to the Java <code>!=</code> operator.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>a!=b</code>
+	 */
+	public static boolean operator_notEquals(int a, byte b) {
+		return a != b;
+	}
+	
+	/**
+	 * The binary <code>power</code> operator. This is the equivalent to the Java's <code>Math.pow()</code> function.
+	 * 
+	 * @param a  an integer.
+	 * @param b  a byte.
+	 * @return   <code>Math.pow(a, b)</code>
+	 */
+	public static double operator_power(int a, byte b) {
+		return Math.pow(a, b);
+	}
+	
+	// END generated code
+
+
 
 }

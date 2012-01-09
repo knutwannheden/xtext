@@ -20,12 +20,16 @@ import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.EcoreUtil2;
+import org.eclipse.xtext.common.types.JvmAnyTypeReference;
+import org.eclipse.xtext.common.types.JvmCompoundTypeReference;
 import org.eclipse.xtext.common.types.JvmConstructor;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
+import org.eclipse.xtext.common.types.JvmDelegateTypeReference;
 import org.eclipse.xtext.common.types.JvmExecutable;
 import org.eclipse.xtext.common.types.JvmFeature;
 import org.eclipse.xtext.common.types.JvmField;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
+import org.eclipse.xtext.common.types.JvmGenericArrayTypeReference;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmIdentifiableElement;
 import org.eclipse.xtext.common.types.JvmMember;
@@ -36,6 +40,7 @@ import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.JvmWildcardTypeReference;
 import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.common.types.TypesPackage;
+import org.eclipse.xtext.common.types.util.AbstractTypeReferenceVisitor;
 import org.eclipse.xtext.common.types.util.Primitives;
 import org.eclipse.xtext.common.types.util.TypeConformanceComputer;
 import org.eclipse.xtext.common.types.util.TypeReferences;
@@ -77,6 +82,7 @@ import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 import org.eclipse.xtext.xbase.typing.Closures;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
 import org.eclipse.xtext.xbase.typing.JvmExceptions;
+import org.eclipse.xtext.xbase.typing.JvmOnlyTypeConformanceComputer;
 import org.eclipse.xtext.xbase.typing.SynonymTypesProvider;
 import org.eclipse.xtext.xbase.util.XExpressionHelper;
 import org.eclipse.xtext.xbase.util.XbaseUsageCrossReferencer;
@@ -93,6 +99,9 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Inject
 	private TypeConformanceComputer conformanceComputer;
+	
+	@Inject
+	private JvmOnlyTypeConformanceComputer javaTypeConformanceComputer;
 
 	@Inject
 	private XExpressionHelper expressionHelper;
@@ -123,7 +132,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	
 	@Inject
 	private Closures closures;
-
+	
 	private final Set<EReference> typeConformanceCheckedReferences = ImmutableSet.of(
 			XbasePackage.Literals.XVARIABLE_DECLARATION__RIGHT, 
 			XbasePackage.Literals.XIF_EXPRESSION__IF,
@@ -613,24 +622,82 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Check
 	public void checkInstanceOf(XInstanceOfExpression instanceOfExpression) {
-		JvmTypeReference expressionTypeRef = typeProvider.getType(instanceOfExpression.getExpression());
-		if (expressionTypeRef != null && expressionTypeRef.getType() instanceof JvmDeclaredType) {
-			boolean isConformant = isConformant(instanceOfExpression.getType(), expressionTypeRef);
-			if (isConformant) {
-				warning("The expression of type " + getNameOfTypes(expressionTypeRef) + " is already of type "
-						+ canonicalName(instanceOfExpression.getType()), null,
-						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_INSTANCEOF);
-			} else {
-				if (isFinal(expressionTypeRef)) {
-					error("Incompatible conditional operand types " + getNameOfTypes(expressionTypeRef) + " and "
-							+ canonicalName(instanceOfExpression.getType()), null,
-							ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
-				}
-			}
+		JvmTypeReference leftType = typeProvider.getType(instanceOfExpression.getExpression());
+		final JvmTypeReference rightType = instanceOfExpression.getType();
+		if (leftType == null || rightType == null || rightType.getType().eIsProxy()) {
+			return;
+		}
+		if (containsTypeArgs(rightType)) {
+			error("Cannot perform instanceof check against parameterized type " + this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (leftType instanceof JvmAnyTypeReference) {
+			return; // null is ok
+		}
+		if (primitives.isPrimitive(rightType)) {
+			error("Cannot perform instanceof check against primitive type " + this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (primitives.isPrimitive(leftType) 
+			|| typeRefs.isArray(rightType) && !(typeRefs.isArray(leftType) || typeRefs.is(leftType, Object.class))
+			|| isFinal(rightType) && !memberOfTypeHierarchy(rightType, leftType)
+			|| isFinal(leftType) && !memberOfTypeHierarchy(leftType, rightType)) {
+			error("Incompatible conditional operand types " + this.getNameOfTypes(leftType)+" and "+this.getNameOfTypes(rightType), null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INSTANCEOF);
+			return;
+		}
+		if (javaTypeConformanceComputer.isConformant(rightType, leftType)) {
+			warning("The expression of type " + getNameOfTypes(leftType) + " is already of type "
+					+ canonicalName(rightType), null,
+					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, OBSOLETE_INSTANCEOF);
 		}
 	}
 
+	protected boolean memberOfTypeHierarchy(JvmTypeReference type, JvmTypeReference potentialMember) {
+		return javaTypeConformanceComputer.isConformant(potentialMember,type);
+	}
+
+	protected boolean containsTypeArgs(JvmTypeReference instanceOfType) {
+		return instanceOfType.accept(new AbstractTypeReferenceVisitor.InheritanceAware<Boolean>() {
+			@Override
+			public Boolean doVisitTypeReference(JvmTypeReference reference) {
+				return false;
+			}
+			@Override
+			public Boolean doVisitParameterizedTypeReference(JvmParameterizedTypeReference reference) {
+				for (JvmTypeReference arg : reference.getArguments()) {
+					if (arg instanceof JvmWildcardTypeReference) {
+						JvmWildcardTypeReference typeReference = (JvmWildcardTypeReference) arg;
+						if (!typeReference.getConstraints().isEmpty())
+							return true;
+					} else {
+						return true;
+					}
+				}
+				return false;
+			}
+			@Override
+			public Boolean doVisitGenericArrayTypeReference(JvmGenericArrayTypeReference reference) {
+				return reference.getComponentType().accept(this);
+			}
+			@Override
+			public Boolean doVisitDelegateTypeReference(JvmDelegateTypeReference reference) {
+				return reference.getDelegate().accept(this);
+			}
+			@Override
+			public Boolean doVisitCompoundTypeReference(JvmCompoundTypeReference reference) {
+				for (JvmTypeReference ele : reference.getReferences()) {
+					if (ele.accept(this))
+						return true;
+				}
+				return false;
+			}
+		});
+	}
+
 	protected boolean isFinal(JvmTypeReference expressionTypeRef) {
+		if (expressionTypeRef instanceof JvmGenericArrayTypeReference) {
+			return isFinal(((JvmGenericArrayTypeReference) expressionTypeRef).getComponentType());
+		}
 		return expressionTypeRef.getType() instanceof JvmDeclaredType
 				&& ((JvmDeclaredType) expressionTypeRef.getType()).isFinal();
 	}

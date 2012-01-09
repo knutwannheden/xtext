@@ -32,6 +32,7 @@ import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmTypeParameter;
 import org.eclipse.xtext.common.types.JvmTypeReference;
+import org.eclipse.xtext.common.types.JvmUnknownTypeReference;
 import org.eclipse.xtext.common.types.TypesPackage;
 import org.eclipse.xtext.common.types.util.ITypeArgumentContext;
 import org.eclipse.xtext.common.types.util.TypeReferences;
@@ -386,10 +387,13 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		if (receiver == null || receiver.eIsProxy())
 			return IScope.NULLSCOPE;
 		JvmTypeReference receiverType = typeProvider.getType(receiver,true);
+		receiverType = unkownToObject(receiverType, receiver);
 		if (receiverType != null) {
 			return createFeatureScopeForTypeRef(receiverType, context, null, IScope.NULLSCOPE);
+		} else {
+			return IScope.NULLSCOPE;
 		}
-		return IScope.NULLSCOPE;
+		
 	}
 	
 
@@ -458,6 +462,7 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 			EObject implicitReceiver = implicitVariable.getEObjectOrProxy();
 			if (implicitReceiver instanceof JvmIdentifiableElement) {
 				JvmTypeReference receiverType = typeProvider.getTypeForIdentifiable((JvmIdentifiableElement) implicitReceiver);
+				receiverType = unkownToObject(receiverType, expression);
 				if (receiverType != null) {
 					XFeatureCall receiver = XbaseFactory.eINSTANCE.createXFeatureCall();
 					receiver.setFeature((JvmIdentifiableElement) implicitReceiver);
@@ -467,6 +472,13 @@ public class XbaseScopeProvider extends XtypeScopeProvider {
 		}
 	}
 	
+	protected JvmTypeReference unkownToObject(JvmTypeReference receiverType, EObject context) {
+		if (receiverType instanceof JvmUnknownTypeReference) {
+			return typeReferences.getTypeForName(Object.class, context);
+		}
+		return receiverType;
+	}
+
 	protected JvmDeclaredType getContextType(EObject obj) {
 		if (obj == null)
 			return null;

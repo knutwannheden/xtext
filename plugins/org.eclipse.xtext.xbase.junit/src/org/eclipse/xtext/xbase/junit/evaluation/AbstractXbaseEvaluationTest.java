@@ -355,7 +355,7 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 
 	@Test public void testPowerOnIntegers() throws Exception {
-		assertEvaluatesTo(new Integer(8), "2**3");
+		assertEvaluatesTo(new Double(8), "2**3");
 	}
 
 	@Test public void testLessThanOnIntegers_01() throws Exception {
@@ -843,11 +843,11 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 	}
 	
 	@Test public void testNullSafeFieldAccess_0() throws Exception {
-		assertEvaluatesWithException(NullPointerException.class, "new foo.FieldAccess().child.child");
+		assertEvaluatesWithException(NullPointerException.class, "new testdata.FieldAccess().stringField.toUpperCase");
 	}
 
 	@Test public void testNullSafeFieldAccess_1() throws Exception {
-		assertEvaluatesTo(null, "new foo.FieldAccess()?.child?.child");
+		assertEvaluatesTo(null, "new testdata.FieldAccess()?.stringField?.toUpperCase");
 	}
 	
 //	TODO see https://bugs.eclipse.org/bugs/show_bug.cgi?id=341048
@@ -1045,6 +1045,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 		assertEvaluatesTo(Boolean.FALSE, "null instanceof Boolean");
 	}
 	
+	@Test public void testInstanceOf_05() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "[|'foo'] instanceof com.google.common.base.Supplier");
+		assertEvaluatesTo(Boolean.TRUE, "[|'foo'] instanceof org.eclipse.xtext.xbase.lib.Functions$Function0");
+	}
+	
+	@Test public void testInstanceOf_06() throws Exception {
+		assertEvaluatesTo(Boolean.FALSE, "newArrayList('foo','bar') as Object instanceof Object[]");
+		assertEvaluatesTo(Boolean.TRUE, "newArrayList('foo','bar') as String[] instanceof Object[]");
+	}
+	
 	@Test public void testClosure_01() throws Exception {
 		assertEvaluatesTo("literal", "new testdata.ClosureClient().invoke0(|'literal')");
 	}
@@ -1206,6 +1216,16 @@ public abstract class AbstractXbaseEvaluationTest extends TestCase {
 				"  val procedure = client.asProcedure(|result.add('literal'))" +
 				"  client.useRunnable(procedure)" +
 				"  result" +
+				"}");
+	}
+	
+	@Test public void testClosureConversion_01() throws Exception {
+		assertEvaluatesTo(newArrayList("bar","foo"), 
+				"{" +
+						"  val client = new testdata.ClosureClient()" +
+						"  val com.google.inject.Provider<String> provider = [|'foo']" +
+						"  val com.google.common.base.Supplier<String> supplier = [|'bar']" +
+						"  newArrayList(client.useProvider(supplier as =>String), client.useSupplier(provider as =>String))" +
 				"}");
 	}
 	

@@ -52,6 +52,7 @@ import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XForLoopExpression;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.conversion.StaticQualifierValueConverter;
+import org.eclipse.xtext.xbase.conversion.XbaseQualifiedNameValueConverter;
 import org.eclipse.xtext.xbase.scoping.XbaseScopeProvider;
 import org.eclipse.xtext.xbase.scoping.featurecalls.IValidatedEObjectDescription;
 import org.eclipse.xtext.xbase.scoping.featurecalls.JvmFeatureDescription;
@@ -80,7 +81,7 @@ public class XbaseProposalProvider extends AbstractXbaseProposalProvider impleme
 	private XbaseGrammarAccess grammarAccess;
 	
 	@Inject
-	private QualifiedNameValueConverter qualifiedNameValueConverter;
+	private XbaseQualifiedNameValueConverter qualifiedNameValueConverter;
 	
 	@Inject
 	private StaticQualifierValueConverter staticQualifierValueConverter;
@@ -553,7 +554,7 @@ public class XbaseProposalProvider extends AbstractXbaseProposalProvider impleme
 							casted.setSelectionStart(casted.getReplacementOffset() + proposal.length() - 1);
 							casted.setSelectionLength(0);
 							casted.setAutoInsertable(false);
-							casted.setSimpleLinkedMode(myContentAssistContext.getViewer(), '\t', '\n');
+							casted.setSimpleLinkedMode(myContentAssistContext.getViewer(), '\t', '\n', '\r');
 						}
 					}
 					getPriorityHelper().adjustCrossReferencePriority(result, myContentAssistContext.getPrefix());

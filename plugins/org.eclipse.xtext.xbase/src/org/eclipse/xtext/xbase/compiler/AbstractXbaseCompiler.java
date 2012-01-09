@@ -9,6 +9,7 @@ package org.eclipse.xtext.xbase.compiler;
 
 import static com.google.common.collect.Sets.*;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
@@ -126,15 +127,15 @@ public abstract class AbstractXbaseCompiler {
 				}
 				referenceSerializer.serialize(procedureOrFunction, obj, appendable, false, false, true, false);
 				appendable.append("() {").increaseIndentation();
-				appendable.append("\npublic ");
+				appendable.newLine().append("public ");
 				referenceSerializer.serialize(primitives.asWrapperTypeIfPrimitive(expectedType), obj, appendable);
 				appendable.append(" apply() {").increaseIndentation();
 				if (needsSneakyThrow) {
-					appendable.append("\ntry {").increaseIndentation();
+					appendable.newLine().append("try {").increaseIndentation();
 				}
 				internalToJavaStatement(obj, appendable, !isPrimitiveVoidExpected && !isPrimitiveVoid && !earlyExit);
 				if (!isPrimitiveVoidExpected && !earlyExit) {
-						appendable.append("\nreturn ");
+						appendable.newLine().append("return ");
 						if (isPrimitiveVoid && !isPrimitiveVoidExpected) {
 							appendable.append("null");
 						} else {
@@ -144,16 +145,16 @@ public abstract class AbstractXbaseCompiler {
 				}
 				if (needsSneakyThrow) {
 					String name = appendable.declareSyntheticVariable(new Object(), "_e");
-					appendable.decreaseIndentation().append("\n} catch (Exception "+name+") {").increaseIndentation();
-					appendable.append("\nthrow ");
+					appendable.decreaseIndentation().newLine().append("} catch (Exception "+name+") {").increaseIndentation();
+					appendable.newLine().append("throw ");
 					appendable.append(typeReferences.findDeclaredType(Exceptions.class, obj));
 					appendable.append(".sneakyThrow(");
 					appendable.append(name);
 					appendable.append(");");
-					appendable.decreaseIndentation().append("\n}");
+					appendable.decreaseIndentation().newLine().append("}");
 				}
-				appendable.decreaseIndentation().append("\n}");
-				appendable.decreaseIndentation().append("\n}.apply()");
+				appendable.decreaseIndentation().newLine().append("}");
+				appendable.decreaseIndentation().newLine().append("}.apply()");
 			} finally {
 				appendable.closeScope();
 			}
@@ -176,11 +177,11 @@ public abstract class AbstractXbaseCompiler {
 		final boolean earlyExit = exitComputer.isEarlyExit(obj);
 		boolean needsSneakyThrow = needsSneakyThrow(obj, declaredExceptions);
 		if (needsSneakyThrow) {
-			appendable.append("\ntry {").increaseIndentation();
+			appendable.newLine().append("try {").increaseIndentation();
 		}
 		internalToJavaStatement(obj, appendable, !isPrimitiveVoidExpected && !isPrimitiveVoid && !earlyExit);
 		if (!isPrimitiveVoidExpected && !earlyExit) {
-				appendable.append("\nreturn ");
+				appendable.newLine().append("return ");
 				if (isPrimitiveVoid && !isPrimitiveVoidExpected) {
 					appendable.append("null");
 				} else {
@@ -190,18 +191,18 @@ public abstract class AbstractXbaseCompiler {
 		}
 		if (needsSneakyThrow) {
 			String name = appendable.declareSyntheticVariable(new Object(), "_e");
-			appendable.decreaseIndentation().append("\n} catch (Exception "+name+") {").increaseIndentation();
-			appendable.append("\nthrow ");
+			appendable.decreaseIndentation().newLine().append("} catch (Exception "+name+") {").increaseIndentation();
+			appendable.newLine().append("throw ");
 			appendable.append(typeReferences.findDeclaredType(Exceptions.class, obj));
 			appendable.append(".sneakyThrow(");
 			appendable.append(name);
 			appendable.append(");");
-			appendable.decreaseIndentation().append("\n}");
+			appendable.decreaseIndentation().newLine().append("}");
 		}
 		return appendable;
 	}
 
-	protected boolean needsSneakyThrow(XExpression obj, Set<JvmTypeReference> declaredExceptions) {
+	protected boolean needsSneakyThrow(XExpression obj, Collection<JvmTypeReference> declaredExceptions) {
 		Iterable<JvmTypeReference> types = typeProvider.getThrownExceptionTypes(obj);
 		Iterable<JvmTypeReference> exceptions = jvmExceptions.findUnhandledExceptions(obj, types, declaredExceptions);
 		return ! Iterables.isEmpty(exceptions);
@@ -223,7 +224,7 @@ public abstract class AbstractXbaseCompiler {
 			} else {
 				internalToJavaStatement(ex, b, isImplicitReturn);
 				if (isImplicitReturn) {
-					b.append("\nreturn (");
+					b.newLine().append("return (");
 					internalToConvertedExpression(ex, b, null);
 					b.append(");");
 				}
@@ -385,7 +386,7 @@ public abstract class AbstractXbaseCompiler {
 		}
 		final String proposedName = makeJavaIdentifier(getFavoriteVariableName(expr));
 		final String varName = b.declareSyntheticVariable(expr, proposedName);
-		b.append("\n");
+		b.newLine();
 		serialize(type,expr,b);
 		b.append(" ").append(varName).append(" = ");
 		expression.exec();

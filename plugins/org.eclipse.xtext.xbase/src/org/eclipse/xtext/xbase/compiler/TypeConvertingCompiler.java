@@ -92,9 +92,9 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 			convertArrayToList(left, appendable, context, expression);
 		} else if (isList(right) && getTypeReferences().isArray(left)) {
 			convertListToArray(left, appendable, context, expression);
-		} else if (isFunction(right)) {
+		} else if (isFunction(right) || (isFunction(left) && closures.findImplementingOperation(right, context.eResource()) != null)) {
 			convertFunctionType(left, right, appendable, expression, context);
-		} else if (isProcedure(right)) {
+		} else if (isProcedure(right) || (isProcedure(left) && closures.findImplementingOperation(right, context.eResource()) != null)) {
 			convertFunctionType(left, right, appendable, expression, context);
 		} else {
 			expression.exec();
@@ -173,7 +173,7 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		serialize(resolvedExpectedType, null, appendable, true, false);
 		appendable.append("() {");
 		appendable.increaseIndentation().increaseIndentation();
-		appendable.append("\npublic ");
+		appendable.newLine().append("public ");
 		serialize(typeArgumentContext.resolve(operation.getReturnType()), null, appendable, true, false);
 		appendable.append(" ").append(operation.getSimpleName()).append("(");
 		EList<JvmFormalParameter> params = operation.getParameters();
@@ -188,11 +188,14 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		appendable.append(") {");
 		appendable.increaseIndentation();
 		if (!getTypeReferences().is(operation.getReturnType(), Void.TYPE))
-			appendable.append("\nreturn ");
+			appendable.newLine().append("return ");
 		else
-			appendable.append("\n");
+			appendable.newLine();
 		expression.exec();
-		appendable.append(".apply(");
+		appendable.append(".");
+		JvmOperation actualOperation = closures.findImplementingOperation(functionType, context.eResource());
+		appendable.append(actualOperation.getSimpleName());
+		appendable.append("(");
 		for (Iterator<JvmFormalParameter> iterator = params.iterator(); iterator.hasNext();) {
 			JvmFormalParameter p = iterator.next();
 			final String name = p.getName();
@@ -202,9 +205,9 @@ public class TypeConvertingCompiler extends AbstractXbaseCompiler {
 		}
 		appendable.append(");");
 		appendable.decreaseIndentation();
-		appendable.append("\n}");
+		appendable.newLine().append("}");
 		appendable.decreaseIndentation().decreaseIndentation();
-		appendable.append("\n}");
+		appendable.newLine().append("}");
 	}
 
 	protected void convertListToArray(
