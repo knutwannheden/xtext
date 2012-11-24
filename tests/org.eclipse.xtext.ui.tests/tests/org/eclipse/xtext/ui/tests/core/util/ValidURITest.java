@@ -44,4 +44,13 @@ public class ValidURITest extends Assert {
 		assertFalse(EcoreUtil2.isValidUri(dummyResource, URI.createURI("platform://resource" + FILE_PATH)));
 		assertFalse(EcoreUtil2.isValidUri(dummyResource, URI.createURI("platform:///resource" + FILE_PATH)));
 	}
+	
+	/**
+	 * https://bugs.eclipse.org/bugs/show_bug.cgi?id=385620
+	 */
+	@Test public void emptyImportURIStringShouldBeInvalid() throws Exception {
+		ResourceSet resourceSet = new ResourceSetImpl();
+		Resource dummyResource = resourceSet.createResource(URI.createURI("test.foo"));
+		assertFalse(EcoreUtil2.isValidUri(dummyResource, URI.createURI("")));
+	}
 }

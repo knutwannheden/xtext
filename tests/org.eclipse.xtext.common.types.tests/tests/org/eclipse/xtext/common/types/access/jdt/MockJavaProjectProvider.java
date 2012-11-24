@@ -36,8 +36,8 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.xtext.common.types.tests.AbstractActivator;
-import org.eclipse.xtext.ui.junit.util.JavaProjectSetupUtil;
-import org.eclipse.xtext.ui.junit.util.PluginUtil;
+import org.eclipse.xtext.junit4.ui.util.JavaProjectSetupUtil;
+import org.eclipse.xtext.junit4.ui.util.PluginUtil;
 import org.eclipse.xtext.util.Strings;
 
 import com.google.common.collect.Lists;
@@ -64,6 +64,8 @@ public class MockJavaProjectProvider implements IJavaProjectProvider {
 	}
 
 	public static void setUp() throws Exception {
+		if(javaProject != null)
+			return;
 		javaProject = createJavaProject("projectWithoutSources",
 				new String[] {
 						JavaCore.NATURE_ID,
@@ -281,9 +283,6 @@ public class MockJavaProjectProvider implements IJavaProjectProvider {
 
 	public static void deleteProject(IProject project) throws CoreException {
 		if (project.exists()) {
-			if (project.isOpen()) {
-				project.close(null);
-			}
 			project.delete(true, true, null);
 		}
 	}

@@ -8,11 +8,9 @@
 package org.eclipse.xtext.common.types.ui.refactoring;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.emf.common.util.WrappedException;
-import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.refactoring.descriptors.RenameJavaElementDescriptor;
 import org.eclipse.jdt.ui.refactoring.RenameSupport;
@@ -29,7 +27,6 @@ import com.google.inject.Provider;
 /**
  * @author Jan Koehnlein - Initial contribution and API
  */
-@SuppressWarnings("restriction")
 public class JdtRenameSupport implements IRenameSupport {
 
 	public static class Factory extends DefaultRenameSupport.Factory {
@@ -57,10 +54,7 @@ public class JdtRenameSupport implements IRenameSupport {
 		@Deprecated
 		protected RenameJavaElementDescriptor createDescriptor(JdtRefactoringContext renameElementContext,
 				String newName) throws JavaModelException {
-			List<IJavaElement> javaElements = renameElementContext.getJavaElements();
-			// TODO handle multiple java elements gracefully
-			IJavaElement referencedJavaElement = javaElements.get(0);
-			return jvmRenameRefactorigProvider.createRenameDescriptor(referencedJavaElement, newName);
+			return jvmRenameRefactorigProvider.createRenameDescriptor(renameElementContext.getJavaElement(), newName);
 		}
 	}
 

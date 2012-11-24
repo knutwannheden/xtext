@@ -24,7 +24,6 @@ import com.google.inject.Inject;
 /**
  * @author Jan Koehnlein - Initial contribution and API
  */
-@SuppressWarnings("restriction")
 public class JvmModelReferenceQueryExecutor extends ReferenceQueryExecutor {
 
 	@Inject
@@ -32,7 +31,7 @@ public class JvmModelReferenceQueryExecutor extends ReferenceQueryExecutor {
 	
 	@Override
 	protected String getLabelPrefix() {
-		return "JVM References to ";
+		return "Java References to ";
 	}
 	
 	@Override

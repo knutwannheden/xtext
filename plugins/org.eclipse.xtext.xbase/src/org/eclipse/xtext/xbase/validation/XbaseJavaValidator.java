@@ -1,5 +1,6 @@
 package org.eclipse.xtext.xbase.validation;
 
+import static com.google.common.collect.Iterables.*;
 import static com.google.common.collect.Sets.*;
 import static java.util.Collections.*;
 import static org.eclipse.xtext.util.Strings.*;
@@ -8,6 +9,7 @@ import static org.eclipse.xtext.xbase.validation.IssueCodes.*;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -18,6 +20,7 @@ import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EPackage;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.EcoreUtil2;
 import org.eclipse.xtext.common.types.JvmAnyTypeReference;
@@ -41,7 +44,10 @@ import org.eclipse.xtext.common.types.JvmWildcardTypeReference;
 import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.common.types.TypesPackage;
 import org.eclipse.xtext.common.types.util.AbstractTypeReferenceVisitor;
+import org.eclipse.xtext.common.types.util.ITypeArgumentContext;
 import org.eclipse.xtext.common.types.util.Primitives;
+import org.eclipse.xtext.common.types.util.SuperTypeCollector;
+import org.eclipse.xtext.common.types.util.TypeArgumentContextProvider;
 import org.eclipse.xtext.common.types.util.TypeConformanceComputer;
 import org.eclipse.xtext.common.types.util.TypeReferences;
 import org.eclipse.xtext.naming.QualifiedName;
@@ -52,9 +58,9 @@ import org.eclipse.xtext.validation.Check;
 import org.eclipse.xtext.validation.ComposedChecks;
 import org.eclipse.xtext.validation.ValidationMessageAcceptor;
 import org.eclipse.xtext.xbase.XAbstractFeatureCall;
+import org.eclipse.xtext.xbase.XAbstractWhileExpression;
 import org.eclipse.xtext.xbase.XAssignment;
 import org.eclipse.xtext.xbase.XBlockExpression;
-import org.eclipse.xtext.xbase.XBooleanLiteral;
 import org.eclipse.xtext.xbase.XCasePart;
 import org.eclipse.xtext.xbase.XCastedExpression;
 import org.eclipse.xtext.xbase.XCatchClause;
@@ -63,13 +69,13 @@ import org.eclipse.xtext.xbase.XConstructorCall;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XForLoopExpression;
+import org.eclipse.xtext.xbase.XIfExpression;
 import org.eclipse.xtext.xbase.XInstanceOfExpression;
-import org.eclipse.xtext.xbase.XIntLiteral;
 import org.eclipse.xtext.xbase.XMemberFeatureCall;
-import org.eclipse.xtext.xbase.XNullLiteral;
+import org.eclipse.xtext.xbase.XNumberLiteral;
 import org.eclipse.xtext.xbase.XReturnExpression;
-import org.eclipse.xtext.xbase.XStringLiteral;
 import org.eclipse.xtext.xbase.XSwitchExpression;
+import org.eclipse.xtext.xbase.XThrowExpression;
 import org.eclipse.xtext.xbase.XTryCatchFinallyExpression;
 import org.eclipse.xtext.xbase.XTypeLiteral;
 import org.eclipse.xtext.xbase.XVariableDeclaration;
@@ -83,10 +89,13 @@ import org.eclipse.xtext.xbase.typing.Closures;
 import org.eclipse.xtext.xbase.typing.ITypeProvider;
 import org.eclipse.xtext.xbase.typing.JvmExceptions;
 import org.eclipse.xtext.xbase.typing.JvmOnlyTypeConformanceComputer;
+import org.eclipse.xtext.xbase.typing.NumberLiterals;
 import org.eclipse.xtext.xbase.typing.SynonymTypesProvider;
 import org.eclipse.xtext.xbase.util.XExpressionHelper;
 import org.eclipse.xtext.xbase.util.XbaseUsageCrossReferencer;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -133,6 +142,15 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	@Inject
 	private Closures closures;
 	
+	@Inject
+	private NumberLiterals numberLiterals;
+	
+	@Inject
+	private SuperTypeCollector superTypeCollector;
+	
+	@Inject
+	private TypeArgumentContextProvider typeArgumentContextProvider;
+
 	private final Set<EReference> typeConformanceCheckedReferences = ImmutableSet.of(
 			XbasePackage.Literals.XVARIABLE_DECLARATION__RIGHT, 
 			XbasePackage.Literals.XIF_EXPRESSION__IF,
@@ -157,29 +175,12 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	}
 
 	@Check
-	public void checkNoSideffectFreeExpressionsInBlockExpression(XBlockExpression blockExpression) {
-		for (int i = 0; i < blockExpression.getExpressions().size() - 1; i++) {
-			XExpression expr = blockExpression.getExpressions().get(i);
-			if (isSideEffectFree(expr)) {
-				error("The expression does not cause any side effects and therefore doesn't do anything in this context.",
-						expr, null, INSIGNIFICANT_INDEX, IssueCodes.SIDE_EFFECT_FREE_EXPRESSION_IN_BLOCK);
-			}
+	protected void checkNumberFormat(XNumberLiteral literal) {
+		try {
+			numberLiterals.numberValue(literal, numberLiterals.getJavaType(literal));
+		} catch (Exception e) {
+			error("Invalid number format: " + e.getMessage(), Literals.XNUMBER_LITERAL__VALUE, INVALID_NUMBER_FORMAT);
 		}
-	}
-
-	// TODO extract and put in separate class for general reuse (see also #checkIsValidConstructorArgument and AbstractXbaseCompiler#isVariableDeclarationRequired)
-	protected boolean isSideEffectFree(XExpression expr) {
-		if (expr instanceof XMemberFeatureCall) {
-			return ((XMemberFeatureCall) expr).getFeature() instanceof JvmField;
-		}
-		if (expr instanceof XFeatureCall) {
-			return !(((XFeatureCall) expr).getFeature() instanceof JvmExecutable);
-		}
-		if (expr instanceof XCastedExpression) {
-			return isSideEffectFree(((XCastedExpression) expr).getTarget());
-		}
-		return expr instanceof XStringLiteral || expr instanceof XTypeLiteral || expr instanceof XIntLiteral
-				|| expr instanceof XNullLiteral || expr instanceof XBooleanLiteral || expr instanceof XClosure;
 	}
 	
 	@Check
@@ -425,7 +426,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 		// TODO what's this special case here?
 		if (expectedType == null || typeRefs.is(expectedType, Void.TYPE))
 			return;
-		JvmTypeReference type = typeProvider.getType(expr);
+		JvmTypeReference type = typeProvider.getCommonReturnType(expr, true);
 		// TODO what's this special case here?
 		if (typeRefs.is(expectedType, Void.class) && EcoreUtil2.getContainerOfType(expr, XClosure.class) != null) {
 			if (typeRefs.is(type, Void.TYPE))
@@ -495,20 +496,28 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 				return;
 
 			JvmType iterable = typeRefs.findDeclaredType(Iterable.class, obj);
+			if (iterable == null) {
+				error("foreach needs '"+Iterable.class.getCanonicalName()+"' on the classpath.", obj, null, -1, MISSING_TYPE);
+				return;
+			}
 			JvmTypeReference argument = typeRefs.wildCard();
 			JvmTypeReference expected = obj.getDeclaredParam().getParameterType();
 			if (expected != null) {
-				argument = typeRefs.wildCardExtends(EcoreUtil2.cloneIfContained(expected));
+				if (typeRefs.is(expected, Void.TYPE)) {
+					// see #checkTypeReferenceIsNotVoid
+					return;
+				}
+				argument = typeRefs.wildCardExtends(EcoreUtil2.cloneIfContained(primitives.asWrapperTypeIfPrimitive(expected)));
 			}
-			JvmParameterizedTypeReference expectedType = typeRefs.createTypeRef(iterable, argument);
+			JvmTypeReference expectedType = typeRefs.createTypeRef(iterable, argument);
 			if (!conformanceComputer.isConformant(expectedType, actualType))
 				error("Incompatible types. Expected " + getNameOfTypes(expectedType) + " but was "
 						+ canonicalName(actualType), obj.getForExpression(), null,
 						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INCOMPATIBLE_TYPES);
 			else if (actualType instanceof JvmParameterizedTypeReference) {
-				// TODO create type argument context and check bound value of iterable's type parameter
 				// rawType - check expectation for Object
-				if (((JvmParameterizedTypeReference) actualType).getArguments().isEmpty()) {
+				ITypeArgumentContext typeArgumentContext = typeArgumentContextProvider.getTypeArgumentContext(new TypeArgumentContextProvider.ReceiverRequest(actualType));
+				if (typeArgumentContext.isRawTypeContext()) {
 					if (obj.getDeclaredParam().getParameterType() != null) {
 						if (!typeRefs.is(obj.getDeclaredParam().getParameterType(), Object.class)) {
 							error("Incompatible types. Expected " + getNameOfTypes(expectedType) + " but was "
@@ -546,10 +555,174 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 		else if (assignmentFeature instanceof JvmFormalParameter)
 			error("Assignment to final parameter", Literals.XASSIGNMENT__ASSIGNABLE,
 					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, ASSIGNMENT_TO_FINAL);
-		else if (assignmentFeature instanceof JvmField && ((JvmField) assignmentFeature).isFinal())
-			error("Assignment to final feature", Literals.XASSIGNMENT__ASSIGNABLE,
+		else if (assignmentFeature instanceof JvmField && ((JvmField) assignmentFeature).isFinal()) {
+			JvmField field = (JvmField) assignmentFeature;
+			JvmIdentifiableElement container = logicalContainerProvider.getNearestLogicalContainer(assignment);
+			
+			// don't issue an error if it's an assignment of a local final field within a constructor.
+			if (container != null && container instanceof JvmConstructor) {
+				JvmConstructor constructor = (JvmConstructor) container;
+				if (field.getDeclaringType() == constructor.getDeclaringType())
+					return;
+			}
+			error("Assignment to final field", Literals.XASSIGNMENT__ASSIGNABLE,
 					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, ASSIGNMENT_TO_FINAL);
+		}
 	}
+
+	/**
+	 * can be called by subclasses to have proper final field initialization checks.
+	 */
+	protected void checkFinalFieldInitialization(JvmGenericType type) {
+		final Set<JvmField> finalFields = newLinkedHashSet(filter(type.getDeclaredFields(), new Predicate<JvmField>() {
+			public boolean apply(JvmField input) {
+				return input.isFinal();
+			}
+		}));
+		if (finalFields.isEmpty())
+			return;
+		final Set<JvmField> initializedFields = newLinkedHashSet(filter(finalFields, new Predicate<JvmField>() {
+			public boolean apply(JvmField input) {
+				return isInitialized(input);
+			}
+
+		}));
+		for (JvmConstructor constr : type.getDeclaredConstructors()) {
+			final Set<JvmField> localInitializedFields = newLinkedHashSet(initializedFields);
+			XExpression expression = logicalContainerProvider.getAssociatedExpression(constr);
+			if (expression != null) {
+				checkInitializationRec(expression, finalFields, localInitializedFields, newLinkedHashSet(localInitializedFields), newHashSet(constr));
+			}
+			for (JvmField field : finalFields) {
+				if (!localInitializedFields.contains(field)) {
+					reportUninitializedField(field);
+				}
+			}
+		}
+		if (isEmpty(type.getDeclaredConstructors())) {
+			finalFields.removeAll(initializedFields);
+			for (JvmField jvmField : finalFields) {
+				reportUninitializedField(jvmField);
+			}
+		}
+	}
+	
+	protected boolean isInitialized(JvmField input) {
+		return logicalContainerProvider.getAssociatedExpression(input) != null;
+	}
+	
+	protected void reportUninitializedField(@SuppressWarnings("unused") JvmField field) {
+	}
+
+	protected void reportFieldAlreadyInitialized(XAssignment assignment, JvmField field) {
+		error("The final field "+field.getSimpleName()+" may already have been assigned", assignment, null, FIELD_ALREADY_INITIALIZED );
+	}
+	
+	
+	protected void checkInitializationRec(EObject expr, Set<JvmField> fields, Set<JvmField> initializedForSure, Set<JvmField> initializedMaybe, Set<JvmConstructor> visited) {
+		if (expr instanceof XAssignment) {
+			XAssignment assignment = (XAssignment) expr;
+			if (assignment.getAssignable() != null)
+				checkInitializationRec(assignment.getAssignable(), fields, initializedForSure, initializedMaybe, visited);
+			if (fields.contains(assignment.getFeature())) {
+				JvmField field = (JvmField) assignment.getFeature();
+				if (fields.contains(field) && (initializedForSure.contains(field) || initializedMaybe.contains(field))) {
+					reportFieldAlreadyInitialized(assignment, field);
+				}
+				initializedForSure.add(field);
+				initializedMaybe.add(field);
+			}
+		} else if (expr instanceof XForLoopExpression) {
+			XForLoopExpression loopExpression = (XForLoopExpression) expr;
+			checkInitializationRec(loopExpression.getForExpression(), fields, initializedForSure, initializedMaybe, visited);
+			checkInitializationRec(loopExpression.getEachExpression(), fields, initializedMaybe, newLinkedHashSet(fields), visited);
+		} else if (expr instanceof XAbstractWhileExpression) {
+			XAbstractWhileExpression loopExpression = (XAbstractWhileExpression) expr;
+			checkInitializationRec(loopExpression.getPredicate(), fields, initializedForSure, newLinkedHashSet(fields), visited);
+			checkInitializationRec(loopExpression.getBody(), fields, initializedMaybe, newLinkedHashSet(fields), visited);
+		} else if (expr instanceof XTryCatchFinallyExpression) {
+			XTryCatchFinallyExpression tryExpr = (XTryCatchFinallyExpression) expr;
+			checkInitializationRec(tryExpr.getExpression(),fields,  initializedForSure, initializedMaybe, visited);
+			checkInitializationRec(tryExpr.getFinallyExpression(), fields, initializedForSure, initializedMaybe, visited);
+		} else if (expr instanceof XIfExpression) {
+			XIfExpression ifExpr = (XIfExpression) expr;
+			checkInitializationRec(ifExpr.getIf(), fields, initializedForSure, initializedMaybe, visited);
+			
+			Set<JvmField> initializedThenForSure = newLinkedHashSet(initializedForSure);
+			Set<JvmField> initializedThenMaybe = newLinkedHashSet(initializedMaybe);
+			checkInitializationRec(ifExpr.getThen(), fields, initializedThenForSure, initializedThenMaybe, visited);
+			
+			if (ifExpr.getElse() != null) {
+				Set<JvmField> initializedElseForSure = newLinkedHashSet(initializedForSure);
+				Set<JvmField> initializedElseMaybe = newLinkedHashSet(initializedMaybe);
+				checkInitializationRec(ifExpr.getElse(), fields, initializedElseForSure, initializedElseMaybe, visited);
+				
+				initializedThenForSure.retainAll(initializedElseForSure);
+				initializedForSure.addAll(initializedThenForSure);
+				initializedMaybe.addAll(initializedThenMaybe);
+				initializedMaybe.addAll(initializedElseMaybe);
+			}
+		} else if (expr instanceof XSwitchExpression) {
+			XSwitchExpression switchExpr = (XSwitchExpression) expr;
+			checkInitializationRec(switchExpr.getSwitch(), fields, initializedForSure, initializedMaybe, visited);
+			Set<JvmField> initializedAllCasesForSure = null;
+			Set<JvmField> initializedAllCasesMaybe = newLinkedHashSet(initializedMaybe);
+			for (XCasePart casepart : switchExpr.getCases()) {
+				if (casepart.getCase() != null) 
+					checkInitializationRec(casepart.getCase(), fields, initializedForSure, initializedMaybe, visited);
+				Set<JvmField> initializedInCaseForSure = newLinkedHashSet(initializedForSure);
+				Set<JvmField> initializedInCaseMaybe = newLinkedHashSet(initializedMaybe);
+				checkInitializationRec(casepart.getThen(), fields, initializedInCaseForSure, initializedInCaseMaybe, visited);
+				if (initializedAllCasesForSure == null)
+					initializedAllCasesForSure = initializedInCaseForSure;
+				else {
+					initializedAllCasesForSure.retainAll(initializedInCaseForSure);
+				}
+				initializedAllCasesMaybe.addAll(initializedInCaseMaybe);
+			}
+			if (switchExpr.getDefault() != null) {
+				Set<JvmField> initializedInCaseForSure = newLinkedHashSet(initializedForSure);
+				Set<JvmField> initializedInCaseMaybe = newLinkedHashSet(initializedMaybe);
+				checkInitializationRec(switchExpr.getDefault(), fields, initializedInCaseForSure, initializedInCaseMaybe, visited);
+				if (initializedAllCasesForSure == null)
+					initializedAllCasesForSure = initializedInCaseForSure;
+				else {
+					initializedAllCasesForSure.retainAll(initializedInCaseForSure);
+				}
+				initializedAllCasesMaybe.addAll(initializedInCaseMaybe);
+				
+				initializedForSure.addAll(initializedAllCasesForSure);
+			}
+			initializedMaybe.addAll(initializedAllCasesMaybe);
+		} else if (expr instanceof XFeatureCall) {
+			XFeatureCall xFeatureCall = (XFeatureCall) expr;
+			if (xFeatureCall.getFeature() instanceof JvmConstructor) {
+				JvmConstructor constructor = (JvmConstructor) xFeatureCall.getFeature();
+				if (constructor.getDeclaringType() == fields.iterator().next().getDeclaringType()) {
+					XExpression expression = logicalContainerProvider.getAssociatedExpression(constructor);
+					if (expression != null) {
+						HashSet<JvmConstructor> visitedCopy = newHashSet(visited);
+						if (visitedCopy.add(constructor)) {
+							checkInitializationRec(expression, fields, initializedForSure, initializedMaybe, visitedCopy);
+						} else {
+							// recursive compiler invocation is checked elsewhere 
+						}
+					}
+				}
+			}
+			for (EObject child : expr.eContents()) {
+				checkInitializationRec(child, fields, initializedForSure, initializedMaybe, visited);
+			}
+		} else if (expr instanceof XClosure) {
+			// don't go into closures.
+			return;
+		} else {
+			for (EObject child : expr.eContents()) {
+				checkInitializationRec(child, fields, initializedForSure, initializedMaybe, visited);
+			}
+		}
+	}
+
 
 	@Check
 	public void checkVariableDeclaration(XVariableDeclaration declaration) {
@@ -562,15 +735,63 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, MISSING_TYPE);
 		}
 	}
-
+	
 	@Check
-	public void checkInnerExpressions(XBlockExpression block) {
-		for (int i = 0; i < block.getExpressions().size() - 1; ++i) {
-			XExpression expr = block.getExpressions().get(i);
-			if (expressionHelper.isLiteral(expr)) {
-				error("Literals can only appear as the last element of a block expression", expr, null,
-						ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INNER_EXPRESSION);
+	public void checkInnerExpressions(XExpression expr) {
+		if (!expressionHelper.hasSideEffects(expr) && !isValueExpectedRecursive(expr)) {
+			mustBeJavaStatementExpression(expr);
+		}
+	}
+	
+	protected boolean isValueExpectedRecursive(XExpression expr) {
+		EStructuralFeature feature = expr.eContainingFeature();
+		EObject container = expr.eContainer();
+		
+		// is part of block
+		if (container instanceof XBlockExpression) {
+			XBlockExpression blockExpression = (XBlockExpression) container;
+			final EList<XExpression> expressions = blockExpression.getExpressions();
+			if (expressions.get(expressions.size()-1) != expr) {
+				return false;
 			}
+		}
+		// no expectation cases
+		if (feature == XbasePackage.Literals.XTRY_CATCH_FINALLY_EXPRESSION__FINALLY_EXPRESSION
+			|| feature == XbasePackage.Literals.XABSTRACT_WHILE_EXPRESSION__BODY
+			|| feature == XbasePackage.Literals.XFOR_LOOP_EXPRESSION__EACH_EXPRESSION) {
+			return false;
+		}
+		// is value expected
+		if (container instanceof XAbstractFeatureCall 
+			|| container instanceof XConstructorCall
+			|| container instanceof XAssignment
+			|| container instanceof XVariableDeclaration
+			|| container instanceof XReturnExpression
+			|| container instanceof XThrowExpression
+			|| feature == XbasePackage.Literals.XFOR_LOOP_EXPRESSION__FOR_EXPRESSION
+			|| feature == XbasePackage.Literals.XSWITCH_EXPRESSION__SWITCH
+			|| feature == XbasePackage.Literals.XCASE_PART__CASE
+			|| feature == XbasePackage.Literals.XIF_EXPRESSION__IF
+			|| feature == XbasePackage.Literals.XABSTRACT_WHILE_EXPRESSION__PREDICATE) {
+			return true;
+		}
+		if (container instanceof XClosure || logicalContainerProvider.getLogicalContainer(expr) != null) {
+			JvmTypeReference expectedReturnType = typeProvider.getExpectedReturnType(expr, true);
+			return !typeRefs.is(expectedReturnType, Void.TYPE);
+		}
+		if (container instanceof XCasePart || container instanceof XCatchClause) {
+			container = container.eContainer();
+		}
+		if (container instanceof XExpression) {
+			return isValueExpectedRecursive((XExpression) container);
+		}
+		return true;
+	}
+
+	protected void mustBeJavaStatementExpression(XExpression expr) {
+		if (expr != null) {
+			error("This expression is not allowed in this context, since it doesn't cause any side effects.", expr, null,
+					ValidationMessageAcceptor.INSIGNIFICANT_INDEX, INVALID_INNER_EXPRESSION);
 		}
 	}
 
@@ -582,7 +803,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 	}
 
 	protected void checkCast(JvmTypeReference toType, JvmTypeReference fromType) {
-		if (fromType != null && fromType.getType() instanceof JvmDeclaredType) {
+		if (toType != null && fromType != null && fromType.getType() instanceof JvmDeclaredType) {
 			JvmDeclaredType targetType = (JvmDeclaredType) fromType.getType();
 			if (targetType.isFinal()) {
 				if (!conformanceComputer.isConformant(toType, fromType)) {
@@ -704,7 +925,13 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 
 	@Check
 	public void checkInstantiationOfAbstractClass(XConstructorCall constructorCall) {
-		if (constructorCall.getConstructor().getDeclaringType().isAbstract()) {
+		JvmConstructor constructor = constructorCall.getConstructor();
+		if (constructor == null || constructor.eIsProxy())
+			return;
+		JvmDeclaredType declaringType = constructor.getDeclaringType();
+		if (declaringType == null || declaringType.eIsProxy())
+			return;
+		if (declaringType.isAbstract()) {
 			error("Cannot instantiate abstract class", null, ValidationMessageAcceptor.INSIGNIFICANT_INDEX,
 					ABSTRACT_CLASS_INSTANTIATION);
 		}
@@ -787,7 +1014,7 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 						XExpression firstInBody = ((XBlockExpression) constructorBody).getExpressions().get(0);
 						if (firstInBody instanceof XFeatureCall) {
 							JvmIdentifiableElement calledFeature = ((XFeatureCall) firstInBody).getFeature();
-							if (calledFeature != null && !feature.eIsProxy() && feature instanceof JvmConstructor) {
+							if (calledFeature != null && !calledFeature.eIsProxy() && calledFeature instanceof JvmConstructor) {
 								calledConstructor = (JvmConstructor) calledFeature;
 								continue;
 							} 
@@ -914,6 +1141,14 @@ public class XbaseJavaValidator extends AbstractXbaseJavaValidator {
 			warning(message, XbasePackage.Literals.XVARIABLE_DECLARATION__NAME, UNUSED_LOCAL_VARIABLE);
 		}
 	}
+	
+	@Check
+	public void checkTypeLiteral(XTypeLiteral typeLiteral) {
+		if (!typeLiteral.getArrayDimensions().isEmpty() && typeLiteral.getType().getIdentifier().equals("void")) {
+			error("'void"+Joiner.on("").join(typeLiteral.getArrayDimensions()) +"' is not a valid type", null, INVALID_TYPE);
+		}
+	}
+
 
 	protected boolean isLocallyUsed(EObject target, EObject containerToFindUsage) {
 		return !XbaseUsageCrossReferencer.find(target, containerToFindUsage).isEmpty();

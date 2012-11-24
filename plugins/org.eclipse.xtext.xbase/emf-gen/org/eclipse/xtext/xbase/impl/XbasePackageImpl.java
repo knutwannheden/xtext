@@ -1,7 +1,9 @@
 /**
- * <copyright>
- * </copyright>
- *
+ * Copyright (c) 2011 itemis AG (http://www.itemis.eu) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.xtext.xbase.impl;
 
@@ -31,9 +33,9 @@ import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XForLoopExpression;
 import org.eclipse.xtext.xbase.XIfExpression;
 import org.eclipse.xtext.xbase.XInstanceOfExpression;
-import org.eclipse.xtext.xbase.XIntLiteral;
 import org.eclipse.xtext.xbase.XMemberFeatureCall;
 import org.eclipse.xtext.xbase.XNullLiteral;
+import org.eclipse.xtext.xbase.XNumberLiteral;
 import org.eclipse.xtext.xbase.XReturnExpression;
 import org.eclipse.xtext.xbase.XStringLiteral;
 import org.eclipse.xtext.xbase.XSwitchExpression;
@@ -151,7 +153,7 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	private EClass xIntLiteralEClass = null;
+	private EClass xNumberLiteralEClass = null;
 
 	/**
 	 * <!-- begin-user-doc -->
@@ -814,9 +816,9 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EClass getXIntLiteral()
+	public EClass getXNumberLiteral()
 	{
-		return xIntLiteralEClass;
+		return xNumberLiteralEClass;
 	}
 
 	/**
@@ -824,9 +826,9 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public EAttribute getXIntLiteral_Value()
+	public EAttribute getXNumberLiteral_Value()
 	{
-		return (EAttribute)xIntLiteralEClass.getEStructuralFeatures().get(0);
+		return (EAttribute)xNumberLiteralEClass.getEStructuralFeatures().get(0);
 	}
 
 	/**
@@ -1094,6 +1096,16 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
+	public EAttribute getXTypeLiteral_ArrayDimensions()
+	{
+		return (EAttribute)xTypeLiteralEClass.getEStructuralFeatures().get(1);
+	}
+
+	/**
+	 * <!-- begin-user-doc -->
+	 * <!-- end-user-doc -->
+	 * @generated
+	 */
 	public EClass getXInstanceOfExpression()
 	{
 		return xInstanceOfExpressionEClass;
@@ -1348,8 +1360,8 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 
 		xNullLiteralEClass = createEClass(XNULL_LITERAL);
 
-		xIntLiteralEClass = createEClass(XINT_LITERAL);
-		createEAttribute(xIntLiteralEClass, XINT_LITERAL__VALUE);
+		xNumberLiteralEClass = createEClass(XNUMBER_LITERAL);
+		createEAttribute(xNumberLiteralEClass, XNUMBER_LITERAL__VALUE);
 
 		xStringLiteralEClass = createEClass(XSTRING_LITERAL);
 		createEAttribute(xStringLiteralEClass, XSTRING_LITERAL__VALUE);
@@ -1386,6 +1398,7 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 
 		xTypeLiteralEClass = createEClass(XTYPE_LITERAL);
 		createEReference(xTypeLiteralEClass, XTYPE_LITERAL__TYPE);
+		createEAttribute(xTypeLiteralEClass, XTYPE_LITERAL__ARRAY_DIMENSIONS);
 
 		xInstanceOfExpressionEClass = createEClass(XINSTANCE_OF_EXPRESSION);
 		createEReference(xInstanceOfExpressionEClass, XINSTANCE_OF_EXPRESSION__TYPE);
@@ -1456,7 +1469,7 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 		xConstructorCallEClass.getESuperTypes().add(this.getXExpression());
 		xBooleanLiteralEClass.getESuperTypes().add(this.getXExpression());
 		xNullLiteralEClass.getESuperTypes().add(this.getXExpression());
-		xIntLiteralEClass.getESuperTypes().add(this.getXExpression());
+		xNumberLiteralEClass.getESuperTypes().add(this.getXExpression());
 		xStringLiteralEClass.getESuperTypes().add(this.getXExpression());
 		xClosureEClass.getESuperTypes().add(this.getXExpression());
 		xCastedExpressionEClass.getESuperTypes().add(this.getXExpression());
@@ -1515,6 +1528,14 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 
 		addEOperation(xAbstractFeatureCallEClass, ecorePackage.getEBoolean(), "isExplicitOperationCallOrBuilderSyntax", 0, 1, IS_UNIQUE, IS_ORDERED);
 
+		addEOperation(xAbstractFeatureCallEClass, this.getXExpression(), "getActualReceiver", 0, 1, IS_UNIQUE, IS_ORDERED);
+
+		addEOperation(xAbstractFeatureCallEClass, this.getXExpression(), "getActualArguments", 0, -1, IS_UNIQUE, IS_ORDERED);
+
+		addEOperation(xAbstractFeatureCallEClass, ecorePackage.getEBoolean(), "isStatic", 0, 1, IS_UNIQUE, IS_ORDERED);
+
+		addEOperation(xAbstractFeatureCallEClass, ecorePackage.getEBoolean(), "isExtension", 0, 1, IS_UNIQUE, IS_ORDERED);
+
 		initEClass(xMemberFeatureCallEClass, XMemberFeatureCall.class, "XMemberFeatureCall", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getXMemberFeatureCall_MemberCallTarget(), this.getXExpression(), null, "memberCallTarget", null, 0, 1, XMemberFeatureCall.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 		initEReference(getXMemberFeatureCall_MemberCallArguments(), this.getXExpression(), null, "memberCallArguments", null, 0, -1, XMemberFeatureCall.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1539,8 +1560,8 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 
 		initEClass(xNullLiteralEClass, XNullLiteral.class, "XNullLiteral", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 
-		initEClass(xIntLiteralEClass, XIntLiteral.class, "XIntLiteral", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
-		initEAttribute(getXIntLiteral_Value(), ecorePackage.getEInt(), "value", null, 0, 1, XIntLiteral.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEClass(xNumberLiteralEClass, XNumberLiteral.class, "XNumberLiteral", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
+		initEAttribute(getXNumberLiteral_Value(), ecorePackage.getEString(), "value", null, 0, 1, XNumberLiteral.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(xStringLiteralEClass, XStringLiteral.class, "XStringLiteral", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEAttribute(getXStringLiteral_Value(), ecorePackage.getEString(), "value", null, 0, 1, XStringLiteral.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
@@ -1579,6 +1600,7 @@ public class XbasePackageImpl extends EPackageImpl implements XbasePackage
 
 		initEClass(xTypeLiteralEClass, XTypeLiteral.class, "XTypeLiteral", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getXTypeLiteral_Type(), theTypesPackage.getJvmType(), null, "type", null, 1, 1, XTypeLiteral.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_COMPOSITE, IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
+		initEAttribute(getXTypeLiteral_ArrayDimensions(), ecorePackage.getEString(), "arrayDimensions", null, 0, -1, XTypeLiteral.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, !IS_UNSETTABLE, !IS_ID, !IS_UNIQUE, !IS_DERIVED, IS_ORDERED);
 
 		initEClass(xInstanceOfExpressionEClass, XInstanceOfExpression.class, "XInstanceOfExpression", !IS_ABSTRACT, !IS_INTERFACE, IS_GENERATED_INSTANCE_CLASS);
 		initEReference(getXInstanceOfExpression_Type(), theTypesPackage.getJvmTypeReference(), null, "type", null, 1, 1, XInstanceOfExpression.class, !IS_TRANSIENT, !IS_VOLATILE, IS_CHANGEABLE, IS_COMPOSITE, !IS_RESOLVE_PROXIES, !IS_UNSETTABLE, IS_UNIQUE, !IS_DERIVED, IS_ORDERED);

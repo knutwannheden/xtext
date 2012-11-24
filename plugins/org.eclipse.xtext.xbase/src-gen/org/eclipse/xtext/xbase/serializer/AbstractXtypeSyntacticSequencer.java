@@ -14,8 +14,8 @@ import org.eclipse.xtext.serializer.analysis.ISyntacticSequencerPDAProvider.ISyn
 import org.eclipse.xtext.serializer.sequencer.AbstractSyntacticSequencer;
 import org.eclipse.xtext.xbase.services.XtypeGrammarAccess;
 
-@SuppressWarnings("restriction")
-public class AbstractXtypeSyntacticSequencer extends AbstractSyntacticSequencer {
+@SuppressWarnings("all")
+public abstract class AbstractXtypeSyntacticSequencer extends AbstractSyntacticSequencer {
 
 	protected XtypeGrammarAccess grammarAccess;
 	protected AbstractElementAlias match_XFunctionTypeRef___LeftParenthesisKeyword_0_0_RightParenthesisKeyword_0_2__q;
@@ -28,9 +28,21 @@ public class AbstractXtypeSyntacticSequencer extends AbstractSyntacticSequencer 
 	
 	@Override
 	protected String getUnassignedRuleCallToken(EObject semanticObject, RuleCall ruleCall, INode node) {
+		if(ruleCall.getRule() == grammarAccess.getArrayBracketsRule())
+			return getArrayBracketsToken(semanticObject, ruleCall, node);
 		return "";
 	}
 	
+	/**
+	 * ArrayBrackets :
+	 * 	'[' ']'
+	 * ;
+	 */
+	protected String getArrayBracketsToken(EObject semanticObject, RuleCall ruleCall, INode node) {
+		if (node != null)
+			return getTokenText(node);
+		return "[]";
+	}
 	
 	@Override
 	protected void emitUnassignedTokens(EObject semanticObject, ISynTransition transition, INode fromNode, INode toNode) {

@@ -9,6 +9,7 @@ import org.eclipse.xtext.resource.IClasspathUriResolver;
 import org.eclipse.xtext.ui.tests.Activator;
 import org.eclipse.xtext.ui.util.JdtClasspathUriResolver;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class JdtClasspathUriResolverTest extends AbstractClasspathUriResolverTest {
@@ -75,18 +76,16 @@ public class JdtClasspathUriResolverTest extends AbstractClasspathUriResolverTes
 		assertResourceLoadable(classpathUri, normalizedUri, expectedUri);
 	}
 	
-//	@Test public void testGetZipEntryUri_Windows() {
-//		String osDependent = "c:\\eclipse\\archive.jar";
-//		String projectDependent = "/org/foo/bar.suffix";
-//		URI uri = JdtClasspathUriResolver.getZipEntryUri(projectDependent, osDependent);
-//		assertEquals("jar:file:///c:/eclipse/archive.jar!org/foo/bar.suffix", uri);
-//	}
-//
-//	@Test public void testGetUpEntryUri_Mac() {
-//		String osDependent = "/Applications/eclipse/archive.jar";
-//		String projectDependent = "/org/foo/bar.suffix";
-//		URI uri = JdtClasspathUriResolver.getZipEntryUri(projectDependent, osDependent);
-//		assertEquals("jar:file:/Applications/eclipse/archive.jar!/org/foo/bar.suffix", uri.toString());
-//	}
-
+	@Ignore("See bug 327491") @Test public void testClasspathUriForFileInRootInJarInWorkspaceWithFragment() throws Exception {
+		_javaProject = JavaProjectSetupUtil.createJavaProject(TEST_PROJECT_NAME);
+		_project = _javaProject.getProject();
+		IFile jarFile = PluginUtil.copyFileToWorkspace(Activator.getInstance(), "/testfiles/" + JAR_FILE, _project, "/"
+				+ JAR_FILE2);
+		JavaProjectSetupUtil.addJarToClasspath(_javaProject, jarFile);
+		URI classpathUri = URI.createURI("classpath:/" + MODEL_FILE + "#/");
+		String expectedUri = "archive:platform:/resource/" + TEST_PROJECT_NAME + "/" + JAR_FILE2 + "!/" + MODEL_FILE + "#/";
+		URI normalizedUri = _resolver.resolve(_javaProject, classpathUri);
+		assertResourceLoadable(classpathUri, normalizedUri, expectedUri);
+	}
+	
 }

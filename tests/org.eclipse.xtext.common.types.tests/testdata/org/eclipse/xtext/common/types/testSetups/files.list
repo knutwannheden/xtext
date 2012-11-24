@@ -1,6 +1,8 @@
+$StartsWithDollar.java.txt
 AbstractMethods.java.txt
 AnnotatedClassWithStringDefault.java.txt
 AnnotatedInterfaceWithStringDefault.java.txt
+Bug334943Client.java.txt
 Bug347739.java.txt
 Bug347739OneTypeParam.java.txt
 Bug347739ThreeTypeParams.java.txt
@@ -26,5 +28,6 @@ TestAnnotationWithDefaults.java.txt
 TestAnnotationWithStringDefault.java.txt
 TestEnum.java.txt
 TestScenario.java.txt
+TypeParamEndsWithDollar.java.txt
 TypeWithInnerAnnotation.java.txt
 TypeWithInnerEnum.java.txt

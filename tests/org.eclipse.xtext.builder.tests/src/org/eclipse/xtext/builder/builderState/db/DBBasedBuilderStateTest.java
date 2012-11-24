@@ -10,8 +10,6 @@ package org.eclipse.xtext.builder.builderState.db;
 import java.io.File;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EObject;
@@ -22,6 +20,10 @@ import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.impl.AbstractResourceDescription;
 import org.eclipse.xtext.util.Files;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
@@ -32,15 +34,14 @@ import com.google.common.collect.Lists;
 /**
  * @author Knut Wannheden - Initial contribution and API
  */
-public class DBBasedBuilderStateTest extends TestCase {
+public class DBBasedBuilderStateTest extends Assert {
 
 	private static final File DIR = new File("test-data");
 
 	private DBBasedBuilderState state;
 
-	@Override
-	protected void setUp() throws Exception {
-		super.setUp();
+	@Before
+	public void setUp() throws Exception {
 		DBBasedBuilderStateProvider provider = new DBBasedBuilderStateProvider() {
 			@Override
 			protected File getBuilderStateLocation() {
@@ -51,15 +52,15 @@ public class DBBasedBuilderStateTest extends TestCase {
 		state.clear();
 	}
 
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() throws Exception {
 		if (state != null) {
 			state.close(false);
 			Files.cleanFolder(DIR, null, true, true);
 		}
-		super.tearDown();
 	}
 
+	@Test
 	public void testTransactionInterface() {
 		state.beginChanges();
 		state.commitChanges();
@@ -80,6 +81,7 @@ public class DBBasedBuilderStateTest extends TestCase {
 		}
 	}
 
+	@Test
 	public void testSimpleTransactionCommit() {
 		List<IResourceDescription> resources = ImmutableList.of(createDescription("foo.bar"));
 
@@ -91,6 +93,7 @@ public class DBBasedBuilderStateTest extends TestCase {
 		assertOnlyContains(resources, state);
 	}
 
+	@Test
 	public void testSimpleTransactionRollback() {
 		List<IResourceDescription> resources = ImmutableList.of(createDescription("foo.bar"));
 
@@ -102,6 +105,7 @@ public class DBBasedBuilderStateTest extends TestCase {
 		assertEmpty(state);
 	}
 
+	@Test
 	public void testCopy() {
 		IResourceDescription oldResource = createDescription("foo.bar");
 		state.beginChanges();

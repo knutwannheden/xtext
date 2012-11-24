@@ -2,18 +2,18 @@
 <rmap xmlns="http://www.eclipse.org/buckminster/RMap-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:bc="http://www.eclipse.org/buckminster/Common-1.0">
 	<property key="checkout.location" value="${workspace.root}/org.eclipse.xtext.git" />
-
+	
 	<locator pattern="^org\.eclipse\.xtext\.releng(?:\..+)?$" searchPathRef="releng" />
 	<locator pattern="^org\.eclipse\.xtext\.example(?:\..*)?$" searchPathRef="xtext.examples" />
 	<locator pattern="^org\.eclipse\.xtext\.gmf\.glue$" searchPathRef="xtext.examples" />
 	<locator pattern="^org\.eclipse\.xtext\.xtext\.ui\.examples$" searchPathRef="xtext.examples.container" />
-	<locator pattern="^org\.eclipse\.xtext\.xtend2\.ui\.examples$" searchPathRef="xtext.examples.container" />
-	<locator pattern="^org\.eclipse\.(?:xtend2|xtext)(?:\..*)?$" searchPathRef="xtext" />
-	<locator pattern="^com\.google\.(?:guava|inject)(?:\..*)?$" searchPathRef="xtext" />
+	<locator pattern="^org\.eclipse\.xtext(?:\..*)?$" searchPathRef="xtext" />
 	
 	<locator pattern="^org\.eclipse\.test$" searchPathRef="eclipse.test" />
 	<locator pattern="^org\.eclipse\.ant\.optional\.junit$" searchPathRef="eclipse.test" />
-
+	
+	<redirect href="xtend.rmap" pattern="^org\.eclipse\.(?:xtend|xtend2)(?:\..+)?$"/>
+	
 	<searchPath name="xtext">
 		<provider componentTypes="osgi.bundle" readerType="local" mutable="false">
 			<uri format="{0}/plugins/{1}">

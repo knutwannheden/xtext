@@ -14,6 +14,7 @@ import java.util.List;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.internal.FunctionDelegate;
 
+import com.google.common.annotations.GwtCompatible;
 import com.google.common.collect.Lists;
 
 /**
@@ -29,7 +30,7 @@ import com.google.common.collect.Lists;
  * List#take -> List
  * List#drop -> List
  */
-public class ListExtensions {
+@GwtCompatible public class ListExtensions {
 
 	/**
 	 * Sorts the specified list itself into ascending order, according to the natural ordering of its elements.
@@ -96,6 +97,7 @@ public class ListExtensions {
 	 *            the list whose elements should be traversed in reverse. May not be <code>null</code>.
 	 * @return a list with the same elements as the given list, in reverse
 	 */
+	@Pure
 	public static <T> List<T> reverseView(List<T> list) {
 		return Lists.reverse(list);
 	}
@@ -127,7 +129,8 @@ public class ListExtensions {
 	 *            the transformation. May not be <code>null</code>.
 	 * @return a list that effectively contains the results of the transformation. Never <code>null</code>.
 	 */
-	public static final <T, R> List<R> map(List<T> original, Function1<? super T, ? extends R> transformation) {
+	@Pure
+	public static <T, R> List<R> map(List<T> original, Function1<? super T, ? extends R> transformation) {
 		return Lists.transform(original, new FunctionDelegate<T, R>(transformation));
 	}
 

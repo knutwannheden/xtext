@@ -18,10 +18,11 @@ import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CompositeChange;
 import org.eclipse.text.edits.MultiTextEdit;
 import org.eclipse.text.edits.TextEdit;
+import org.eclipse.xtext.ui.refactoring.IChangeRedirector;
 import org.eclipse.xtext.ui.refactoring.IRefactoringUpdateAcceptor;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.inject.Inject;
 
@@ -30,7 +31,7 @@ import com.google.inject.Inject;
  * 
  * @author Jan Koehnlein - Initial contribution and API
  */
-public class RefactoringUpdateAcceptor implements IRefactoringUpdateAcceptor {
+public class RefactoringUpdateAcceptor implements IRefactoringUpdateAcceptor, IChangeRedirector.Aware {
 
 	private IRefactoringDocument.Provider refactoringDocumentProvider; 
 	
@@ -43,8 +44,8 @@ public class RefactoringUpdateAcceptor implements IRefactoringUpdateAcceptor {
 	private StatusWrapper status;
 	
 	private Map<URI, IRefactoringDocument> uri2document = newHashMap();
-	private Multimap<IRefactoringDocument, TextEdit> document2textEdits = HashMultimap.create();
-	private Multimap<IRefactoringDocument, Change> document2change = HashMultimap.create();
+	private Multimap<IRefactoringDocument, TextEdit> document2textEdits = LinkedHashMultimap.create();
+	private Multimap<IRefactoringDocument, Change> document2change = LinkedHashMultimap.create();
 
 	public void accept(URI resourceURI, TextEdit textEdit) {
 		IRefactoringDocument document = getDocument(resourceURI);
@@ -95,4 +96,15 @@ public class RefactoringUpdateAcceptor implements IRefactoringUpdateAcceptor {
 		return compositeChange;
 	}
 
+	public void setChangeRedirector(IChangeRedirector changeRedirector) {
+		if(refactoringDocumentProvider instanceof IChangeRedirector.Aware) 
+			((IChangeRedirector.Aware) refactoringDocumentProvider).setChangeRedirector(changeRedirector);
+	}
+
+	public IChangeRedirector getChangeRedirector() {
+		if(refactoringDocumentProvider instanceof IChangeRedirector.Aware) 
+			return ((IChangeRedirector.Aware) refactoringDocumentProvider).getChangeRedirector();
+		else 
+			return IChangeRedirector.NULL;
+	}
 }

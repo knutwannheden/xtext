@@ -19,11 +19,13 @@ import org.eclipse.xtext.common.types.JvmVisibility;
 import org.eclipse.xtext.common.types.TypesFactory;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
  * @author Jan Koehnlein
  */
+@Singleton
 public class VisibilityService {
 
 	@Inject
@@ -46,7 +48,14 @@ public class VisibilityService {
 		if (contextType == null) {
 			return false;
 		} else if (jvmMember.getVisibility() == JvmVisibility.DEFAULT) {
-			return equal(jvmMember.getDeclaringType().getPackageName(), contextType.getPackageName());
+			if (jvmMember instanceof JvmDeclaredType) {
+				return equal(((JvmDeclaredType) jvmMember).getPackageName(), contextType.getPackageName());
+			} else {
+				JvmDeclaredType declaringType = jvmMember.getDeclaringType();
+				if (declaringType != null)
+					return equal(declaringType.getPackageName(), contextType.getPackageName());
+				return true;
+			}
 		} else if (contextType.equals(jvmMember.getDeclaringType())) {
 			return true;
 		} else {

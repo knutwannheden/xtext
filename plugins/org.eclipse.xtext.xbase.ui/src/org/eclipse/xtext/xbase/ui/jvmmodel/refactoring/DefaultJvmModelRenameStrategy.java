@@ -18,7 +18,6 @@ import com.google.inject.Inject;
 /**
  * @author Jan Koehnlein - Initial contribution and API
  */
-@SuppressWarnings("restriction")
 public class DefaultJvmModelRenameStrategy extends XbaseRenameStrategy {
 
 	@Inject
@@ -42,6 +41,11 @@ public class DefaultJvmModelRenameStrategy extends XbaseRenameStrategy {
 	}
 
 	protected void setInferredJvmElementName(String name, EObject renamedElement) {
+		// This only works if the elements keep their EObject fragment on rename.
+		// 
+		// In case you modified the IFragmentProvider or if you did something bad in 
+		// createDeclarationChange, you must implement this method without discarding 
+		// the inferred model.
 		if (renamedElement.eResource() instanceof DerivedStateAwareResource) {
 			DerivedStateAwareResource resource = (DerivedStateAwareResource) renamedElement.eResource();
 			resource.discardDerivedState();

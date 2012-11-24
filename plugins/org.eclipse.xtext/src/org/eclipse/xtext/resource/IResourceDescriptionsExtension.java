@@ -48,11 +48,11 @@ public interface IResourceDescriptionsExtension {
 		}
 
 		/**
-		 * Checks whether this policy includes the given other policy.
+		 * Checks whether this policy includes the given other type.
 		 * 
-		 * @param policy
-		 *            other policy
-		 * @return true if this match policy includes the given policy
+		 * @param type
+		 *            other type
+		 * @return true if this match policy includes the given type
 		 */
 		public boolean includes(final MatchType type) {
 			return Arrays.contains(matchTypes, type);
@@ -93,7 +93,7 @@ public interface IResourceDescriptionsExtension {
 	 *            {@link URI} of the target objects
 	 * @return An {@link Iterable} of all {@link IReferenceDescription}s of all cross-references that reference the
 	 *         given objects.
-	 * @throws {@link IllegalArgumentException} if the given {@link URI} does not contain a fragment.
+	 * @throws IllegalArgumentException if the given {@link URI} does not contain a fragment.
 	 */
 	Iterable<IReferenceDescription> findReferencesToObjects(final Iterable<URI> targetObjects);
 

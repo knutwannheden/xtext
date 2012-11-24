@@ -1,22 +1,16 @@
 package org.eclipse.xtext.purexbase.validation;
 
-import org.eclipse.xtext.purexbase.pureXbase.SpecialBlockExpression;
 import org.eclipse.xtext.validation.Check;
-import org.eclipse.xtext.xbase.XBlockExpression;
-import org.eclipse.xtext.xbase.validation.XbaseJavaValidator;
+import org.eclipse.xtext.xbase.XExpression;
+import org.eclipse.xtext.xbase.validation.XbaseJavaValidator2;
  
 
-public class PureXbaseJavaValidator extends XbaseJavaValidator {
+@SuppressWarnings("restriction")
+public class PureXbaseJavaValidator extends XbaseJavaValidator2 {
 
-	@Check
-	public void checkInnerExpressions(XBlockExpression block) {
-		if (!(block instanceof SpecialBlockExpression)) {
-			super.checkInnerExpressions(block);
-		}
-	}
-	
-	@Check
 	@Override
-	public void checkNoSideffectFreeExpressionsInBlockExpression(XBlockExpression blockExpression) {
+	@Check
+	public void checkInnerExpressions(XExpression expr) {
+		// disabled since pure xbase is meant to be a playground
 	}
 }

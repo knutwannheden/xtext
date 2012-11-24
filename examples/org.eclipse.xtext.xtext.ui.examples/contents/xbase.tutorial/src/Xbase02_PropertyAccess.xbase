@@ -15,15 +15,9 @@ person.forename +' '+ person.name
 // Jimi Hendrix (String)
 
 
-
-
-
-
-
-
-
-
-
+// static features can be accessed using ::
+java::util::Collections::singleton("So lonely") 
+System::err.println()
 
 
 

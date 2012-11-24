@@ -94,7 +94,7 @@ public interface IResourceDescription extends ISelectable {
 	}
 
 	/**
-	 * @since 2.3
+	 * @since 2.4
 	 */
 	interface ManagerExtension {
 		
@@ -148,7 +148,7 @@ public interface IResourceDescription extends ISelectable {
 	}
 
 	/**
-	 * @since 2.3
+	 * @since 2.4
 	 */
 	interface DeltaExtension {
 

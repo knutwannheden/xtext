@@ -80,6 +80,19 @@
         </page>
     </extension>
     <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.ContentAssistTestLanguageExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.ContentAssistTestLanguage"
+            name="ContentAssistTestLanguage">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_ContentAssistTestLanguage"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
+        </page>
+    </extension>
+    <extension
         point="org.eclipse.ui.keywords">
         <keyword
             id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_ContentAssistTestLanguage"
@@ -146,6 +159,37 @@
         </resourceServiceProvider>
     </extension>
 
+
+   <extension
+         point="org.eclipse.xtext.builder.participant">
+      <participant
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.ContentAssistTestLanguageExecutableExtensionFactory:org.eclipse.xtext.builder.IXtextBuilderParticipant">
+      </participant>
+   </extension>
+   <extension
+            point="org.eclipse.ui.preferencePages">
+        <page
+            category="org.eclipse.xtext.common.types.xtext.ui.ContentAssistTestLanguage"
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.ContentAssistTestLanguageExecutableExtensionFactory:org.eclipse.xtext.builder.preferences.BuilderPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.ContentAssistTestLanguage.compiler.preferencePage"
+            name="Compiler">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_ContentAssistTestLanguage"/>
+        </page>
+    </extension>
+    <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            category="org.eclipse.xtext.common.types.xtext.ui.ContentAssistTestLanguage"
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.ContentAssistTestLanguageExecutableExtensionFactory:org.eclipse.xtext.builder.preferences.BuilderPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.ContentAssistTestLanguage.compiler.propertyPage"
+            name="Compiler">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_ContentAssistTestLanguage"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
+        </page>
+    </extension>
 
   <extension point="org.eclipse.emf.ecore.generated_package">
     <package 
@@ -221,6 +265,19 @@
             id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage.templates"
             name="Templates">
             <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage"/>
+        </page>
+    </extension>
+    <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguageExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage"
+            name="RefactoringTestLanguage">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
         </page>
     </extension>
     <extension
@@ -360,6 +417,19 @@
         </page>
     </extension>
     <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage1ExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage1"
+            name="RefactoringTestLanguage1">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage1"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
+        </page>
+    </extension>
+    <extension
         point="org.eclipse.ui.keywords">
         <keyword
             id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage1"
@@ -429,7 +499,7 @@
    	<!-- Rename Refactoring -->
 	<extension point="org.eclipse.ui.handlers">
 		<handler 
-			class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage1ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler"
+			class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage1ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.DefaultRenameElementHandler"
 			commandId="org.eclipse.xtext.ui.refactoring.RenameElement">
 			<activeWhen>
 				<reference
@@ -451,6 +521,15 @@
          </command>
       </menuContribution>
    </extension>
+   <extension point="org.eclipse.ui.preferencePages">
+	    <page
+	        category="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage1"
+	        class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage1ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.RefactoringPreferencePage"
+	        id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage1.refactoring"
+	        name="Refactoring">
+	        <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage1"/>
+	    </page>
+	</extension>
 
 
     <extension
@@ -518,6 +597,19 @@
             id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage2.templates"
             name="Templates">
             <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage2"/>
+        </page>
+    </extension>
+    <extension
+            point="org.eclipse.ui.propertyPages">
+        <page
+            class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage2ExecutableExtensionFactory:org.eclipse.xtext.ui.editor.preferences.LanguageRootPreferencePage"
+            id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage2"
+            name="RefactoringTestLanguage2">
+            <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage2"/>
+            <enabledWhen>
+	            <adapt type="org.eclipse.core.resources.IProject"/>
+			</enabledWhen>
+	        <filter name="projectNature" value="org.eclipse.xtext.ui.shared.xtextNature"/>
         </page>
     </extension>
     <extension
@@ -590,7 +682,7 @@
    	<!-- Rename Refactoring -->
 	<extension point="org.eclipse.ui.handlers">
 		<handler 
-			class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage2ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler"
+			class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage2ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.DefaultRenameElementHandler"
 			commandId="org.eclipse.xtext.ui.refactoring.RenameElement">
 			<activeWhen>
 				<reference
@@ -612,5 +704,14 @@
          </command>
       </menuContribution>
    </extension>
+   <extension point="org.eclipse.ui.preferencePages">
+	    <page
+	        category="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage2"
+	        class="org.eclipse.xtext.common.types.xtext.ui.ui.RefactoringTestLanguage2ExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.RefactoringPreferencePage"
+	        id="org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguage2.refactoring"
+	        name="Refactoring">
+	        <keywordReference id="org.eclipse.xtext.common.types.xtext.ui.ui.keyword_RefactoringTestLanguage2"/>
+	    </page>
+	</extension>
 
 </plugin>

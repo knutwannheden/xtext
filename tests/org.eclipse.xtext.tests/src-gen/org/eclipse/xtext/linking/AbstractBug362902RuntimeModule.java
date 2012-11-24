@@ -70,6 +70,11 @@ public abstract class AbstractBug362902RuntimeModule extends DefaultRuntimeModul
 	}
 
 	// contributed by org.eclipse.xtext.generator.grammarAccess.GrammarAccessFragment
+	public java.lang.ClassLoader bindClassLoaderToInstance() {
+		return getClass().getClassLoader();
+	}
+
+	// contributed by org.eclipse.xtext.generator.grammarAccess.GrammarAccessFragment
 	public Class<? extends org.eclipse.xtext.IGrammarAccess> bindIGrammarAccess() {
 		return org.eclipse.xtext.linking.services.Bug362902GrammarAccess.class;
 	}
@@ -81,12 +86,12 @@ public abstract class AbstractBug362902RuntimeModule extends DefaultRuntimeModul
 
 	// contributed by org.eclipse.xtext.generator.serializer.SerializerFragment
 	public Class<? extends org.eclipse.xtext.serializer.sequencer.ISemanticSequencer> bindISemanticSequencer() {
-		return org.eclipse.xtext.linking.serializer.AbstractBug362902SemanticSequencer.class;
+		return org.eclipse.xtext.linking.serializer.Bug362902SemanticSequencer.class;
 	}
 
 	// contributed by org.eclipse.xtext.generator.serializer.SerializerFragment
 	public Class<? extends org.eclipse.xtext.serializer.sequencer.ISyntacticSequencer> bindISyntacticSequencer() {
-		return org.eclipse.xtext.linking.serializer.AbstractBug362902SyntacticSequencer.class;
+		return org.eclipse.xtext.linking.serializer.Bug362902SyntacticSequencer.class;
 	}
 
 	// contributed by org.eclipse.xtext.generator.serializer.SerializerFragment

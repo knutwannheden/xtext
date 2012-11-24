@@ -28,6 +28,7 @@ import org.eclipse.xtext.junit4.util.ResourceLoadHelper;
 import org.eclipse.xtext.linking.ILinkingService;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.nodemodel.ICompositeNode;
+import org.eclipse.xtext.nodemodel.impl.InvariantChecker;
 import org.eclipse.xtext.parser.IAstFactory;
 import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.parser.IParser;
@@ -53,6 +54,7 @@ import com.google.inject.name.Names;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
+ * @since 2.3
  */
 public abstract class AbstractXtextTests extends Assert implements ResourceLoadHelper {
 
@@ -170,6 +172,10 @@ public abstract class AbstractXtextTests extends Assert implements ResourceLoadH
 		return getInjector().getInstance(IScopeProvider.class);
 	}
 	
+	protected InvariantChecker getInvariantChecker(){
+		return getInjector().getInstance(InvariantChecker.class);
+	}
+
 	protected InputStream getAsStream(String model) {
 		return new StringInputStream(model);
 	}
@@ -244,6 +250,7 @@ public abstract class AbstractXtextTests extends Assert implements ResourceLoadH
 	
 	public final XtextResource getResourceAndExpect(InputStream in, URI uri, int expectedErrors) throws Exception {
 		XtextResource resource = doGetResource(in, uri);
+		checkNodeModel(resource);
 		if (expectedErrors != UNKNOWN_EXPECTATION) {
 			if (expectedErrors == EXPECT_ERRORS)
 				assertFalse(resource.getErrors().toString(), resource.getErrors().isEmpty());
@@ -266,6 +273,12 @@ public abstract class AbstractXtextTests extends Assert implements ResourceLoadH
 		}
 
 		return resource;
+	}
+
+	protected void checkNodeModel(XtextResource resource) {
+		IParseResult parseResult = resource.getParseResult();
+		if(parseResult != null)
+			getInvariantChecker().checkInvariant(parseResult.getRootNode());
 	}
 
 	protected boolean shouldTestSerializer(XtextResource resource) {
@@ -328,8 +341,9 @@ public abstract class AbstractXtextTests extends Assert implements ResourceLoadH
 		if (url == null) {
 			fail("Could not read resource: '" + filePath + "'. Is your file system case sensitive?");
 		} else {
-			if(!new File(url.getPath()).getCanonicalPath().endsWith(filePath))
-				throw new RuntimeException(filePath + ":\n" +
+			String canonicalPath = new File(new File(url.getPath()).getCanonicalPath()).toURI().getPath();
+			if(!canonicalPath.endsWith(filePath))
+				throw new RuntimeException(filePath + " -> " + canonicalPath + ":\n" +
 						"The file does not exist exactly as it was named.\n" +
 						"The test is likely to cause trouble on the build server.\n" +
 						"Is your filesystem case insensitive? Please verify the spelling.");

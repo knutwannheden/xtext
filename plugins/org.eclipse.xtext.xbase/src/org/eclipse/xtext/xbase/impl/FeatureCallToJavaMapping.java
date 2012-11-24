@@ -21,11 +21,15 @@ import org.eclipse.xtext.xbase.resource.LinkingAssumptions;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
  * @author Sebastian Zarnekow - Support for linking assumptions
+ * @deprecated Query the XAbstractFeatureCall directly
  */
+@Deprecated
+@Singleton
 public class FeatureCallToJavaMapping {
 	
 	@Inject
@@ -103,6 +107,10 @@ public class FeatureCallToJavaMapping {
 		return newArrayList(explicitArguments.subList(1, explicitArguments.size()));
 	}
 	
+	/**
+	 * @param featureCall may be used by inheritors  
+	 * @param implicitReceiver may be used by inheritors
+	 */
 	public boolean isTargetsMemberSyntaxCall(XAbstractFeatureCall featureCall, JvmIdentifiableElement feature, XExpression implicitReceiver) {
 		return !isStaticJavaFeature(feature);
 	}

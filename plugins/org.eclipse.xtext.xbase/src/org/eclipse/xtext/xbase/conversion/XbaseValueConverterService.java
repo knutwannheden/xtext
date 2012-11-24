@@ -7,12 +7,21 @@
  *******************************************************************************/
 package org.eclipse.xtext.xbase.conversion;
 
+import java.util.Set;
+
 import org.eclipse.xtext.common.services.DefaultTerminalConverters;
 import org.eclipse.xtext.conversion.IValueConverter;
 import org.eclipse.xtext.conversion.ValueConverter;
+import org.eclipse.xtext.conversion.ValueConverterException;
+import org.eclipse.xtext.conversion.impl.AbstractValueConverter;
+import org.eclipse.xtext.conversion.impl.INTValueConverter;
 import org.eclipse.xtext.conversion.impl.KeywordAlternativeConverter;
 import org.eclipse.xtext.conversion.impl.KeywordBasedValueConverter;
+import org.eclipse.xtext.conversion.impl.QualifiedNameValueConverter;
+import org.eclipse.xtext.nodemodel.INode;
+import org.eclipse.xtext.util.Strings;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -27,6 +36,32 @@ import com.google.inject.Singleton;
  */
 @Singleton
 public class XbaseValueConverterService extends DefaultTerminalConverters {
+	
+	public static class OtherOperatorsValueConverter extends AbstractValueConverter<String> {
+
+		private final static Set<String> operators = ImmutableSet.of(
+			"->",
+			"..",
+			"=>",
+			">>",
+			">>>",
+			"<<",
+			"<<<",
+			"<>",
+			"?:",
+			"<=>");
+		
+		public String toValue(String string, INode node) throws ValueConverterException {
+			return string;
+		}
+
+		public String toString(String value) throws ValueConverterException {
+			if (!operators.contains(value))
+				throw new ValueConverterException("'" + value + "' is not a valid operator.", null, null);
+			return value;
+		}
+		
+	}
 
 	@Inject
 	private XbaseQualifiedNameValueConverter qualifiedNameValueConverter;
@@ -36,6 +71,9 @@ public class XbaseValueConverterService extends DefaultTerminalConverters {
 	
 	@Inject
 	private Provider<KeywordBasedValueConverter> keywordBasedConverterProvider;
+	
+	@Inject
+	private OtherOperatorsValueConverter otherOperatorsValueConverter;
 	
 	@Inject
 	private KeywordAlternativeConverter validIDConverter;
@@ -95,7 +133,7 @@ public class XbaseValueConverterService extends DefaultTerminalConverters {
 	
 	@ValueConverter(rule = "OpOther")
 	public IValueConverter<String> getOpOtherConverter() {
-		return keywordBasedConverterProvider.get();
+		return otherOperatorsValueConverter;
 	}
 	
 	@ValueConverter(rule = "OpAdd")
@@ -113,4 +151,24 @@ public class XbaseValueConverterService extends DefaultTerminalConverters {
 		return keywordBasedConverterProvider.get();
 	}
 	
+	@Inject
+	private IntUnderscoreValueConverter intUnderscoreValueConverter;
+	
+	@Override
+	@ValueConverter(rule = "INT")
+	public IValueConverter<Integer> INT() {
+		return intUnderscoreValueConverter;
+	}
+	
+	public static class IntUnderscoreValueConverter extends INTValueConverter {
+		@Override
+		public Integer toValue(String string, INode node) {
+			if (Strings.isEmpty(string))
+				throw new ValueConverterException("Couldn't convert empty string to an int value.", node, null);
+			String withoutUnderscore = string.replace("_", "");
+			if (Strings.isEmpty(withoutUnderscore))
+				throw new ValueConverterException("Couldn't convert input '" + string + "' to an int value.", node, null);
+			return super.toValue(withoutUnderscore, node);
+		}
+	}
 }

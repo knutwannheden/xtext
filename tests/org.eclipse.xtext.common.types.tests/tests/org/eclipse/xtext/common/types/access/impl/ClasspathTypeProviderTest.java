@@ -7,50 +7,59 @@
  *******************************************************************************/
 package org.eclipse.xtext.common.types.access.impl;
 
-import static com.google.common.collect.Iterables.*;
-
 import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
+import org.eclipse.xtext.common.types.JvmArrayType;
 import org.eclipse.xtext.common.types.JvmDeclaredType;
 import org.eclipse.xtext.common.types.JvmGenericType;
 import org.eclipse.xtext.common.types.JvmType;
+import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.common.types.access.IMirror;
 import org.eclipse.xtext.common.types.access.TypeResource;
+import org.eclipse.xtext.common.types.xtext.ui.RefactoringTestLanguageInjectorProvider;
+import org.eclipse.xtext.junit4.InjectWith;
+import org.eclipse.xtext.junit4.XtextRunner;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import com.google.common.base.Function;
+import com.google.inject.Inject;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
  */
+@RunWith(XtextRunner.class)
+@InjectWith(RefactoringTestLanguageInjectorProvider.class)
 public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 
+	@Inject
 	private ResourceSet resourceSet;
-	private ClasspathTypeProvider typeProvider;
 
+	@Inject
+	private IndexedJvmTypeAccess indexedJvmTypeAccess;
+	
+	private ClasspathTypeProvider typeProvider;
+	
 	@Override
-	protected void setUp() throws Exception {
+	public void setUp() throws Exception {
 		super.setUp();
-		resourceSet = new ResourceSetImpl();
-		typeProvider = new ClasspathTypeProvider(getClass().getClassLoader(), resourceSet, null);
+		typeProvider = new ClasspathTypeProvider(getClass().getClassLoader(), resourceSet, indexedJvmTypeAccess);
 	}
 	
-	@Override
-	protected void tearDown() throws Exception {
-		resourceSet = null;
+	@After
+	public void tearDown() throws Exception {
 		typeProvider = null;
-		super.tearDown();
 	}
 	
-	public void testSetup_01() {
+	@Test public void testSetup_01() {
 		Map<String, Object> map = resourceSet.getResourceFactoryRegistry().getProtocolToFactoryMap();
 		assertSame(getTypeProvider(), map.get(URIHelperConstants.PROTOCOL));
 	}
 	
-	public void testCreateResource_01() {
+	@Test public void testCreateResource_01() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource resource = getTypeProvider().createResource(primitivesURI);
 		assertNotNull(resource);
@@ -58,7 +67,7 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertTrue(resource.getContents().isEmpty());
 	}
 	
-	public void testCreateResource_02() {
+	@Test public void testCreateResource_02() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource resource = (TypeResource) resourceSet.createResource(primitivesURI);
 		assertNotNull(resource);
@@ -66,7 +75,7 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertTrue(resource.getContents().isEmpty());
 	}
 	
-	public void testGetResource_01() {
+	@Test public void testGetResource_01() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource resource = (TypeResource) resourceSet.getResource(primitivesURI, true);
 		assertNotNull(resource);
@@ -74,13 +83,13 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertEquals(9, resource.getContents().size());
 	}
 	
-	public void testGetResource_02() {
+	@Test public void testGetResource_02() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource resource = (TypeResource) resourceSet.getResource(primitivesURI, false);
 		assertNull(resource);
 	}
 	
-	public void testGetResource_03() {
+	@Test public void testGetResource_03() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource createdResource = (TypeResource) resourceSet.createResource(primitivesURI);
 		TypeResource resource = (TypeResource) resourceSet.getResource(primitivesURI, false);
@@ -89,7 +98,7 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertTrue(resource.getContents().isEmpty());
 	}
 	
-	public void testGetResource_04() {
+	@Test public void testGetResource_04() {
 		URI primitivesURI = URI.createURI("java:/Primitives"); 
 		TypeResource createdResource = (TypeResource) resourceSet.createResource(primitivesURI);
 		TypeResource resource = (TypeResource) resourceSet.getResource(primitivesURI, true);
@@ -98,7 +107,7 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertEquals(9, resource.getContents().size());
 	}
 	
-	public void testCreateMirror_01() {
+	@Test public void testCreateMirror_01() {
 		URI uri = URI.createURI("java:/Objects/java.util.Map");
 		IMirror mirror = getTypeProvider().createMirror(uri);
 		assertNotNull(mirror);
@@ -106,14 +115,14 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		assertEquals("java.util.Map", ((ClassMirror) mirror).getMirroredClass().getName());
 	}
 	
-	public void testCreateMirror_02() {
+	@Test public void testCreateMirror_02() {
 		URI uri = URI.createURI("java:/Primitives");
 		IMirror mirror = getTypeProvider().createMirror(uri);
 		assertNotNull(mirror);
 		assertTrue(mirror instanceof PrimitiveMirror);
 	}
 	
-	public void testCreateMirror_03() {
+	@Test public void testCreateMirror_03() {
 		URI uri = URI.createURI("java:/Something");
 		try {
 			getTypeProvider().createMirror(uri);
@@ -123,7 +132,7 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		}
 	}
 	
-	public void testCreateMirror_04() {
+	@Test public void testCreateMirror_04() {
 		URI uri = URI.createURI("java:/Primitives").appendFragment("int");
 		try {
 			getTypeProvider().createMirror(uri);
@@ -133,12 +142,12 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		}
 	}
 	
-	public void testCreateMirror_05() {
+	@Test public void testCreateMirror_05() {
 		URI uri = URI.createURI("java:/Objects/java.lang.does.not.exist");
 		assertNull(getTypeProvider().createMirror(uri));
 	}
 	
-	public void testBug337307() {
+	@Test public void testBug337307() {
 		String typeName = "ClassWithDefaultPackage";
 		JvmType type = getTypeProvider().findTypeByName(typeName);
 		assertNotNull(type);
@@ -152,27 +161,53 @@ public class ClasspathTypeProviderTest extends AbstractTypeProviderTest {
 		getAndResolveAllFragments(resource);
 		recomputeAndCheckIdentifiers(resource);
 	}
-//TODO - this one fails on the server	
-//	public void testFindTypeByName_$ImmutableList() {
-//		String typeName = "com.google.inject.internal.util.$ImmutableList";
-//		JvmGenericType type = (JvmGenericType) getTypeProvider().findTypeByName(typeName);
-//		assertNotNull(type);
-//		Iterable<String> innerTypes = transform(filter(type.getMembers(), JvmType.class), new Function<JvmType, String>() {
-//			public String apply(JvmType input) {
-//				return input.getSimpleName();
-//			}
-//		});
-//		assertTrue("Missing member type $Builder", contains(innerTypes, "Builder"));
-//		assertTrue("Missing member type $EmptyImmutableList", contains(innerTypes, "EmptyImmutableList"));
-//		assertTrue("Missing member type $RegularImmutableList", contains(innerTypes, "RegularImmutableList"));
-//		assertTrue("Missing member type $SerializedForm", contains(innerTypes, "SerializedForm"));
-//		assertEquals(4, size(innerTypes));
-//		diagnose(type);
-//		Resource resource = type.eResource();
-//		getAndResolveAllFragments(resource);
-//		recomputeAndCheckIdentifiers(resource);
-//
-//	}
+	
+	@Test
+	public void testJvmTypeSimple() {
+		Resource resource = resourceSet.createResource(URI.createURI("foo.typesRefactoring"));
+		JvmGenericType expected = TypesFactory.eINSTANCE.createJvmGenericType();
+		expected.setSimpleName("SimpleName");
+		expected.setPackageName("package.name");
+		resource.getContents().add(expected);
+		JvmType actual = getTypeProvider().findTypeByName("package.name.SimpleName");
+		assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void testJvmTypeNoPackage() {
+		Resource resource = resourceSet.createResource(URI.createURI("foo.typesRefactoring"));
+		JvmGenericType expected = TypesFactory.eINSTANCE.createJvmGenericType();
+		expected.setSimpleName("SimpleName");
+		resource.getContents().add(expected);
+		JvmType actual = getTypeProvider().findTypeByName("SimpleName");
+		assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void testJvmTypeNestedClass() {
+		Resource resource = resourceSet.createResource(URI.createURI("foo.typesRefactoring"));
+		JvmGenericType container = TypesFactory.eINSTANCE.createJvmGenericType();
+		container.setSimpleName("SimpleName");
+		container.setPackageName("package.name");
+		JvmGenericType expected = TypesFactory.eINSTANCE.createJvmGenericType();
+		expected.setSimpleName("Child");
+		container.getMembers().add(expected);
+		resource.getContents().add(container);
+		JvmType actual = getTypeProvider().findTypeByName("package.name.SimpleName$Child");
+		assertEquals(expected, actual);
+	}
+	
+	@Test
+	public void testJvmTypeArray() {
+		Resource resource = resourceSet.createResource(URI.createURI("foo.typesRefactoring"));
+		JvmGenericType expected = TypesFactory.eINSTANCE.createJvmGenericType();
+		expected.setSimpleName("SimpleName");
+		expected.setPackageName("package.name");
+		resource.getContents().add(expected);
+		JvmType actual = getTypeProvider().findTypeByName("package.name.SimpleName[]");
+		assertTrue(actual instanceof JvmArrayType);
+		assertEquals(expected, ((JvmArrayType) actual).getComponentType());
+	}
 	
 	@Override
 	public ClasspathTypeProvider getTypeProvider() {

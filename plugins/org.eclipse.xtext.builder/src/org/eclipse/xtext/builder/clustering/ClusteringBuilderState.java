@@ -38,6 +38,7 @@ import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.resource.IResourceDescription.Delta;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceServiceProvider;
+import org.eclipse.xtext.resource.IndexingOrderer;
 import org.eclipse.xtext.resource.impl.DefaultResourceDescriptionDelta;
 import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.Strings;
@@ -80,18 +81,17 @@ public class ClusteringBuilderState extends AbstractBuilderState {
     
     @Inject
     private IWorkspace workspace;
+    
+    @Inject
+    private IndexingOrderer indexingOrderer;
 
     /**
      * Actually do the build.
      *
-     * @param resourceSet
-     *            The resource set
-     * @param toBeUpdated
-     *            The URIs of all the resources that have physically changed
-     * @param toBeRemoved
-     *            The URIs of all the resources that have been physically deleted
-     * @param newMap
-     *            A map collecting the new resource descriptions as they are to be persisted. (The new index after the build.)
+     * @param buildData
+     *            the data that should be considered for the update
+     * @param newData
+     *            the new resource descriptions as they are to be persisted (the new index after the build).
      *            Initially contains the old resource descriptions.
      * @param monitor
      *            The progress monitor
@@ -173,17 +173,16 @@ public class ClusteringBuilderState extends AbstractBuilderState {
 
             int index = 1;
             while (!queue.isEmpty()) {
-                subProgress.setWorkRemaining(queue.size() + 2);
-                // TODO: How to properly do progress indication with an unknown amount of work? Somehow, the progress bar doesn't
-                // advance anymore after this...
-                final List<Delta> newDeltas = Lists.newArrayList();
+            	// heuristic: only 2/3 of ticks will be consumed; rest kept for affected resources
+                subProgress.setWorkRemaining(queue.size() * 3);
+                int clusterIndex = 0;
                 final List<Delta> changedDeltas = Lists.newArrayList();
                 while (!queue.isEmpty()) {
                     if (subProgress.isCanceled()) {
                         loadOperation.cancel();
                         throw new OperationCanceledException();
                     }
-                    if (!clusteringPolicy.continueProcessing(resourceSet, null, newDeltas.size())) {
+                    if (!clusteringPolicy.continueProcessing(resourceSet, null, clusterIndex)) {
                         break;
                     }
 
@@ -245,11 +244,14 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                         }
                     }
                     if (newDelta != null) {
-                        newDeltas.add(newDelta);
+                        allDeltas.add(newDelta);
+                    	clusterIndex++;
                         if (newDelta.haveEObjectDescriptionsChanged())
                             changedDeltas.add(newDelta);
                         // Make the new resource description known and update the map.
                         newState.register(newDelta);
+                        // Validate now.
+            			updateMarkers(newDelta, resourceSet, subProgress.newChild(1));
                     }
                     subProgress.worked(1);
                     index++;
@@ -264,15 +266,13 @@ public class ClusteringBuilderState extends AbstractBuilderState {
                     loadOperation.load(queue);
                 }
 
-                // Validate now.
-                updateMarkers(resourceSet, ImmutableList.<Delta>copyOf(newDeltas), subProgress.newChild(1));
-                allDeltas.addAll(newDeltas);
                 // Release memory
                 if (!queue.isEmpty())
                     clearResourceSet(resourceSet);
             }
         } finally {
             if(loadOperation != null) loadOperation.cancel();
+            progress.done();
         }
         return allDeltas;
     }
@@ -284,17 +284,14 @@ public class ClusteringBuilderState extends AbstractBuilderState {
     /**
      * Create new resource descriptions for a set of resources given by their URIs.
      *
-     * @param resourceSet
-     *            The resource set
+     * @param buildData
+     *            The underlying data for the write operation.
      * @param oldState
      *            The old index
      * @param newState
      *            The new index
-     * @param toBeUpdated
-     *            URIs of all resources physically changed (initial delta)
      * @param monitor
      *            The progress monitor used for user feedback
-     * @return A list of all the URIs of toBeUpdated that could be indeed loaded and for which new description were written.
      */
     protected void writeNewResourceDescriptions(
             BuildData buildData,
@@ -302,8 +299,8 @@ public class ClusteringBuilderState extends AbstractBuilderState {
             CurrentDescriptions newState,
             final IProgressMonitor monitor) {
         int index = 0;
-        Collection<URI> toBeUpdated = buildData.getToBeUpdated();
         ResourceSet resourceSet = buildData.getResourceSet();
+        List<URI> toBeUpdated = indexingOrderer.getOrderedUris(resourceSet, buildData.getToBeUpdated());
         final int n = toBeUpdated.size();
         final SubMonitor subMonitor = SubMonitor.convert(monitor, "Write new resource descriptions", n); // TODO: NLS
         IProject currentProject = getBuiltProject(buildData);
@@ -413,16 +410,16 @@ public class ClusteringBuilderState extends AbstractBuilderState {
      * Put all resources that depend on some changes onto the queue of resources to be processed.
      * Updates notInDelta by removing all URIs put into the queue.
      *
-     * @param notInDelta
-     *            URIs of unchanged and unaffected resources
+     * @param allRemainingURIs
+     *            URIs that were not considered by prior operations.
      * @param oldState
      *            State before the build
      * @param newState
      *            The current state
      * @param deltas
      *            The changes
-     * @param queue
-     *            The queue of resources yet to be built
+     * @param buildData
+     *            the underlying data for this build run.
      * @param monitor
      *            The progress monitor used for user feedback
      */

@@ -10,8 +10,10 @@ package org.eclipse.xtext.xbase.compiler;
 
 import java.util.List;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.xtext.common.types.JvmType;
 
+@NonNullByDefault
 public class StringBuilderBasedAppendable implements IAppendable {
 
 	private StringBuilder builder = new StringBuilder(8 * 1024);
@@ -26,8 +28,8 @@ public class StringBuilderBasedAppendable implements IAppendable {
 		return this;
 	}
 
-	public IAppendable append(String string) {
-		String replaced = string.replace(lineSeparator, getIndentationString());
+	public IAppendable append(CharSequence string) {
+		String replaced = string.toString().replace(lineSeparator, getIndentationString());
 		builder.append(replaced);
 		return this;
 	}
@@ -49,6 +51,14 @@ public class StringBuilderBasedAppendable implements IAppendable {
 	@Override
 	public String toString() {
 		return builder.toString();
+	}
+	
+	public String getContent() {
+		return toString();
+	}
+	
+	public int length() {
+		return builder.length();
 	}
 
 	public IAppendable increaseIndentation() {
@@ -118,14 +128,36 @@ public class StringBuilderBasedAppendable implements IAppendable {
 	}
 
 	public String getName(Object key) {
-		return scopes.getName(key);
+		String result = scopes.getName(key);
+		if (result == null)
+			throw new IllegalStateException("Cannot get name for " + key);
+		return result;
+	}
+	
+	public boolean hasName(Object key) {
+		return scopes.getName(key) != null;
 	}
 
 	public Object getObject(String name) {
-		return scopes.get(name);
+		Object result = scopes.get(name);
+		if (result == null)
+			throw new IllegalStateException("Cannot get object for " + name);
+		return result;
+	}
+	
+	public boolean hasObject(String name) {
+		return scopes.get(name) != null;
 	}
 	
 	protected String getLineSeparator() {
 		return lineSeparator;
+	}
+	
+	public char charAt(int index) {
+		return builder.charAt(index);
+	}
+	
+	public CharSequence subSequence(int start, int end) {
+		return builder.subSequence(start, end);
 	}
 }

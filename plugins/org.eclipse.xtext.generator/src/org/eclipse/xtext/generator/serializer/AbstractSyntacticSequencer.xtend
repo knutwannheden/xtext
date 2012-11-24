@@ -19,6 +19,9 @@ import org.eclipse.xtext.serializer.analysis.ISyntacticSequencerPDAProvider
 import org.eclipse.xtext.util.Strings
 
 import static extension org.eclipse.xtext.GrammarUtil.*
+import org.eclipse.xtext.nodemodel.util.NodeModelUtils
+import org.eclipse.xtext.nodemodel.ILeafNode
+import org.eclipse.xtext.nodemodel.ICompositeNode
 
 class AbstractSyntacticSequencer extends GeneratedFile {
 	
@@ -28,12 +31,8 @@ class AbstractSyntacticSequencer extends GeneratedFile {
 	
 	@Inject extension SyntacticSequencerUtil util
 	
-	override String getQualifiedName(Grammar grammar) {
-		grammar.getName("Abstract", "SyntacticSequencer");		
-	}
-	
-	override getFileContents() {
-		val file = new JavaFile(packageName);
+	override getFileContents(SerializerGenFileNames$GenFileName filename) {
+		val file = new JavaFile(filename.packageName);
 		
 		file.imported(typeof(org.eclipse.xtext.serializer.sequencer.AbstractSyntacticSequencer))
 		file.imported(typeof(RuleCall))
@@ -45,9 +44,10 @@ class AbstractSyntacticSequencer extends GeneratedFile {
 		file.imported(typeof(List))
 		file.imported(typeof(GrammarAlias$AbstractElementAlias))
 		
+		val _abstract = if (filename.isAbstract) "abstract " else ""
 		file.body = '''
-			@SuppressWarnings("restriction")
-			public class «simpleName» extends AbstractSyntacticSequencer {
+			@SuppressWarnings("all")
+			public «_abstract»class «filename.simpleName» extends AbstractSyntacticSequencer {
 			
 				protected «file.imported(grammar.gaFQName)» grammarAccess;
 				«FOR group:util.allAmbiguousTransitionsBySyntax»
@@ -64,7 +64,7 @@ class AbstractSyntacticSequencer extends GeneratedFile {
 				
 				«file.genGetUnassignedRuleCallTokens()»
 				
-				«FOR rule:unassignedCalledTokenRules»
+				«FOR rule:unassignedCalledTokenRules SEPARATOR "\n"»
 					«file.genGetUnassignedRuleCallToken(rule)»
 				«ENDFOR»
 				
@@ -85,17 +85,16 @@ class AbstractSyntacticSequencer extends GeneratedFile {
 		file.toString 
 	}
 	
-//						 *
-//					 * Transitions:
-//					 «FOR t:group.value»
-//					 *    Type: «if(t.EClass == null) "null" else t.EClass.name» Context: «t.context.gaAccessor» Transition: «t»
-//					 «ENDFOR»
-//	
+	def List<AbstractRule> unassignedCalledTokenRules() {
+		val rules = grammar.allRules.filter[EObjectRule]
+		val calls = rules.map(r|r.containedRuleCalls.filter(e|isUnassignedRuleCall(e))).flatten
+		calls.map[rule].toSet.sortBy[name]
+	}
 	
-	def unassignedCalledTokenRules() {
-		val rules = grammar.allRules.filter(e|e.EObjectRule)
-		val calls = rules.map(r|r.containedRuleCalls.filter(e | !e.isAssigned() && !e.isEObjectRuleCall())).flatten
-		calls.map(e | e.rule).toSet.sort(r1, r2 | r1.name.compareTo(r2.name))
+	def boolean isUnassignedRuleCall(RuleCall c) {
+		if(c.isEObjectRuleCall()) return false
+		val ass = c.containingAssignment
+		ass == null || ass.isBooleanAssignment 
 	}
 	
 	def unassignedCalledTokenRuleName(AbstractRule rule) '''get«rule.name»Token'''
@@ -124,7 +123,18 @@ class AbstractSyntacticSequencer extends GeneratedFile {
 		}
 	'''
 	
+	def textWithoutComments(INode node) {
+		switch node {
+			ILeafNode case !node.hidden || node.text.trim.length == 0: node.text
+			ICompositeNode: node.children.map[textWithoutComments].join
+			default: ""
+		}
+	}
+	
 	def genGetUnassignedRuleCallToken(JavaFile file, AbstractRule rule) '''
+		/**
+		 * «NodeModelUtils::getNode(rule).textWithoutComments.trim.replace("\n", "\n* ")»
+		 */
 		protected String «rule.unassignedCalledTokenRuleName»(EObject semanticObject, RuleCall ruleCall, INode node) {
 			if (node != null)
 				return getTokenText(node);

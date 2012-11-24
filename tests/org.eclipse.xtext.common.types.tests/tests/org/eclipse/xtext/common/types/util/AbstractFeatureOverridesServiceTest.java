@@ -9,8 +9,6 @@ package org.eclipse.xtext.common.types.util;
 
 import java.util.HashSet;
 
-import junit.framework.TestCase;
-
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
@@ -21,10 +19,16 @@ import org.eclipse.xtext.common.types.JvmType;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.common.types.access.IJvmTypeProvider;
+import org.eclipse.xtext.common.types.access.jdt.MockJavaProjectProvider;
 import org.eclipse.xtext.common.types.testSetups.GenericSuperClass;
 import org.eclipse.xtext.common.types.testSetups.SubClass;
 import org.eclipse.xtext.common.types.testSetups.SubOfGenericClass;
 import org.eclipse.xtext.common.types.testSetups.SuperClass;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.google.common.collect.Sets;
 import com.google.inject.Guice;
@@ -35,16 +39,19 @@ import com.google.inject.Module;
 /**
  * @author Sven Efftinge  Initial contribution and API
  */
-public abstract class AbstractFeatureOverridesServiceTest extends TestCase {
+public abstract class AbstractFeatureOverridesServiceTest extends Assert {
     
     private IJvmTypeProvider typeProvider;
     private JvmTypeReferences typeRefs;
 	@Inject
     private FeatureOverridesService service;
+	
+	@BeforeClass public static void createMockJavaProject() throws Exception {
+		MockJavaProjectProvider.setUp();
+	}
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+	@Before
+    public void setUp() throws Exception {
         ResourceSet resourceSet = new ResourceSetImpl();
         Resource syntheticResource = new XMLResourceImpl(URI.createURI("http://synthetic.resource"));
         resourceSet.getResources().add(syntheticResource);
@@ -56,15 +63,14 @@ public abstract class AbstractFeatureOverridesServiceTest extends TestCase {
 
 	protected abstract Module getModule();
     
-    @Override
-    protected void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         typeProvider = null;
         typeRefs = null;
         service = null;
-        super.tearDown();
     }
     
-    public void testSimple() throws Exception {
+    @Test public void testSimple() throws Exception {
         JvmTypeReference reference = typeRefs.typeReference("java.util.ArrayList").wildCardExtends("java.lang.CharSequence").create();
         Iterable<JvmFeature> iterable = service.getAllJvmFeatures(reference);
         HashSet<JvmFeature> set = Sets.newHashSet(iterable);
@@ -76,7 +82,7 @@ public abstract class AbstractFeatureOverridesServiceTest extends TestCase {
         assertFalse(set.contains(findOperation("java.util.List","iterator()")));
     }
     
-    public void testContainsFields() throws Exception {
+    @Test public void testContainsFields() throws Exception {
         JvmTypeReference reference = typeRefs.typeReference(SubClass.class.getName()).create();
         Iterable<JvmFeature> iterable = service.getAllJvmFeatures(reference);
         HashSet<JvmFeature> set = Sets.newHashSet(iterable);
@@ -99,7 +105,7 @@ public abstract class AbstractFeatureOverridesServiceTest extends TestCase {
         assertTrue(set.contains(findOperation(SubClass.class.getName(),"privateMethod(java.lang.String)")));
     }
     
-    public void testGenerics_00() throws Exception {
+    @Test public void testGenerics_00() throws Exception {
         JvmTypeReference reference = typeRefs.typeReference(SubOfGenericClass.class.getName()).arg(String.class.getName()).create();
         Iterable<JvmFeature> iterable = service.getAllJvmFeatures(reference);
         HashSet<JvmFeature> set = Sets.newHashSet(iterable);
@@ -109,7 +115,7 @@ public abstract class AbstractFeatureOverridesServiceTest extends TestCase {
         assertFalse(set.contains(findOperation(GenericSuperClass.class.getName(),"myMethod(T)")));
     }
     
-    public void testGenerics_01() throws Exception {
+    @Test public void testGenerics_01() throws Exception {
         JvmTypeReference reference = typeRefs.typeReference(SubOfGenericClass.class.getName()).arg(Object.class.getName()).create();
         Iterable<JvmFeature> iterable = service.getAllJvmFeatures(reference);
         HashSet<JvmFeature> set = Sets.newHashSet(iterable);

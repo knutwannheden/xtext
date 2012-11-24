@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
-<toc topic="contents/xtext.html" label="Xtext 2.1 Documentation" >
-	<topic href="contents/xtext_15.html#Xtext%202.1%20Documentation_15" label="Getting Started" >
-		<topic href="contents/005-installation.html#Installation" label="Installation" >
-			<topic href="contents/005-installation.html#InstallDistro" label="Install Pre-Configured Eclipse With Xtext" >
-			</topic>
-			<topic href="contents/005-installation.html#InstallXtext" label="Install Xtext From Update Site" >
-			</topic>
-		</topic>
+<toc topic="contents/xtext.html" label="Xtext 2.3 Documentation" >
+	<topic href="contents/xtext_14.html#Xtext%202.3%20Documentation_14" label="Getting Started" >
 		<topic href="contents/010-xtext-in-5-minutes.html#FirstFiveMinutes" label="5 Minutes Tutorial" >
 			<topic href="contents/010-xtext-in-5-minutes.html#NewProject" label="Creating A New Xtext Project" >
 			</topic>
@@ -17,16 +11,16 @@
 			<topic href="contents/010-xtext-in-5-minutes.html#Conclusion" label="Conclusion" >
 			</topic>
 		</topic>
-		<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough" label="15 Minutes Tutorial" >
-			<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough_4" label="Create A New Xtext Project" >
+		<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough" label="15 Minutes Tutorial" >
+			<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough_4" label="Create A New Xtext Project" >
 			</topic>
-			<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough_5" label="Write Your Own Grammar" >
+			<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough_5" label="Write Your Own Grammar" >
 			</topic>
-			<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough_6" label="Generate Language Artifacts" >
+			<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough_6" label="Generate Language Artifacts" >
 			</topic>
-			<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough_7" label="Run the Generated IDE Plug-in" >
+			<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough_7" label="Run the Generated IDE Plug-in" >
 			</topic>
-			<topic href="contents/020-domainmodel-step-by-step.html#DomainmodelWalkThrough_8" label="Second Iteration : Adding Packages and Imports" >
+			<topic href="contents/020-domainmodel-step-by-step.html#DomainModelWalkThrough_8" label="Second Iteration: Adding Packages and Imports" >
 			</topic>
 		</topic>
 		<topic href="contents/030-tutorial-next-steps.html#DomainmodelNextSteps" label="15 Minutes Tutorial - Extended" >
@@ -50,7 +44,7 @@
 			</topic>
 		</topic>
 	</topic>
-	<topic href="contents/xtext_16.html#Xtext%202.1%20Documentation_16" label="Reference Documentation" >
+	<topic href="contents/xtext_15.html#Xtext%202.3%20Documentation_15" label="Reference Documentation" >
 		<topic href="contents/000-introduction.html#Overview" label="Overview" >
 			<topic href="contents/000-introduction.html#Overview_1" label="What is Xtext?" >
 			</topic>
@@ -74,12 +68,12 @@
 				<topic href="contents/020-grammar-language.html#package_declarations" label="EPackage Declarations" >
 					<topic href="contents/020-grammar-language.html#package_declarations_2" label="EPackage Generation" >
 					</topic>
-					<topic href="contents/020-grammar-language.html#package_declarations_3" label="EPackage Import" >
-						<topic href="contents/020-grammar-language.html#package_declarations_3_2" label="Using Namespace URIs to Import Existing EPackages" >
+					<topic href="contents/020-grammar-language.html#ePackageImport" label="EPackage Import" >
+						<topic href="contents/020-grammar-language.html#ePackageImport_2" label="Using Namespace URIs to Import Existing EPackages" >
 						</topic>
-						<topic href="contents/020-grammar-language.html#package_declarations_3_3" label="Using Resource URIs to Import Existing EPackages - Deprecated" >
+						<topic href="contents/020-grammar-language.html#ePackageImport_3" label="Using Resource URIs to Import Existing EPackages - Deprecated" >
 						</topic>
-						<topic href="contents/020-grammar-language.html#package_declarations_3_4" label="Using Classpath URIs to Import Existing EPackages - Deprecated" >
+						<topic href="contents/020-grammar-language.html#ePackageImport_4" label="Using Classpath URIs to Import Existing EPackages - Deprecated" >
 						</topic>
 					</topic>
 					<topic href="contents/020-grammar-language.html#package_declarations_4" label="Ecore Model Aliases for EPackages" >
@@ -147,9 +141,7 @@
 				</topic>
 				<topic href="contents/020-grammar-language.html#metamodelInference_6" label="Feature Normalization" >
 				</topic>
-				<topic href="contents/020-grammar-language.html#customPostProcessing" label="Customized Post Processing" >
-				</topic>
-				<topic href="contents/020-grammar-language.html#metamodelInference_8" label="Error Conditions" >
+				<topic href="contents/020-grammar-language.html#metamodelInference_7" label="Error Conditions" >
 				</topic>
 			</topic>
 			<topic href="contents/020-grammar-language.html#grammarMixins" label="Grammar Mixins" >
@@ -326,6 +318,12 @@
 				<topic href="contents/120-heading-UI.html#highlighting_7" label="Semantic Highlighting" >
 				</topic>
 			</topic>
+			<topic href="contents/120-heading-UI.html#refactoring" label="Rename Refactoring" >
+				<topic href="contents/120-heading-UI.html#refactoring_7" label="Customizing" >
+				</topic>
+				<topic href="contents/120-heading-UI.html#refactoring_8" label="Rename Participants" >
+				</topic>
+			</topic>
 		</topic>
 		<topic href="contents/199-xtext-and-java.html#Xbase" label="Xtext and Java" >
 			<topic href="contents/199-xtext-and-java.html#Xbase_3" label="Plug-in Setup" >
@@ -341,9 +339,9 @@
 				</topic>
 			</topic>
 			<topic href="contents/199-xtext-and-java.html#xbaseExpressions" label="Using Xbase Expressions" >
-				<topic href="contents/199-xtext-and-java.html#xbaseExpressions_2" label="Making Your Grammar Refer To Xbase" >
+				<topic href="contents/199-xtext-and-java.html#xbaseExpressions_3" label="Making Your Grammar Refer To Xbase" >
 				</topic>
-				<topic href="contents/199-xtext-and-java.html#xbaseExpressions_3" label="Using the Xbase Interpreter" >
+				<topic href="contents/199-xtext-and-java.html#xbaseExpressions_4" label="Using the Xbase Interpreter" >
 				</topic>
 			</topic>
 			<topic href="contents/199-xtext-and-java.html#xbaseLanguageRef_Introduction" label="Xbase Language Reference" >
@@ -356,19 +354,7 @@
 						<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_Identifiers_4" label="Examples" >
 						</topic>
 					</topic>
-					<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_StringLiteral" label="String Literals" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_StringLiteral_4" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_StringLiteral_5" label="Examples" >
-						</topic>
-					</topic>
-					<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_IntegerLiteral" label="Integer Literals" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_IntegerLiteral_3" label="Syntax" >
-						</topic>
-					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_Comments" label="Comments" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_Comments_2" label="Syntax" >
-						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Syntax_Whitespace" label="White Space" >
 					</topic>
@@ -379,21 +365,15 @@
 					<topic href="contents/199-xtext-and-java.html#Xbase_Types_Arrays" label="Arrays" >
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Types_TypeReferences" label="Simple Type References" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Types_TypeReferences_2" label="Syntax" >
-						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Types_TypeReferences_3" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Types_FunctionTypes" label="Function Types" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Types_FunctionTypes_4" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Types_FunctionTypes_5" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Types_FunctionTypes_3" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Types_ParameterizedTypeReference" label="Parameterized Type References" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Types_ParameterizedTypeReference_3" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Types_ParameterizedTypeReference_4" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Types_ParameterizedTypeReference_3" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Types_Primitives" label="Primitives" >
@@ -405,9 +385,11 @@
 				</topic>
 				<topic href="contents/199-xtext-and-java.html#xbaseLanguageRef_Expressions" label="Expressions" >
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Literals" label="Literals" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_StringLiterals" label="String Literals" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_StringLiteral" label="String Literals" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IntegerLiterals" label="Integer Literals" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Literals_3" label="Examples" >
+						</topic>
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_NumberLiteral" label="Number Literals" >
 						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_BooleanLiteral" label="Boolean Literals" >
 						</topic>
@@ -417,9 +399,7 @@
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_TypeCasts" label="Type Casts" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_TypeCasts_3" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_TypeCasts_4" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_TypeCasts_3" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Operators" label="Infix Operators / Operator Overloading" >
@@ -427,43 +407,39 @@
 						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Operators_4" label="Examples" >
 						</topic>
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Operators_5" label="With Operator" >
+						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_PropertyAssignment" label="Assignments" >
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_FeatureCalls" label="Feature Calls" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_FeatureCalls_2" label="Syntax" >
-						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_PropertyAccess" label="Property Access" >
+						</topic>
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_NullSafeFeatureCalls" label="Null-Safe Feature Call" >
+						</topic>
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_staticFeatureCalls" label="Static Feature Calls" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ImplicitThis" label="Implicit variables 'this' and 'it'" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_NullSafeFeatureCalls" label="Null-Safe Feature Call" >
-						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ConstructorCall" label="Constructor Call" >
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ConstructorCall_2" label="Examples" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ConstructorCall_3" label="Syntax" >
-						</topic>
 					</topic>
-					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Closures" label="Closures" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Closures_2" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ClosuresTypeInference" label="Typing" >
+					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Lambda" label="Lambda Expressions" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_LambdaTypeInference" label="Typing" >
 						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_FunctionMapping" label="Function Mapping" >
 						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_implicit_parameter" label="Implicit Parameter it" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Closures_6" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Lambda_17" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IfExpression" label="If Expression" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IfExpression_2" label="Syntax" >
-						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IfTypeInference" label="Typing" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IfExpression_4" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_IfExpression_7" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_SwitchExpression" label="Switch Expression" >
@@ -473,35 +449,23 @@
 						</topic>
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_SwitchExpression_9" label="Examples" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_SwitchExpression_10" label="Syntax" >
-						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_VariableDeclaration" label="Variable Declarations" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_VariableDeclaration_5" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_VariableDeclaration_6" label="Typing" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_VariableDeclaration_5" label="Typing" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Blocks" label="Blocks" >
 						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Blocks_3" label="Examples" >
 						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Blocks_4" label="Syntax" >
-						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ForLoop" label="For Loop" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_ForLoop_4" label="Syntax" >
-						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_WhileExpression" label="While Loop" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_WhileExpression_2" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_WhileExpression_3" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_WhileExpression_2" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_DoWhileExpression" label="Do-While Loop" >
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_DoWhileExpression_2" label="Syntax" >
-						</topic>
-						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_DoWhileExpression_3" label="Examples" >
+						<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_DoWhileExpression_2" label="Examples" >
 						</topic>
 					</topic>
 					<topic href="contents/199-xtext-and-java.html#Xbase_Expressions_Return" label="Return Expression" >
@@ -566,15 +530,15 @@
 			</topic>
 			<topic href="contents/210-emf-integration.html#gmf_integration" label="Integration with GMF Editors" >
 				<topic href="contents/210-emf-integration.html#gmf_integration_stage_1" label="Stage 1: Make GMF Read and Write the Semantic Model As Text" >
-					<topic href="contents/210-emf-integration.html#gmf_integration_stage_1_9" label="Stage 2: Calling the Xtext Parser to Parse GMF Labels" >
-					</topic>
-					<topic href="contents/210-emf-integration.html#gmf_integration_stage_1_10" label="Stage 3: A Popup Xtext Editor (experimental)" >
-					</topic>
+				</topic>
+				<topic href="contents/210-emf-integration.html#gmf_integration_7" label="Stage 2: Calling the Xtext Parser to Parse GMF Labels" >
+				</topic>
+				<topic href="contents/210-emf-integration.html#gmf_integration_8" label="Stage 3: A Popup Xtext Editor (experimental)" >
 				</topic>
 			</topic>
 		</topic>
 	</topic>
-	<topic href="contents/xtext_17.html#Xtext%202.1%20Documentation_17" label="Appendix" >
+	<topic href="contents/xtext_16.html#Xtext%202.3%20Documentation_16" label="Appendix" >
 		<topic href="contents/213-migrating-from-1.0.html#migrating_from_1_0_x" label="Migrating from Xtext 1.0.x to 2.0" >
 			<topic href="contents/213-migrating-from-1.0.html#migrating_from_1_0_x_4" label="Take the Shortcut" >
 			</topic>

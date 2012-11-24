@@ -9,12 +9,15 @@ package org.eclipse.xtext.xbase.lib;
 
 import java.math.BigInteger;
 
+import com.google.common.annotations.GwtCompatible;
+
+
 /**
  * This is an extension library for {@link BigInteger big integral numbers}.
  * 
  * @author Jan Koehnlein - Initial contribution and API
  */
-public class BigIntegerExtensions {
+@GwtCompatible public class BigIntegerExtensions {
 
 	/**
 	 * The unary <code>minus</code> operator.
@@ -25,6 +28,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} is <code>null</code>.
 	 */
+	@Inline(value="$1.negate()")
+	@Pure
 	public static BigInteger operator_minus(BigInteger a) {
 		return a.negate();
 	}
@@ -40,6 +45,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Inline(value="$1.add($2)")
+	@Pure
 	public static BigInteger operator_plus(BigInteger a, BigInteger b) {
 		return a.add(b);
 	}
@@ -55,6 +62,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Inline(value="$1.subtract($2)")
+	@Pure
 	public static BigInteger operator_minus(BigInteger a, BigInteger b) {
 		return a.subtract(b);
 	}
@@ -70,6 +79,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} <code>null</code>.
 	 */
+	@Inline(value="$1.pow($2)")
+	@Pure
 	public static BigInteger operator_power(BigInteger a, int exponent) {
 		return a.pow(exponent);
 	}
@@ -85,6 +96,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Inline(value="$1.multiply($2)")
+	@Pure
 	public static BigInteger operator_multiply(BigInteger a, BigInteger b) {
 		return a.multiply(b);
 	}
@@ -100,6 +113,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Inline(value="$1.divide($2)")
+	@Pure
 	public static BigInteger operator_divide(BigInteger a, BigInteger b) {
 		return a.divide(b);
 	}
@@ -115,6 +130,8 @@ public class BigIntegerExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Inline(value="$1.mod($2)")
+	@Pure
 	public static BigInteger operator_modulo(BigInteger a, BigInteger b) {
 		return a.mod(b);
 	}

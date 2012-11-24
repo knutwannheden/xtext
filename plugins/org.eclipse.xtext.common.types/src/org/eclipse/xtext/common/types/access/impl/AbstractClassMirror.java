@@ -23,7 +23,6 @@ import org.eclipse.xtext.common.types.JvmMember;
 import org.eclipse.xtext.common.types.JvmTypeParameter;
 import org.eclipse.xtext.common.types.JvmTypeParameterDeclarator;
 import org.eclipse.xtext.common.types.JvmTypeReference;
-import org.eclipse.xtext.common.types.TypesFactory;
 import org.eclipse.xtext.resource.IFragmentProvider;
 
 /**
@@ -110,10 +109,6 @@ public abstract class AbstractClassMirror implements IClassMirror {
 		JvmComponentType component = (JvmComponentType) getEObject(resource, fragment.substring(0, fragment.length() - 2), fallback);
 		if (component == null)
 			return null;
-		if (component.getArrayType() == null) {
-			JvmArrayType arrayType = TypesFactory.eINSTANCE.createJvmArrayType();
-			arrayType.setComponentType(component);
-		}
 		return component.getArrayType();
 	}
 	

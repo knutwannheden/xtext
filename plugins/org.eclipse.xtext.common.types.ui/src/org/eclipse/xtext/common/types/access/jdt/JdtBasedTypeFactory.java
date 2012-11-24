@@ -10,6 +10,7 @@ package org.eclipse.xtext.common.types.access.jdt;
 import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.eclipse.emf.common.util.URI;
@@ -17,10 +18,12 @@ import org.eclipse.emf.ecore.EDataType;
 import org.eclipse.emf.ecore.EStructuralFeature;
 import org.eclipse.emf.ecore.EcoreFactory;
 import org.eclipse.emf.ecore.InternalEObject;
+import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IMethod;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.core.WorkingCopyOwner;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.IAnnotationBinding;
@@ -30,6 +33,13 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.IVariableBinding;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.internal.compiler.env.IBinaryType;
+import org.eclipse.jdt.internal.compiler.problem.AbortCompilation;
+import org.eclipse.jdt.internal.core.BinaryType;
+import org.eclipse.jdt.internal.core.DefaultWorkingCopyOwner;
+import org.eclipse.jdt.internal.core.JavaElement;
+import org.eclipse.jdt.internal.core.SourceMapper;
+import org.eclipse.jdt.internal.core.SourceMethod;
 import org.eclipse.xtext.common.types.JvmAnnotationAnnotationValue;
 import org.eclipse.xtext.common.types.JvmAnnotationReference;
 import org.eclipse.xtext.common.types.JvmAnnotationTarget;
@@ -61,6 +71,7 @@ import org.eclipse.xtext.common.types.access.impl.ITypeFactory;
 import org.eclipse.xtext.util.Strings;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -69,9 +80,19 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 
 	private final static Logger log = Logger.getLogger(JdtBasedTypeFactory.class);
 	private final TypeURIHelper uriHelper;
+	private WorkingCopyOwner workingCopyOwner;
 
+	@Deprecated
 	public JdtBasedTypeFactory(TypeURIHelper uriHelper) {
+		this(uriHelper, DefaultWorkingCopyOwner.PRIMARY);
+	}
+	
+	/**
+	 * @since 2.4
+	 */
+	public JdtBasedTypeFactory(TypeURIHelper uriHelper, WorkingCopyOwner workingCopyOwner) {
 		this.uriHelper = uriHelper;
+		this.workingCopyOwner = workingCopyOwner;
 	}
 
 	public JvmDeclaredType createType(IType jdtType) {
@@ -79,6 +100,7 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 			throw new IllegalArgumentException("Cannot create type from non-toplevel-type: '"
 					+ jdtType.getFullyQualifiedName() + "'.");
 		ASTParser parser = ASTParser.newParser(AST.JLS3);
+		parser.setWorkingCopyOwner(workingCopyOwner);
 		parser.setProject(jdtType.getJavaProject());
 		parser.setIgnoreMethodBodies(true);
 		
@@ -139,7 +161,7 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 			for (IAnnotationBinding annotation : annotated.getAnnotations()) {
 				createAnnotationReference(result, annotation);
 			}
-		} catch(@SuppressWarnings("restriction") org.eclipse.jdt.internal.compiler.problem.AbortCompilation aborted) {
+		} catch(AbortCompilation aborted) {
 			log.info("Couldn't resolve annotations of "+annotated, aborted);
 		}
 	}
@@ -148,28 +170,53 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 		JvmAnnotationReference annotationReference = TypesFactory.eINSTANCE.createJvmAnnotationReference();
 		result.getAnnotations().add(annotationReference);
 		annotationReference.setAnnotation(createAnnotationProxy(annotation.getAnnotationType()));
-		IMemberValuePairBinding[] allMemberValuePairs = annotation.getAllMemberValuePairs();
-		for (IMemberValuePairBinding memberValuePair : allMemberValuePairs) {
-			ITypeBinding originalTypeBinding = memberValuePair.getMethodBinding().getReturnType();
-			ITypeBinding typeBinding = originalTypeBinding;
-			if (typeBinding.isArray()) {
-				typeBinding = typeBinding.getComponentType();
+		try {
+			IMemberValuePairBinding[] allMemberValuePairs = annotation.getAllMemberValuePairs();
+			for (IMemberValuePairBinding memberValuePair : allMemberValuePairs) {
+				IMethodBinding methodBinding = memberValuePair.getMethodBinding();
+				createAnnotationValue(annotationReference, annotation, memberValuePair.getValue(), methodBinding);
 			}
-			if (typeBinding.isParameterizedType())
-				typeBinding = typeBinding.getErasure();
-			JvmAnnotationValue annotationValue = originalTypeBinding.isArray() ? 
-					createArrayAnnotationValue(memberValuePair, createAnnotationValue(typeBinding)) : 
-					createAnnotationValue(memberValuePair, createAnnotationValue(typeBinding));
-			annotationReference.getValues().add(annotationValue);
-			annotationValue.setOperation(createMethodProxy(annotation.getAnnotationType(), memberValuePair.getName()));
+		} catch(NullPointerException npe) {
+			log.debug("NPE in IAnnotationBinding#getAllMemberValuePairs ?", npe);
+			IMemberValuePairBinding[] declaredMemberValuePairs = annotation.getDeclaredMemberValuePairs();
+			Set<IMethodBinding> seenMethodBindings = Sets.newHashSet();
+			for (IMemberValuePairBinding memberValuePair : declaredMemberValuePairs) {
+				IMethodBinding methodBinding = memberValuePair.getMethodBinding();
+				seenMethodBindings.add(methodBinding);
+				createAnnotationValue(annotationReference, annotation, memberValuePair.getValue(), methodBinding);
+			}
+			ITypeBinding annotationType = annotation.getAnnotationType();
+			IMethodBinding[] allAnnotationMethods = annotationType.getDeclaredMethods();
+			for(IMethodBinding methodBinding: allAnnotationMethods) {
+				if (seenMethodBindings.add(methodBinding)) {
+					try {
+						createAnnotationValue(annotationReference, annotation, methodBinding.getDefaultValue(), methodBinding);
+					} catch(NullPointerException nestedNPE) {
+						log.debug("NPE in IMethodBinding#getDefaultValue ?", npe);
+					}
+				}
+			}
 		}
 		return annotationReference;
 	}
 
-	public JvmAnnotationValue createArrayAnnotationValue(IMemberValuePairBinding memberValuePair,
-			JvmAnnotationValue result) {
-		Object value = memberValuePair.getValue();
-		return createArrayAnnotationValue(value, result);
+	/**
+	 * @since 2.3
+	 */
+	protected void createAnnotationValue(JvmAnnotationReference annotationReference, IAnnotationBinding annotation,
+			Object value, IMethodBinding methodBinding) {
+		ITypeBinding originalTypeBinding = methodBinding.getReturnType();
+		ITypeBinding typeBinding = originalTypeBinding;
+		if (typeBinding.isArray()) {
+			typeBinding = typeBinding.getComponentType();
+		}
+		if (typeBinding.isParameterizedType())
+			typeBinding = typeBinding.getErasure();
+		JvmAnnotationValue annotationValue = originalTypeBinding.isArray() ? 
+				createArrayAnnotationValue(value, createAnnotationValue(typeBinding)) : 
+				createAnnotationValue(value, createAnnotationValue(typeBinding));
+		annotationReference.getValues().add(annotationValue);
+		annotationValue.setOperation(createMethodProxy(annotation.getAnnotationType(), methodBinding.getName()));
 	}
 
 	private JvmAnnotationValue createArrayAnnotationValue(Object value, JvmAnnotationValue result) {
@@ -232,11 +279,6 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 		URI uri = uriHelper.getFullURIForClass(fqn);
 		proxy.eSetProxyURI(uri);
 		return (org.eclipse.xtext.common.types.JvmType) proxy;
-	}
-
-	public JvmAnnotationValue createAnnotationValue(IMemberValuePairBinding memberValuePair, JvmAnnotationValue result) {
-		Object value = memberValuePair.getValue();
-		return createAnnotationValue(value, result);
 	}
 
 	private JvmAnnotationValue createAnnotationValue(Object value, JvmAnnotationValue result) {
@@ -537,7 +579,12 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 		result.setSimpleName(method.getName());
 		setVisibility(result, method.getModifiers());
 
-		IMethod javaMethod = (IMethod) method.getJavaElement();
+		IMethod javaMethod = null;
+		try {
+			javaMethod = (IMethod) method.getJavaElement();
+		} catch(IllegalArgumentException e) {
+			log.debug("Cannot locate javaMethod for: " + fqName);
+		}
 		String[] parameterNames = fastGetParameterNames(javaMethod);
 		result.setVarArgs(method.isVarargs());
 		for (int i = 0; i < parameterTypes.length; i++) {
@@ -545,7 +592,7 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 			IAnnotationBinding[] parameterAnnotations = null;
 			try {
 				parameterAnnotations = method.getParameterAnnotations(i);
-			} catch(@SuppressWarnings("restriction") org.eclipse.jdt.internal.compiler.problem.AbortCompilation aborted) {
+			} catch(AbortCompilation aborted) {
 				parameterAnnotations = null;
 			}
 			result.getParameters().add(createFormalParameter(parameterTypes[i], parameterName, parameterAnnotations));
@@ -555,7 +602,6 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 		}
 	}
 
-	@SuppressWarnings("restriction")
 	protected String[] fastGetParameterNames(IMethod javaMethod) {
 		String[] parameterNames = null;
 		if (javaMethod != null) {
@@ -564,13 +610,13 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 			if (numberOfParameters != 0) {
 				if (javaMethod.exists()) {
 					try {
-						if (javaMethod instanceof org.eclipse.jdt.internal.core.SourceMethod) {
+						if (javaMethod instanceof SourceMethod) {
 							parameterNames = javaMethod.getParameterNames();
 							return parameterNames;
 						}
-						if (javaMethod instanceof org.eclipse.jdt.internal.core.JavaElement) {
-							org.eclipse.jdt.internal.core.JavaElement casted = (org.eclipse.jdt.internal.core.JavaElement) javaMethod;
-							org.eclipse.jdt.internal.core.SourceMapper mapper = casted.getSourceMapper();
+						if (javaMethod instanceof JavaElement) {
+							JavaElement casted = (JavaElement) javaMethod;
+							SourceMapper mapper = casted.getSourceMapper();
 							if (mapper != null) {
 								char[][] parameterNamesAsChars = mapper.getMethodParameterNames(javaMethod);
 								if (parameterNamesAsChars != null) {
@@ -578,7 +624,7 @@ public class JdtBasedTypeFactory implements ITypeFactory<IType> {
 									return parameterNames;
 								}
 								IType type = (IType) javaMethod.getParent();
-								org.eclipse.jdt.internal.compiler.env.IBinaryType info = (org.eclipse.jdt.internal.compiler.env.IBinaryType) ((org.eclipse.jdt.internal.core.BinaryType) javaMethod
+								IBinaryType info = (IBinaryType) ((BinaryType) javaMethod
 										.getDeclaringType()).getElementInfo();
 								char[] source = mapper.findSource(type, info);
 								if (source != null) {

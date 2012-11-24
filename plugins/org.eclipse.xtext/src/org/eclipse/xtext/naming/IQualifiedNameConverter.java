@@ -7,7 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.naming;
 
-import java.util.regex.Pattern;
+import java.util.List;
 
 import org.eclipse.xtext.util.Strings;
 
@@ -39,21 +39,11 @@ public interface IQualifiedNameConverter {
 		public String toString(QualifiedName qualifiedName) {
 			if (qualifiedName == null)
 				throw new IllegalArgumentException("Qualified name cannot be null");
-			if (qualifiedName.getSegmentCount() == 1)
-				return qualifiedName.getFirstSegment();
-			StringBuilder builder = new StringBuilder();
-			boolean isFirst = true;
-			for (String segment : qualifiedName.getSegments()) {
-				if (!isFirst)
-					builder.append(getDelimiter());
-				isFirst = false;
-				builder.append(segment);
-			}
-			return builder.toString();
+			return qualifiedName.toString(getDelimiter());
 		}
-
+		
 		/**
-		 * Splits the given string into segments and returns them as a {@link} QualifiedName.
+		 * Splits the given string into segments and returns them as a {@link QualifiedName}.
 		 * 
 		 * @exception IllegalArgumentException
 		 *                if the input is empty or null.
@@ -65,8 +55,9 @@ public interface IQualifiedNameConverter {
 				throw new IllegalArgumentException("Qualified name cannot be empty");
 			if (Strings.isEmpty(getDelimiter()))
 				return QualifiedName.create(qualifiedNameAsString);
-			String[] segments = qualifiedNameAsString.split(Pattern.quote(getDelimiter()));
-			return QualifiedName.create(segments);
+			List<String> segs = getDelimiter().length() == 1 ? Strings.split(qualifiedNameAsString, getDelimiter()
+					.charAt(0)) : Strings.split(qualifiedNameAsString, getDelimiter());
+		    return QualifiedName.create(segs);
 		}
 
 		public String getDelimiter() {

@@ -20,9 +20,13 @@ import java.util.SortedSet;
 import org.eclipse.xtext.xbase.lib.Functions.Function1;
 import org.eclipse.xtext.xbase.lib.Functions.Function2;
 import org.eclipse.xtext.xbase.lib.Procedures.Procedure1;
+import org.eclipse.xtext.xbase.lib.Procedures.Procedure2;
 import org.eclipse.xtext.xbase.lib.internal.BooleanFunctionDelegate;
 import org.eclipse.xtext.xbase.lib.internal.FunctionDelegate;
 
+import com.google.common.annotations.Beta;
+import com.google.common.annotations.GwtCompatible;
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicates;
 import com.google.common.collect.AbstractIterator;
@@ -37,6 +41,7 @@ import com.google.common.collect.Sets;
  * @author Sven Efftinge - Initial contribution and API
  * @author Sebastian Zarnekow
  */
+@GwtCompatible(emulated = true)
 public class IterableExtensions {
 
 	/**
@@ -56,6 +61,8 @@ public class IterableExtensions {
 	 *            the second iterable. May not be <code>null</code>.
 	 * @return a combined iterable. Never <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$3.$4concat($1, $2)", imported=Iterables.class)
 	public static <T> Iterable<T> operator_plus(Iterable<? extends T> a, Iterable<? extends T> b) {
 		return Iterables.concat(a, b);
 	}
@@ -219,6 +226,7 @@ public class IterableExtensions {
 	 * @throws IllegalArgumentException
 	 *             if <code>count</code> is negative.
 	 */
+	@Pure
 	public static <T> Iterable<T> drop(final Iterable<T> iterable, final int count) {
 		if (iterable == null)
 			throw new NullPointerException("iterable");
@@ -303,7 +311,8 @@ public class IterableExtensions {
 	 *            the predicate. May not be <code>null</code>.
 	 * @return an iterable that contains only the elements that fulfill the predicate. Never <code>null</code>.
 	 */
-	public static final <T> Iterable<T> filter(Iterable<T> unfiltered, Function1<? super T, Boolean> predicate) {
+	@Pure
+	public static <T> Iterable<T> filter(Iterable<T> unfiltered, Function1<? super T, Boolean> predicate) {
 		return Iterables.filter(unfiltered, new BooleanFunctionDelegate<T>(predicate));
 	}
 
@@ -320,7 +329,10 @@ public class IterableExtensions {
 	 * @return an unmodifiable iterable containing all elements of the original iterable that were of the requested
 	 *         type. Never <code>null</code>.
 	 */
-	public static final <T> Iterable<T> filter(Iterable<?> unfiltered, Class<T> type) {
+	@GwtIncompatible("Class.isInstance")
+	@Pure
+	@Inline(value="$3.$4filter($1, $2)", imported=Iterables.class)
+	public static <T> Iterable<T> filter(Iterable<?> unfiltered, Class<T> type) {
 		return Iterables.filter(unfiltered, type);
 	}
 	
@@ -331,7 +343,8 @@ public class IterableExtensions {
 	 *            the unfiltered iterable. May not be <code>null</code>.
 	 * @return an unmodifiable iterable containing all elements of the original iterable without any <code>null</code> references. Never <code>null</code>.
 	 */
-	public static final <T> Iterable<T> filterNull(Iterable<T> unfiltered) {
+	@Pure
+	public static <T> Iterable<T> filterNull(Iterable<T> unfiltered) {
 		return Iterables.filter(unfiltered, Predicates.notNull());
 	}
 
@@ -349,7 +362,8 @@ public class IterableExtensions {
 	 *            the transformation. May not be <code>null</code>.
 	 * @return an iterable that provides the result of the transformation. Never <code>null</code>.
 	 */
-	public static final <T, R> Iterable<R> map(Iterable<T> original, Function1<? super T, ? extends R> transformation) {
+	@Pure
+	public static <T, R> Iterable<R> map(Iterable<T> original, Function1<? super T, ? extends R> transformation) {
 		return Iterables.transform(original, new FunctionDelegate<T, R>(transformation));
 	}
 
@@ -365,7 +379,8 @@ public class IterableExtensions {
 	 *            the to be flattened iterables. May not be <code>null</code>.
 	 * @return an iterable that provides the concatenated values of the input elements. Never <code>null</code>.
 	 */
-	public static final <T> Iterable<T> flatten(Iterable<? extends Iterable<? extends T>> inputs) {
+	@Inline(value="$2.$3concat($1)", imported=Iterables.class)
+	public static <T> Iterable<T> flatten(Iterable<? extends Iterable<? extends T>> inputs) {
 		return Iterables.concat(inputs);
 	}
 
@@ -377,11 +392,33 @@ public class IterableExtensions {
 	 * @param procedure
 	 *            the procedure. May not be <code>null</code>.
 	 */
-	public static final <T> void forEach(Iterable<T> iterable, Procedure1<? super T> procedure) {
+	public static <T> void forEach(Iterable<T> iterable, Procedure1<? super T> procedure) {
 		if (procedure == null)
 			throw new NullPointerException("procedure");
 		for (T t : iterable) {
 			procedure.apply(t);
+		}
+	}
+	
+	/**
+	 * Applies {@code procedure} for each element of the given iterable.
+	 * The procedure takes the element and a loop counter. If the counter would overflow, {@link Integer#MAX_VALUE}
+	 * is returned for all subsequent elements. The first element is at index zero.
+	 * 
+	 * @param iterable
+	 *            the iterable. May not be <code>null</code>.
+	 * @param procedure
+	 *            the procedure. May not be <code>null</code>.
+	 * @since 2.3
+	 */
+	public static <T> void forEach(Iterable<T> iterable, Procedure2<? super T, ? super Integer> procedure) {
+		if (procedure == null)
+			throw new NullPointerException("procedure");
+		int i = 0;
+		for (T t : iterable) {
+			procedure.apply(t, i);
+			if (i != Integer.MAX_VALUE)
+				i++;
 		}
 	}
 
@@ -393,7 +430,7 @@ public class IterableExtensions {
 	 * @return the string representation of the iterable's elements. Never <code>null</code>.
 	 * @see #join(Iterable, CharSequence, Function1)
 	 */
-	public static final String join(Iterable<?> iterable) {
+	public static String join(Iterable<?> iterable) {
 		return join(iterable, "");
 	}
 
@@ -409,7 +446,7 @@ public class IterableExtensions {
 	 * @return the string representation of the iterable's elements. Never <code>null</code>.
 	 * @see #join(Iterable, CharSequence, Function1)
 	 */
-	public static final String join(Iterable<?> iterable, CharSequence separator) {
+	public static String join(Iterable<?> iterable, CharSequence separator) {
 		return Joiner.on(separator.toString()).useForNull("null").join(iterable);
 	}
 
@@ -428,7 +465,7 @@ public class IterableExtensions {
 	 *            <code>null</code>.
 	 * @return the string representation of the iterable's elements. Never <code>null</code>.
 	 */
-	public static final <T> String join(Iterable<T> iterable, CharSequence separator,
+	public static <T> String join(Iterable<T> iterable, CharSequence separator,
 			Functions.Function1<? super T, ? extends CharSequence> function) {
 		if (separator == null)
 			throw new NullPointerException("separator");
@@ -465,7 +502,7 @@ public class IterableExtensions {
 	 *            <code>null</code>.
 	 * @return the string representation of the iterable's elements. Never <code>null</code>.
 	 */
-	public static final <T> String join(Iterable<T> iterable, CharSequence before, CharSequence separator, CharSequence after,
+	public static <T> String join(Iterable<T> iterable, CharSequence before, CharSequence separator, CharSequence after,
 			Functions.Function1<? super T, ? extends CharSequence> function) {
 		if (function == null)
 			throw new NullPointerException("function");
@@ -497,7 +534,7 @@ public class IterableExtensions {
 	 *            an iterable. May not be <code>null</code>.
 	 * @return <code>true</code> if the two iterables contain equal elements in the same order.
 	 */
-	public static final boolean elementsEqual(Iterable<?> iterable, Iterable<?> other) {
+	public static boolean elementsEqual(Iterable<?> iterable, Iterable<?> other) {
 		return Iterables.elementsEqual(iterable, other);
 	}
 
@@ -508,7 +545,7 @@ public class IterableExtensions {
 	 *            the to-be-queried iterable. May be <code>null</code>.
 	 * @return {@code true} if the iterable is <code>null</code> or contains no elements
 	 */
-	public static final boolean isNullOrEmpty(Iterable<?> iterable) {
+	public static boolean isNullOrEmpty(Iterable<?> iterable) {
 		return iterable == null || isEmpty(iterable);
 	}
 
@@ -520,7 +557,7 @@ public class IterableExtensions {
 	 * @return {@code true} if the iterable contains no elements
 	 * @see #isNullOrEmpty(Iterable)
 	 */
-	public static final boolean isEmpty(Iterable<?> iterable) {
+	public static boolean isEmpty(Iterable<?> iterable) {
 		if (iterable instanceof Collection<?>)
 			return ((Collection<?>) iterable).isEmpty();
 		return !iterable.iterator().hasNext();
@@ -533,7 +570,7 @@ public class IterableExtensions {
 	 *            the iterable. May not be <code>null</code>.
 	 * @return the number of elements in {@code iterable}.
 	 */
-	public static final int size(Iterable<?> iterable) {
+	public static int size(Iterable<?> iterable) {
 		return Iterables.size(iterable);
 	}
 
@@ -562,10 +599,10 @@ public class IterableExtensions {
 	 *            the combinator function. May not be <code>null</code>.
 	 * @return the last result of the applied combinator function or <code>null</code> for the empty input.
 	 */
-	public static <T> T reduce(Iterable<T> iterable, Function2<? super T, ? super T, ? extends T> function) {
+	public static <T> T reduce(Iterable<? extends T> iterable, Function2<? super T, ? super T, ? extends T> function) {
 		if (function == null)
 			throw new NullPointerException("function");
-		Iterator<T> iterator = iterable.iterator();
+		Iterator<? extends T> iterator = iterable.iterator();
 		if (iterator.hasNext()) {
 			T result = iterator.next();
 			while (iterator.hasNext()) {
@@ -620,13 +657,15 @@ public class IterableExtensions {
 
 	/**
 	 * Returns a list that contains all the entries of the given iterable in the same order. If the iterable is of type
-	 * {@link List}, itself is returned. In all other cases, the result list is a copy of the iterable.
+	 * {@link List}, itself is returned. Therefore an unchecked cast is performed. 
+	 * In all other cases, the result list is a copy of the iterable.
 	 * 
 	 * @param iterable
 	 *            the iterable. May not be <code>null</code>.
 	 * @return a list with the same entries as the given iterable. May be the same as the given iterable iff it
 	 *         implements {@link List}, otherwise a copy is returned. Never <code>null</code>.
 	 */
+	@Beta
 	public static <T> List<T> toList(Iterable<? extends T> iterable) {
 		if (iterable instanceof List<?>) {
 			@SuppressWarnings("unchecked")
@@ -638,15 +677,15 @@ public class IterableExtensions {
 
 	/**
 	 * Returns a set that contains all the unique entries of the given iterable in the order of their appearance. If the
-	 * iterable is of type {@link Set}, itself is returned. In all other cases, the result set is a copy of the iterable
-	 * with stable order.
-	 * 
+	 * iterable is of type {@link Set}, itself is returned. Therefore an unchecked cast is performed.
+	 * In all other cases, the result set is a copy of the iterable with stable order.
 	 * 
 	 * @param iterable
 	 *            the iterable. May not be <code>null</code>.
 	 * @return a set with the unique entries of the given iterable. May be the same as the given iterable iff it
 	 *         implements {@link Set}, otherwise a copy is returned. Never <code>null</code>.
 	 */
+	@Beta
 	public static <T> Set<T> toSet(Iterable<? extends T> iterable) {
 		if (iterable instanceof Set<?>) {
 			@SuppressWarnings("unchecked")

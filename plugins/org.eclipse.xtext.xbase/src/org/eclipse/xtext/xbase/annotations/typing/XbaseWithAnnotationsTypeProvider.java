@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.EReference;
+import org.eclipse.xtext.common.types.JvmAnnotationType;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.xbase.XExpression;
@@ -51,6 +52,10 @@ public class XbaseWithAnnotationsTypeProvider extends XbaseTypeProvider {
 		}
 	}
 	
+	/**
+	 * @param index unused but required in dispatch signature 
+	 * @param rawType unused but required in dispatch signature
+	 */
 	protected JvmTypeReference _expectedType(XAnnotation annotation, EReference reference, int index,
 			boolean rawType) {
 		if (reference == XAnnotationsPackage.Literals.XANNOTATION__VALUE) {
@@ -62,6 +67,10 @@ public class XbaseWithAnnotationsTypeProvider extends XbaseTypeProvider {
 		return null;
 	}
 	
+	/**
+	 * @param index unused but required in dispatch signature 
+	 * @param rawType unused but required in dispatch signature
+	 */
 	protected JvmTypeReference _expectedType(XAnnotationElementValuePair annotation, EReference reference, int index,
 			boolean rawType) {
 		if (reference == XAnnotationsPackage.Literals.XANNOTATION_ELEMENT_VALUE_PAIR__VALUE) {
@@ -72,6 +81,9 @@ public class XbaseWithAnnotationsTypeProvider extends XbaseTypeProvider {
 		return null;
 	}
 	
+	/**
+	 * @param index unused but required in dispatch signature 
+	 */
 	protected JvmTypeReference _expectedType(XAnnotationElementValueBinaryOperation binaryOp, EReference reference, int index,
 			boolean rawType) {
 		if (reference == XAnnotationsPackage.Literals.XANNOTATION_ELEMENT_VALUE_BINARY_OPERATION__RIGHT_OPERAND) {
@@ -80,6 +92,10 @@ public class XbaseWithAnnotationsTypeProvider extends XbaseTypeProvider {
 		return null;
 	}
 	
+	/**
+	 * @param reference unused but required in dispatch signature 
+	 * @param index unused but required in dispatch signature
+	 */
 	protected JvmTypeReference _expectedType(XAnnotationValueArray array, EReference reference, int index,
 			boolean rawType) {
 		return getExpectedType(array, rawType);
@@ -98,14 +114,25 @@ public class XbaseWithAnnotationsTypeProvider extends XbaseTypeProvider {
 		}
 	}
 
+	/**
+	 * @param rawExpectation unused but required in dispatch signature 
+	 * @param rawType unused but required in dispatch signature
+	 */
 	protected JvmTypeReference _type(XAnnotation annotation, JvmTypeReference rawExpectation, boolean rawType) {
-		return getTypeReferences().createTypeRef(annotation.getAnnotationType());
+		final JvmAnnotationType annotationType = annotation.getAnnotationType();
+		if (annotationType == null) {
+			return null;
+		}
+		return getTypeReferences().createTypeRef(annotationType);
 	}
 	
 	protected JvmTypeReference _type(XAnnotationElementValueBinaryOperation annotation, JvmTypeReference rawExpectation, boolean rawType) {
 		return getType(annotation.getLeftOperand(), rawExpectation, rawType);
 	}
 	
+	/**
+	 * @param rawExpectation unused but required in dispatch signature 
+	 */
 	protected JvmTypeReference _type(XAnnotationValueArray annotation, JvmTypeReference rawExpectation, boolean rawType) {
 		List<JvmTypeReference> references = newArrayList();
 		for (XExpression expression : annotation.getValues()) {

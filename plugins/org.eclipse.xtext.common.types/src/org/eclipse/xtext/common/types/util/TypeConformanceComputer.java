@@ -10,11 +10,12 @@ package org.eclipse.xtext.common.types.util;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.EcoreUtil2;
+import org.eclipse.xtext.common.types.JvmAnyTypeReference;
 import org.eclipse.xtext.common.types.JvmArrayType;
 import org.eclipse.xtext.common.types.JvmComponentType;
 import org.eclipse.xtext.common.types.JvmDelegateTypeReference;
@@ -44,12 +45,15 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multiset.Entry;
 import com.google.common.collect.Sets;
+import com.google.common.primitives.Booleans;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
  * @author Sebastian Zarnekow
  */
+@Singleton
 public class TypeConformanceComputer {
 
 	protected AbstractConformanceVisitor<JvmTypeReference> leftDispatcher = createStrategySelector();
@@ -145,6 +149,8 @@ public class TypeConformanceComputer {
 		}
 		
 		public boolean accept(JvmTypeReference superType, int distance) {
+			if (superType == null)
+				return false;
 			JvmType type = superType.getType();
 			rawTypeToReference.put(type, resolver.apply(superType));
 			if (distances.contains(type)) {
@@ -212,8 +218,10 @@ public class TypeConformanceComputer {
 //		}
 		// TODO handle all primitives
 		// TODO handle arrays
-		if (containsPrimitive(types)) {
-			List<JvmTypeReference> withoutPrimitives = replacePrimitives(types);
+		if (containsPrimitiveOrAnyReferences(types)) {
+			List<JvmTypeReference> withoutPrimitives = replacePrimitivesAndRemoveAnyReferences(types);
+			if (withoutPrimitives.equals(types))
+				return null;
 			return getCommonSuperType(withoutPrimitives);
 		}
 		JvmTypeReference firstType = types.get(0);
@@ -236,30 +244,55 @@ public class TypeConformanceComputer {
 		// try to find a matching parameterized type for the raw types in ascending order
 		List<JvmTypeReference> referencesWithSameDistance = Lists.newArrayListWithExpectedSize(2);
 		int wasDistance = -1;
-		for(Entry<JvmType> rawTypeCandidate: candidates) {
+		boolean classSeen = false;
+		outer: for(Entry<JvmType> rawTypeCandidate: candidates) {
+			JvmType rawType = rawTypeCandidate.getElement();
+			JvmTypeReference result = null;
 			if (wasDistance == -1) {
 				wasDistance = rawTypeCandidate.getCount();
 			} else {
 				if (wasDistance != rawTypeCandidate.getCount()) {
-					break;
+					if (classSeen)
+						break;
+					result = getTypeParametersForSupertype(all, rawType, types);
+					for(JvmTypeReference alreadyCollected: referencesWithSameDistance) {
+						if (isConformant(result, alreadyCollected, true)) {
+							classSeen = classSeen || isClass(rawType);
+							continue outer;
+						}
+					}
+					wasDistance = rawTypeCandidate.getCount(); 
 				}
 			}
-			JvmType rawType = rawTypeCandidate.getElement();
-			JvmTypeReference result = getTypeParametersForSupertype(all, rawType, types);
+			if (result == null)
+				result = getTypeParametersForSupertype(all, rawType, types);
 			if (result != null) {
-				referencesWithSameDistance.add(result);
+				boolean isClass = isClass(rawType);
+				classSeen = classSeen || isClass;
+				if (isClass)
+					referencesWithSameDistance.add(0, result);
+				else
+					referencesWithSameDistance.add(result);
 			}
 		}
 		if (referencesWithSameDistance.size() == 1) {
 			return referencesWithSameDistance.get(0);
 		} else if (referencesWithSameDistance.size() > 1) {
 			JvmMultiTypeReference result = typeReferences.createMultiTypeReference(referencesWithSameDistance.get(0).getType());
+			if (result == null)
+				return result;
 			for(JvmTypeReference reference: referencesWithSameDistance) {
 				result.getReferences().add(EcoreUtil2.cloneIfContained(reference));
 			}
 			return result;
 		}
 		return null;
+	}
+
+	protected boolean isClass(JvmType type) {
+		if (type instanceof JvmArrayType)
+			return isClass(((JvmArrayType) type).getComponentType());
+		return type instanceof JvmGenericType && !((JvmGenericType) type).isInterface();
 	}
 
 	protected JvmType findContext(JvmTypeReference firstType) {
@@ -269,17 +302,20 @@ public class TypeConformanceComputer {
 		return firstType.getType();
 	}
 
-	protected List<JvmTypeReference> replacePrimitives(List<JvmTypeReference> types) {
+	protected List<JvmTypeReference> replacePrimitivesAndRemoveAnyReferences(List<JvmTypeReference> types) {
 		List<JvmTypeReference> result = Lists.newArrayList();
 		for(JvmTypeReference type: types) {
-			result.add(primitives.asWrapperTypeIfPrimitive(type));
+			if (!(type instanceof JvmAnyTypeReference))
+				result.add(primitives.asWrapperTypeIfPrimitive(type));
 		}
 		return result;
 	}
 
-	protected boolean containsPrimitive(List<JvmTypeReference> types) {
+	protected boolean containsPrimitiveOrAnyReferences(List<JvmTypeReference> types) {
 		for(JvmTypeReference type: types) {
 			if (isPrimitiveType(type))
+				return true;
+			if (type instanceof JvmAnyTypeReference)
 				return true;
 		}
 		return false;
@@ -434,7 +470,7 @@ public class TypeConformanceComputer {
 			JvmParameterizedTypeReference result = factory.createJvmParameterizedTypeReference();
 			result.setType(rawType);
 			for(JvmTypeReference parameterSuperType: parameterSuperTypes) {
-				result.getArguments().add((JvmTypeReference) EcoreUtil.copy(parameterSuperType));
+				result.getArguments().add(EcoreUtil2.clone(parameterSuperType));
 			}
 			return result;
 		} else if (rawType instanceof JvmArrayType) {
@@ -465,6 +501,9 @@ public class TypeConformanceComputer {
 					componentType, 
 					Lists.transform(initiallyRequested, getComponentType));
 			if (componentTypeReference != null) {
+				if (componentTypeReference.eContainer() instanceof JvmGenericArrayTypeReference) {
+					return (JvmTypeReference) componentTypeReference.eContainer();
+				}
 				JvmGenericArrayTypeReference result = factory.createJvmGenericArrayTypeReference();
 				result.setComponentType(componentTypeReference);
 				return result;
@@ -474,8 +513,14 @@ public class TypeConformanceComputer {
 	}
 
 	protected JvmTypeReference getFirstForRawType(Multimap<JvmType, JvmTypeReference> all, JvmType rawType) {
-		JvmTypeReference result = all.get(rawType).iterator().next();
-		return result;
+		Iterator<JvmTypeReference> iterator = all.get(rawType).iterator();
+		while(iterator.hasNext()) {
+			JvmTypeReference result = iterator.next();
+			if (result instanceof JvmParameterizedTypeReference || result instanceof JvmGenericArrayTypeReference) {
+				return result;
+			}
+		}
+		throw new IllegalStateException(all.toString() + " does not contain a useful type reference for rawtype " + rawType.getQualifiedName());
 	}
 
 	protected void initializeDistance(final JvmTypeReference firstType, Multimap<JvmType, JvmTypeReference> all,
@@ -524,14 +569,9 @@ public class TypeConformanceComputer {
 					return compare(((JvmArrayType) element1).getComponentType(), ((JvmArrayType) element2).getComponentType());
 				}
 				if (element1 instanceof JvmGenericType && element2 instanceof JvmGenericType) {
-					if (((JvmGenericType) element1).isInterface()) {
-						if (!((JvmGenericType) element2).isInterface()) {
-							return 1;
-						}
-					} else {
-						if (((JvmGenericType) element2).isInterface()) {
-							return -1;
-						}
+					int result = Booleans.compare(((JvmGenericType) element1).isInterface(), ((JvmGenericType) element2).isInterface());
+					if (result != 0) {
+						return result;
 					}
 				}
 				return element1.getIdentifier().compareTo(element2.getIdentifier());
@@ -563,7 +603,7 @@ public class TypeConformanceComputer {
 		JvmWildcardTypeReference wildcardTypeReference = factory.createJvmWildcardTypeReference();
 		if (superType != null) {
 			JvmUpperBound upperBound = factory.createJvmUpperBound();
-			upperBound.setTypeReference((JvmTypeReference) EcoreUtil.copy(superType));
+			upperBound.setTypeReference(EcoreUtil2.clone(superType));
 			wildcardTypeReference.getConstraints().add(upperBound);
 		}
 		return wildcardTypeReference;

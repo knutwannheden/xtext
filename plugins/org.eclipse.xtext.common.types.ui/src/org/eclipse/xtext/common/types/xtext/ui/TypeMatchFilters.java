@@ -9,7 +9,6 @@ package org.eclipse.xtext.common.types.xtext.ui;
 
 import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
-import org.eclipse.xtext.common.types.xtext.ui.ITypesProposalProvider;
 import org.eclipse.xtext.common.types.xtext.ui.ITypesProposalProvider.Filter;
 
 /**
@@ -211,7 +210,7 @@ public final class TypeMatchFilters {
 			return IJavaSearchConstants.CLASS;
 		}
 	}
-
+	
 	public static class IsPublic implements ITypesProposalProvider.Filter {
 		public boolean accept(int modifiers, char[] packageName, char[] simpleTypeName,
 				char[][] enclosingTypeNames, String path) {
@@ -228,4 +227,5 @@ public final class TypeMatchFilters {
 			return IJavaSearchConstants.TYPE;
 		}
 	}
+
 }

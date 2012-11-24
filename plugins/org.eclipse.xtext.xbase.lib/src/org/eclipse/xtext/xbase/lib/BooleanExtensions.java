@@ -7,12 +7,15 @@
  *******************************************************************************/
 package org.eclipse.xtext.xbase.lib;
 
+import com.google.common.annotations.GwtCompatible;
+
+
 /**
  * This is an extension library for {@link Boolean booleans}.
  * 
  * @author Sven Efftinge - Initial contribution and API
  */
-public class BooleanExtensions {
+@GwtCompatible public class BooleanExtensions {
 
 	/**
 	 * The logical <code>and</code> (conjunction). This is the equivalent to the java <code>&&</code> operator.
@@ -23,6 +26,8 @@ public class BooleanExtensions {
 	 *            another boolean value.
 	 * @return <code>a && b</code>
 	 */
+	@Pure
+	@Inline("($1 && $2)")
 	public static boolean operator_and(boolean a, boolean b) {
 		return a && b;
 	}
@@ -36,6 +41,8 @@ public class BooleanExtensions {
 	 *            another boolean value.
 	 * @return <code>a || b</code>
 	 */
+	@Pure
+	@Inline("($1 || $2)")
 	public static boolean operator_or(boolean a, boolean b) {
 		return a || b;
 	}
@@ -47,6 +54,8 @@ public class BooleanExtensions {
 	 *            a boolean value.
 	 * @return <code>!b</code>
 	 */
+	@Pure
+	@Inline("(!$1)")
 	public static boolean operator_not(boolean b) {
 		return !b;
 	}
@@ -60,6 +69,8 @@ public class BooleanExtensions {
 	 *            an boolean.
 	 * @return <code>a==b</code>
 	 */
+	@Pure
+	@Inline("($1 == $2)")
 	public static boolean operator_equals(boolean a, boolean b) {
 		return a == b;
 	}
@@ -73,6 +84,8 @@ public class BooleanExtensions {
 	 *            an boolean.
 	 * @return <code>a!=b</code>
 	 */
+	@Pure
+	@Inline("($1 != $2)")
 	public static boolean operator_notEquals(boolean a, boolean b) {
 		return a != b;
 	}
@@ -86,6 +99,8 @@ public class BooleanExtensions {
 	 *            another boolean value.
 	 * @return <code>a ^ b</code>
 	 */
+	@Pure
+	@Inline("($1 ^ $2)")
 	public static boolean xor(boolean a, boolean b) {
 		return a ^ b;
 	}

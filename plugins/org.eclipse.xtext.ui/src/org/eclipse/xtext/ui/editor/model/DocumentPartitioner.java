@@ -10,6 +10,7 @@ package org.eclipse.xtext.ui.editor.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jface.text.BadLocationException;
@@ -44,6 +45,8 @@ import com.google.inject.Inject;
 public class DocumentPartitioner implements IDocumentPartitioner, IDocumentPartitionerExtension,
 		IDocumentPartitionerExtension2, IDocumentPartitionerExtension3 {
 
+	private static final Logger log = Logger.getLogger(DocumentPartitioner.class);
+	
 	/**
 	 * The position category this partitioner uses to store the document's partitioning information.
 	 * 
@@ -388,8 +391,22 @@ public class DocumentPartitioner implements IDocumentPartitioner, IDocumentParti
 				} else {
 					partitionStart = partition.getOffset() + partition.getLength();
 					contentType = IDocument.DEFAULT_CONTENT_TYPE;
+					
+					if (actualReparseStart != partitionStart) {
+						String message = String.format(
+								"Detected unexpected state in document partitioner. Please file a bug with the following information attached:%n" +
+								"Document content after the event was applied:%n" +
+								">>>%s<<<%n" +
+								"Document event: %s", fDocument.get(), String.valueOf(e));
+						log.error(message);
+					}
 				}
 			}
+
+			fScanner.setPartialRange(fDocument, actualReparseStart, fDocument.getLength() - actualReparseStart, contentType, 
+					actualReparseStart);
+			behindLastScannedPosition = actualReparseStart;
+			token = fScanner.nextToken();
 
 			fPositionUpdater.update(e);
 			for (int i = first; i < category.length; i++) {
@@ -732,12 +749,18 @@ public class DocumentPartitioner implements IDocumentPartitioner, IDocumentParti
 			if (previous != null) {
 				gapOffset = previous.getOffset() + previous.getLength();
 				gap.setOffset(gapOffset);
-				gap.setLength(fDocument.getLength() - gapOffset);
-				if ((includeZeroLengthPartitions && overlapsOrTouches(gap, offset, length))
-						|| (gap.getLength() > 0 && gap.overlapsWith(offset, length))) {
-					start = Math.max(offset, gapOffset);
-					end = Math.min(endOffset, fDocument.getLength());
-					list.add(new TypedRegion(start, end - start, IDocument.DEFAULT_CONTENT_TYPE));
+				int gapLength = fDocument.getLength() - gapOffset;
+				if(gapLength < 0) {
+					clearPositionCache();
+					return new TypedRegion[0];
+				} else {
+					gap.setLength(gapLength);
+					if ((includeZeroLengthPartitions && overlapsOrTouches(gap, offset, length))
+							|| (gap.getLength() > 0 && gap.overlapsWith(offset, length))) {
+						start = Math.max(offset, gapOffset);
+						end = Math.min(endOffset, fDocument.getLength());
+						list.add(new TypedRegion(start, end - start, IDocument.DEFAULT_CONTENT_TYPE));
+					}
 				}
 			}
 

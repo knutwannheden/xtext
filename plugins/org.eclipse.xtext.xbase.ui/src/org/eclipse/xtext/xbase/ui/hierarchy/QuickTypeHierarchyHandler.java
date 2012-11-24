@@ -37,8 +37,7 @@ import com.google.inject.Inject;
 /**
  * @author Holger Schill - Initial contribution and API
  */
-@SuppressWarnings("restriction")
-public class QuickTypeHierarchyHandler extends AbstractTypeHierarchyHandler {
+public class QuickTypeHierarchyHandler extends AbstractHierarchyHandler {
 
 	@Inject
 	private ILocationInFileProvider locationInFileProvider;
@@ -59,8 +58,6 @@ public class QuickTypeHierarchyHandler extends AbstractTypeHierarchyHandler {
 		presenter.setSizeConstraints(50, 20, true, false);
 		presenter.install(sourceViewer);
 		presenter.showInformation();
-		
-
 	}
 	
 	private IInformationControlCreator getHierarchyPresenterControlCreator() {

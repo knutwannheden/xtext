@@ -249,9 +249,14 @@
          point="org.eclipse.core.resources.markers">
       <super type="org.eclipse.emf.ecore.diagnostic"/>
       <persistent value="true"/>
+      <!-- see org.eclipse.xtext.validation.Issue.CODE_KEY -->
       <attribute name="CODE_KEY"/>
+      <!-- see org.eclipse.xtext.validation.Issue.DATA_KEY -->
       <attribute name="DATA_KEY"/>
+      <!-- see org.eclipse.xtext.validation.Issue.URI_KEY -->
       <attribute name="URI_KEY"/>
+      <!-- see org.eclipse.xtext.ui.editor.validation.MarkerCreator.FIXABLE_KEY -->
+      <attribute name="FIXABLE_KEY"/>
    </extension>
   <extension
          id="org.eclipse.xtext.ui.check.fast"
@@ -288,6 +293,12 @@
       	markerSeverity="1"
         super="org.eclipse.ui.workbench.texteditor.warning">
       </type>
+      <type
+      	name="org.eclipse.xtext.ui.editor.info"
+      	markerType="org.eclipse.emf.ecore.diagnostic"
+      	markerSeverity="0"
+        super="org.eclipse.ui.workbench.texteditor.info">
+      </type>a
    </extension>
    <extension
          point="org.eclipse.ui.editors.markerAnnotationSpecification">
@@ -295,15 +306,19 @@
             annotationImageProvider="org.eclipse.xtext.ui.editor.model.XtextMarkerAnnotationImageProvider"
             annotationType="org.eclipse.xtext.ui.editor.error"
             includeOnPreferencePage="true"
-            symbolicIcon="error"
-            quickFixIcon="icons/quick_fix_error_obj.gif">
+            symbolicIcon="error">
       </specification>
       <specification
             annotationImageProvider="org.eclipse.xtext.ui.editor.model.XtextMarkerAnnotationImageProvider"
             annotationType="org.eclipse.xtext.ui.editor.warning"
             includeOnPreferencePage="true"
-            symbolicIcon="warning"
-            quickFixIcon="icons/quick_fix_warning_obj.gif">
+            symbolicIcon="warning">
+      </specification>
+      <specification
+            annotationImageProvider="org.eclipse.xtext.ui.editor.model.XtextMarkerAnnotationImageProvider"
+            annotationType="org.eclipse.xtext.ui.editor.info"
+            includeOnPreferencePage="true"
+            symbolicIcon="info">
       </specification>
    </extension>
    

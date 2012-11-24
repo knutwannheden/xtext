@@ -14,45 +14,53 @@ echo "Using eclipse from $DIR_SOURCE_ECLIPSE"
 set -u #unseted variables assertion
 ECLIPSE_CODENAME=$1            #i.e. indigo
 
-# Constatnts
+# Constants
 DIR_TARGETPLATFORMS="$DIR_ROOT/$ECLIPSE_CODENAME/targetplatforms"		# platform depended eclipses where feature should be installed
 DIR_OUTPUT="$DIR_ROOT/$ECLIPSE_CODENAME/output"							# produced distros folder
 DIR_TMP="$DIR_ROOT/$ECLIPSE_CODENAME/tmp"								# temp folder
 DIR_REPOSITORIES="$DIR_ROOT/$ECLIPSE_CODENAME/repositories"			 	# local zipped repositories to be used
-#DIR_ADDITIONAL_PLUGINS="$DIR_ROOT/$ECLIPSE_CODENAME/additionalplugins"	# additional plugins to be copied into the dropins folder
+DIR_LOCAL_REPO="$DIR_ROOT/$ECLIPSE_CODENAME/local-repo/final"           # local b3 aggregated repo
 
 IDEPREFIX="eclipse-SDK"
 ZIPSUFFIX=".zip"
 JARSUFFIX=".jar"
 
+function var.defined {
+	eval '[[ ${!'$1'[@]} ]]'
+}
 
 # reads property from $ECLIPSE_CODENAME.properties file and set it as global var. Exp.: parseProperty VERSION
 function parseProperty()
 {
-#echo "parse $1 in $ECLIPSE_CODENAME"
+if var.defined $1
+then
+	eval 'echo '$1 is already set to \$$1''
+else
 local __propertyName=$1
 local parsedValue=`sed '/^\#/d' $ECLIPSE_CODENAME/builder.properties | grep $__propertyName  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-#echo "parsed: $parsedValue"
+echo "setting parsed value: $__propertyName = $parsedValue"
 eval $__propertyName="'$parsedValue'"
+fi
 }
 
 #read properties
 parseProperty DISTRO_SUFFIX
 parseProperty REMOTE_REPOSITORIES
 parseProperty VERSION
+
+#Add local aggregator repo
+REMOTE_REPOSITORIES="$REMOTE_REPOSITORIES,file:///$DIR_LOCAL_REPO"
+
 echo "
 Building $ECLIPSE_CODENAME for $DISTRO_SUFFIX $VERSION
 "
-parseProperty ECLIPSE_DOWNLOAD
-parseProperty ADDITIONAL_IUS
-#echo "additional tools parsed: $ADDITIONAL_IUS"
 
-parseProperty DEPENDENCY_IUS
-#echo "dependencies parsed: $DEPENDENCY_IUS"
+parseProperty ADDITIONAL_IUS
+echo "additional tools parsed: $ADDITIONAL_IUS"
 
 parseProperty INSTALL_IUS
 
-INSTALL_IUS="$INSTALL_IUS,$DEPENDENCY_IUS,$ADDITIONAL_IUS"
+INSTALL_IUS="$INSTALL_IUS,$ADDITIONAL_IUS"
 echo "IUs to install parsed:"
 echo "$INSTALL_IUS"|sed -e 's/\,/\
 /g'
@@ -122,6 +130,10 @@ fi
 cd $DIR_ROOT
 # we are in root now
 
+parseProperty DOWNLOAD_FTP_HOST
+parseProperty DOWNLOAD_FTP_PATH
+ECLIPSE_DOWNLOAD="ftp://$DOWNLOAD_FTP_HOST/$DOWNLOAD_FTP_PATH"
+
 # uncompress ides
 if [[ -d "$DIR_TARGETPLATFORMS" && "$(ls -A $DIR_TARGETPLATFORMS)" ]]
 then
@@ -132,9 +144,13 @@ target platforms will be downloaded from $ECLIPSE_DOWNLOAD"
    mkdir -p $DIR_TARGETPLATFORMS
    cd $DIR_TARGETPLATFORMS
     #FTP download
-   ftp -n "$ECLIPSE_DOWNLOAD" <<ENDFTP
-   bin
+    echo "$ECLIPSE_DOWNLOAD"
+   ftp -n <<ENDFTP
    prompt off
+   open $DOWNLOAD_FTP_HOST
+   user anonymous anonymous
+   bin
+   cd $DOWNLOAD_FTP_PATH
    lcd $DIR_TARGETPLATFORMS
    mget eclipse-SDK-*-win*.zip
    mget eclipse-SDK-*-linux-gtk.tar.gz

@@ -20,7 +20,6 @@ public class IssueCodes {
 	public static final String ABSTRACT_CLASS_INSTANTIATION = ISSUE_CODE_PREFIX + "abstract_class_instantiation";
 	public static final String ANNOTATIONS_NO_VALUE_ATTRIBUTE = ISSUE_CODE_PREFIX + "no_attribute_value";
 	public static final String ANNOTATIONS_MISSING_ATTRIBUTE_DEFINITION = ISSUE_CODE_PREFIX + "missing_attribute_definition";
-	public static final String ASSIGNMENT_TARGET_IS_NOT_WRITEABLE = ISSUE_CODE_PREFIX + "assignment_target_is_not_writeable";
 	public static final String ASSIGNMENT_TO_FINAL = ISSUE_CODE_PREFIX + "assignment_to_final";
 	public static final String CIRCULAR_CONSTRUCTOR_INVOCATION = ISSUE_CODE_PREFIX + "circular_constructor_invocation";
 	public static final String FEATURE_NOT_VISIBLE = ISSUE_CODE_PREFIX + "invisible_feature";
@@ -56,10 +55,15 @@ public class IssueCodes {
 	public static final String UNREACHABLE_CODE = ISSUE_CODE_PREFIX + "unreachable_code";
 	public static final String UNRESOLVABLE_PROXY = ISSUE_CODE_PREFIX + "unresolvable_proxy";
 	public static final String VARIABLE_NAME_SHADOWING = ISSUE_CODE_PREFIX + "variable_name_shadowing";
-	public static final String SIDE_EFFECT_FREE_EXPRESSION_IN_BLOCK = ISSUE_CODE_PREFIX + "side_effect_free_expression_in_block";
 	public static final String NULL_SAFE_FEATURE_CALL_ON_PRIMITIVE = ISSUE_CODE_PREFIX + "null_safe_feature_call_on_primitive";
 	public static final String NOT_INSTANTIABLE = ISSUE_CODE_PREFIX + "not_instantiable";
-	public static final String UNUSED_LOCAL_VARIABLE = "unused_local_variable";
+	public static final String UNUSED_LOCAL_VARIABLE = ISSUE_CODE_PREFIX + "unused_local_variable";
+	public static final String INVALID_IDENTIFIER = ISSUE_CODE_PREFIX + "invalid_identifier";
+	public static final String INVALID_NUMBER_FORMAT = ISSUE_CODE_PREFIX + "invalidNumberFormat";
+	public static final String FIELD_ALREADY_INITIALIZED = ISSUE_CODE_PREFIX + "field_already_initialized";
+	public static final String INVALID_TYPE = ISSUE_CODE_PREFIX + "invalid_type";
+	public static final String FORBIDDEN_REFERENCE = ISSUE_CODE_PREFIX	+ "forbidden_reference";
+	public static final String DISCOURAGED_REFERENCE = ISSUE_CODE_PREFIX + "discouraged_reference";
 	
 	
 	// list is not necessarily complete
@@ -69,7 +73,6 @@ public class IssueCodes {
 			LOCAL_VAR_ACCESS_WITH_PARENTHESES,
 			METHOD_ACCESS_WITHOUT_PARENTHESES,
 			INVALID_MUTABLE_VARIABLE_ACCESS,
-			ASSIGNMENT_TARGET_IS_NOT_WRITEABLE,
 			INSTANCE_ACCESS_TO_STATIC_MEMBER,
 			INVALID_GENERIC_ARGUMENT_TYPES,
 			INVALID_NUMBER_OF_TYPE_ARGUMENTS,

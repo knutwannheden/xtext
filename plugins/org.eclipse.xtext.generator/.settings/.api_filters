@@ -1,59 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <component id="org.eclipse.xtext.generator" version="2">
-    <resource path="META-INF/MANIFEST.MF">
-        <filter id="923795461">
+    <resource path="src-gen/org/eclipse/xtext/generator/parser/antlr/splitting/AbstractSimpleExpressionsRuntimeModule.java" type="org.eclipse.xtext.generator.parser.antlr.splitting.AbstractSimpleExpressionsRuntimeModule">
+        <filter id="1143996420">
             <message_arguments>
-                <message_argument value="2.2.1"/>
-                <message_argument value="2.1.0"/>
+                <message_argument value="bindClassLoaderToInstance()"/>
             </message_arguments>
         </filter>
     </resource>
-    <resource path="META-INF/MANIFEST.MF" type="org.eclipse.xtext.xtend2.lib.EObjectExtensions">
-        <filter id="305422471">
+    <resource path="src-gen/org/eclipse/xtext/generator/parser/antlr/splitting/services/SimpleExpressionsGrammarAccess.java" type="org.eclipse.xtext.generator.parser.antlr.splitting.services.SimpleExpressionsGrammarAccess">
+        <filter comment="Cannot use @since in generated code" id="1143996420">
             <message_arguments>
-                <message_argument value="org.eclipse.xtext.xtend2.lib.EObjectExtensions"/>
-                <message_argument value="org.eclipse.xtext.generator_2.1.0"/>
-            </message_arguments>
-        </filter>
-    </resource>
-    <resource path="META-INF/MANIFEST.MF" type="org.eclipse.xtext.xtend2.lib.ResourceExtensions">
-        <filter id="305422471">
-            <message_arguments>
-                <message_argument value="org.eclipse.xtext.xtend2.lib.ResourceExtensions"/>
-                <message_argument value="org.eclipse.xtext.generator_2.1.0"/>
-            </message_arguments>
-        </filter>
-    </resource>
-    <resource path="META-INF/MANIFEST.MF" type="org.eclipse.xtext.xtend2.lib.ResourceSetExtensions">
-        <filter id="305422471">
-            <message_arguments>
-                <message_argument value="org.eclipse.xtext.xtend2.lib.ResourceSetExtensions"/>
-                <message_argument value="org.eclipse.xtext.generator_2.1.0"/>
-            </message_arguments>
-        </filter>
-    </resource>
-    <resource path="META-INF/MANIFEST.MF" type="org.eclipse.xtext.xtend2.lib.StringConcatenation">
-        <filter id="305422471">
-            <message_arguments>
-                <message_argument value="org.eclipse.xtext.xtend2.lib.StringConcatenation"/>
-                <message_argument value="org.eclipse.xtext.generator_2.1.0"/>
-            </message_arguments>
-        </filter>
-    </resource>
-    <resource path="src/org/eclipse/xtext/generator/parser/antlr/splitting/AntlrParserSplitter.java" type="org.eclipse.xtext.generator.parser.antlr.splitting.AntlrParserSplitter">
-        <filter comment="Field should not be referenced by client code" id="388194388">
-            <message_arguments>
-                <message_argument value="org.eclipse.xtext.generator.parser.antlr.splitting.AntlrParserSplitter"/>
-                <message_argument value="FIELDS_PER_CLASS"/>
-                <message_argument value="2500"/>
+                <message_argument value="internalFindGrammar(GrammarProvider)"/>
             </message_arguments>
         </filter>
     </resource>
     <resource path="xtend-gen/org/eclipse/xtext/generator/grammarAccess/GrammarAccess.java" type="org.eclipse.xtext.generator.grammarAccess.GrammarAccess">
-        <filter id="305324134">
+        <filter comment="Make API tooling happy" id="305324134">
             <message_arguments>
                 <message_argument value="org.eclipse.xtext.generator.grammarAccess.GrammarAccess"/>
-                <message_argument value="org.eclipse.xtext.generator_2.2.1"/>
+                <message_argument value="org.eclipse.xtext.generator_2.4.0"/>
             </message_arguments>
         </filter>
     </resource>

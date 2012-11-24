@@ -1,2 +1,5 @@
+bin
 .DS_Store
 target
+*.java._trace
+*.java_trace

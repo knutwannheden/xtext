@@ -46,6 +46,7 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.eclipse.xtext.linking.lazy.LazyLinkingResource;
 import org.eclipse.xtext.resource.ClassloaderClasspathUriResolver;
 import org.eclipse.xtext.util.CancelIndicator;
+import org.eclipse.xtext.util.Strings;
 
 import com.google.common.collect.MapMaker;
 
@@ -129,6 +130,8 @@ public class EcoreUtil2 extends EcoreUtil {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends EObject> T cloneWithProxies(T original) {
+		if (original == null)
+			return original;
 		EcoreUtil.Copier copier = new EcoreUtil.Copier(false);
 		T copy = (T) copier.copy(original);
 		copier.copyReferences();
@@ -139,7 +142,7 @@ public class EcoreUtil2 extends EcoreUtil {
 	 * only clones the element if it is contained in another {@link EObject} or another {@link Resource}
 	 */
 	public static <T extends EObject> T cloneIfContained(T eObject) {
-		if (eObject.eContainer()!=null || eObject.eResource()!=null)
+		if (eObject != null && (eObject.eContainer()!=null || eObject.eResource()!=null))
 			return clone(eObject);
 		return eObject;
 	}
@@ -401,8 +404,14 @@ public class EcoreUtil2 extends EcoreUtil {
 		return Collections.unmodifiableSet(allSuperTypes);
 	}
 
-	public static boolean isAssignableFrom(EClass target, EClass candidate) {
-		return (candidate != null && (target == EcorePackage.Literals.EOBJECT || target.isSuperTypeOf(candidate)));
+	/**
+	 * Returns whether the given super type is the same as, or a super type of, some other class.
+	 * @param superType the super type
+	 * @param candidate the subtype
+	 * @return whether the super type is the same as, or a super type of, some other class.
+	 */
+	public static boolean isAssignableFrom(EClass superType, EClass candidate) {
+		return (candidate != null && (superType == EcorePackage.Literals.EOBJECT || superType.isSuperTypeOf(candidate)));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -421,6 +430,9 @@ public class EcoreUtil2 extends EcoreUtil {
 	 * resource factory and the physical resource exists.
 	 */
 	public static boolean isValidUri(Resource resource, URI uri) {
+		if (uri == null || uri.isEmpty()) {
+			return false;
+		}
 		URI newURI = getResolvedImportUri(resource, uri);
 		try {
 			ResourceSet resourceSet = resource.getResourceSet();
@@ -445,7 +457,7 @@ public class EcoreUtil2 extends EcoreUtil {
 
 	private static URI getResolvedImportUri(Resource context, URI uri) {
 		URI contextURI = context.getURI();
-		if (contextURI.isHierarchical() && !contextURI.isRelative() && uri.isRelative()) {
+		if (contextURI.isHierarchical() && !contextURI.isRelative() && (uri.isRelative() && !uri.isEmpty())) {
 			uri = uri.resolve(contextURI);
 		}
 		return uri;
@@ -512,7 +524,7 @@ public class EcoreUtil2 extends EcoreUtil {
 		}
 	}
 
-	private final static String delim = "«";
+	private final static char delim = '«';
 
 	/**
 	 * creates an external form of the given EReference. Use
@@ -546,8 +558,8 @@ public class EcoreUtil2 extends EcoreUtil {
 	public static EReference getEReferenceFromExternalForm(EPackage.Registry registry, String externalForm) {
 		if (externalForm == null)
 			return null;
-		String[] split = externalForm.split(delim);
-		if (split.length != 3) {
+		List<String> split = Strings.split(externalForm, delim);
+		if (split.size() != 3) {
 			URI uri = URI.createURI(externalForm);
 			URI packURI = uri.trimFragment();
 			EPackage ePackage = registry.getEPackage(packURI.toString());
@@ -556,13 +568,13 @@ public class EcoreUtil2 extends EcoreUtil {
 			EReference result = (EReference) ePackage.eResource().getEObject(uri.fragment());
 			return result;
 		}
-		EPackage ePackage = registry.getEPackage(split[0]);
+		EPackage ePackage = registry.getEPackage(split.get(0));
 		if (ePackage == null)
 			return null;
-		EClass clazz = (EClass) ePackage.getEClassifier(split[1]);
+		EClass clazz = (EClass) ePackage.getEClassifier(split.get(1));
 		if (clazz == null)
 			return null;
-		return (EReference) clazz.getEStructuralFeature(Integer.valueOf(split[2]));
+		return (EReference) clazz.getEStructuralFeature(Integer.valueOf(split.get(2)));
 	}
 
 	public static boolean hasSameURI(EObject o0, EObject o1) {

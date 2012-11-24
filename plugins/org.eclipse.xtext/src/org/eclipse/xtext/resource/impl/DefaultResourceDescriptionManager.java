@@ -41,7 +41,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 
 /**
- * Default implementation of the {@link IResourceDescription.Manager}. Customize by binding another
+ * Default implementation of the {@link org.eclipse.xtext.resource.IResourceDescription.Manager}. Customize by binding another
  * {@link IDefaultResourceDescriptionStrategy}.
  * 
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -194,21 +194,21 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 	}
 
 	/**
-	 * @since 2.2
+	 * @since 2.4
 	 */
 	protected boolean isManagerFor(URI uri) {
 		return serviceProvider.canHandle(uri);
 	}
 
 	/**
-	 * @since 2.2
+	 * @since 2.4
 	 */
 	protected boolean isInterestedIn(Delta delta) {
 		return delta.haveEObjectDescriptionsChanged();
 	}
 
 	/**
-	 * @since 2.2
+	 * @since 2.4
 	 */
 	public Collection<URI> getAffectedResources(Collection<Delta> deltas, final Collection<URI> candidates,
 			IResourceDescriptionsExtension context) {

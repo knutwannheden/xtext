@@ -91,7 +91,7 @@ public class StatusWrapper {
 	}
 
 	protected String _toString(EObject element) {
-		return notNull(SimpleAttributeResolver.NAME_RESOLVER.apply(element));
+		return element.eClass().getName() + " '" + notNull(SimpleAttributeResolver.NAME_RESOLVER.apply(element)) + "' in " + _toString(element.eResource().getURI());
 	}
 
 	protected String _toString(Exception exc) {
@@ -128,7 +128,7 @@ public class StatusWrapper {
 	}
 
 	public void add(int severity, String message, EObject element, ITextRegion region) {
-		status.addEntry(new RefactoringStatusEntry(severity, message, createContext(element, region)));
+		status.addEntry(new RefactoringStatusEntry(severity, notNull(message), createContext(element, region)));
 	}
 
 	public void add(int severity, String message, Exception exc, Logger log) {

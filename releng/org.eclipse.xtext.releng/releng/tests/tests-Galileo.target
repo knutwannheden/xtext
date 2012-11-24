@@ -13,19 +13,26 @@
 <repository location="http://download.eclipse.org/eclipse/updates/3.5"/>
 </location>
 <location includeAllPlatforms="false" includeMode="planner" includeSource="false" type="InstallableUnit">
+<unit id="org.eclipse.jdt.annotation"  version="0.0.0"/>
+<unit id="org.junit4" version="0.0.0"/>
+<unit id="org.junit" version="0.0.0"/>
+<repository location="http://download.eclipse.org/eclipse/updates/3.8"/>
+</location>
+
+<location includeAllPlatforms="false" includeMode="planner" includeSource="false" type="InstallableUnit">
 <unit id="org.eclipse.emf.feature.group" version="2.5.0.v200906151043"/>
 <unit id="org.eclipse.emf.compare.sdk.feature.group" version="1.0.1.v200909161031"/>
 <repository location="http://download.eclipse.org/modeling/emf/updates"/>
 </location>
 <location includeAllPlatforms="false" includeMode="planner" includeSource="false" type="InstallableUnit">
-<unit id="com.google.collect" version="0.0.0"/>
+<unit id="com.google.guava" version="0.0.0"/>
 <unit id="com.google.inject" version="0.0.0"/>
 <unit id="org.apache.log4j" version="0.0.0"/>
 <unit id="org.aopalliance" version="0.0.0"/>
 <unit id="org.easymock" version="0.0.0"/>
 <unit id="org.antlr.runtime" version="0.0.0"/>
 <unit id="javax.inject" version="0.0.0"/>
-<repository location="http://download.eclipse.org/tools/orbit/downloads/drops/S20110907174232/repository"/>
+<repository location="http://download.eclipse.org/modeling/tmf/xtext/updates/orbit"/>
 </location>
 <location includeAllPlatforms="false" includeMode="planner" includeSource="false" type="InstallableUnit">
 <unit id="org.eclipse.draw2d.feature.group" version="0.0.0"/>

@@ -113,7 +113,7 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 	 *        reported and that the operation cannot be cancelled.
 	 */
 	protected void incrementalBuild(IResourceDelta delta, final IProgressMonitor monitor) throws CoreException {
-		final SubMonitor progress = SubMonitor.convert(monitor, Messages.XtextBuilder_CollectingResources, 2);
+		final SubMonitor progress = SubMonitor.convert(monitor, Messages.XtextBuilder_CollectingResources, 10);
 		progress.subTask(Messages.XtextBuilder_CollectingResources);
 
 		final ToBeBuilt toBeBuilt = new ToBeBuilt();
@@ -137,8 +137,8 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 		delta.accept(visitor);
 		if (progress.isCanceled())
 			throw new OperationCanceledException();
-		progress.worked(1);
-		doBuild(toBeBuilt, progress.newChild(1), BuildType.INCREMENTAL);
+		progress.worked(2);
+		doBuild(toBeBuilt, progress.newChild(8), BuildType.INCREMENTAL);
 	}
 
 	/**
@@ -147,8 +147,13 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 	 *        reported and that the operation cannot be cancelled.
 	 */
 	protected void doBuild(ToBeBuilt toBeBuilt, IProgressMonitor monitor, BuildType type) throws CoreException {
+		// return early if there's nothing to do.
+		// we reuse the isEmpty() impl from BuildData assuming that it doesnT access the ResourceSet which is still null 
+		// and would be expensive to create.
+		if (new BuildData(getProject().getName(), null, toBeBuilt, queuedBuildData).isEmpty())
+			return;
+		
 		SubMonitor progress = SubMonitor.convert(monitor, 2);
-
 		ResourceSet resourceSet = getResourceSetProvider().get(getProject());
 		resourceSet.getLoadOptions().put(ResourceDescriptionsProvider.NAMED_BUILDER_SCOPE, Boolean.TRUE);
 		if (resourceSet instanceof ResourceSetImpl) {
@@ -159,6 +164,7 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 		if (participant != null) {
 			participant.build(new BuildContext(this, resourceSet, deltas, type),
 					progress.newChild(1));
+			getProject().getWorkspace().checkpoint(false);
 		} else {
 			progress.worked(1);
 		}
@@ -173,14 +179,14 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 	 *        reported and that the operation cannot be cancelled.
 	 */
 	protected void fullBuild(final IProgressMonitor monitor, boolean isRecoveryBuild) throws CoreException {
-		SubMonitor progress = SubMonitor.convert(monitor, 2);
+		SubMonitor progress = SubMonitor.convert(monitor, 10);
 
 		IProject project = getProject();
 		ToBeBuilt toBeBuilt = 
 			isRecoveryBuild
-				? toBeBuiltComputer.updateProjectNewResourcesOnly(project, progress.newChild(1)) 
-				: toBeBuiltComputer.updateProject(project, progress.newChild(1));
-		doBuild(toBeBuilt, progress.newChild(1), 
+				? toBeBuiltComputer.updateProjectNewResourcesOnly(project, progress.newChild(2)) 
+				: toBeBuiltComputer.updateProject(project, progress.newChild(2));
+		doBuild(toBeBuilt, progress.newChild(8), 
 			isRecoveryBuild 
 				? BuildType.RECOVERY 
 				: BuildType.FULL);
@@ -199,10 +205,10 @@ public class XtextBuilder extends IncrementalProjectBuilder {
 	 */
 	@Override
 	protected void clean(IProgressMonitor monitor) throws CoreException {
-		SubMonitor progress = SubMonitor.convert(monitor, 2);
+		SubMonitor progress = SubMonitor.convert(monitor, 10);
 		try {
-			ToBeBuilt toBeBuilt = toBeBuiltComputer.removeProject(getProject(), progress.newChild(1));
-			doClean(toBeBuilt, progress.newChild(1));
+			ToBeBuilt toBeBuilt = toBeBuiltComputer.removeProject(getProject(), progress.newChild(2));
+			doClean(toBeBuilt, progress.newChild(8));
 		} finally {
 			if (monitor != null)
 				monitor.done();

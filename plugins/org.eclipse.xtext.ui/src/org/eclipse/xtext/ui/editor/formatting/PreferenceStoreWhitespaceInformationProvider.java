@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 
 /**
  * @author Jan Koehnlein - Initial contribution and API
+ * @since 2.3
  */
 public class PreferenceStoreWhitespaceInformationProvider implements IWhitespaceInformationProvider {
 
@@ -60,10 +61,15 @@ public class PreferenceStoreWhitespaceInformationProvider implements IWhitespace
 				break;
 			}
 		}
-		if (project != null)
-			return getLineSeparatorPreference(new ProjectScope(project));
-		else
-			return getLineSeparatorPreference(new InstanceScope());
+		if (project != null) {
+			String result = getLineSeparatorPreference(new ProjectScope(project));
+			if (result != null)
+				return result;
+		}
+		String result = getLineSeparatorPreference(new InstanceScope());
+		if (result != null)
+			return result;
+		return System.getProperty("line.separator");
 	}
 
 	protected String getLineSeparatorPreference(IScopeContext scopeContext) {

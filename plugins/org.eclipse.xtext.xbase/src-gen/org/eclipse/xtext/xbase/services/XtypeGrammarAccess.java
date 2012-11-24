@@ -7,11 +7,12 @@ package org.eclipse.xtext.xbase.services;
 import com.google.inject.Singleton;
 import com.google.inject.Inject;
 
+import java.util.List;
+
 import org.eclipse.xtext.*;
 import org.eclipse.xtext.service.GrammarProvider;
 import org.eclipse.xtext.service.AbstractElementFinder.*;
 
-import org.eclipse.xtext.common.services.TerminalsGrammarAccess;
 
 @Singleton
 public class XtypeGrammarAccess extends AbstractGrammarElementFinder {
@@ -25,40 +26,58 @@ public class XtypeGrammarAccess extends AbstractGrammarElementFinder {
 		private final Group cGroup_0_1 = (Group)cGroup_0.eContents().get(1);
 		private final Group cGroup_0_1_0 = (Group)cGroup_0_1.eContents().get(0);
 		private final Action cJvmGenericArrayTypeReferenceComponentTypeAction_0_1_0_0 = (Action)cGroup_0_1_0.eContents().get(0);
-		private final Keyword cLeftSquareBracketKeyword_0_1_0_1 = (Keyword)cGroup_0_1_0.eContents().get(1);
-		private final Keyword cRightSquareBracketKeyword_0_1_0_2 = (Keyword)cGroup_0_1_0.eContents().get(2);
+		private final RuleCall cArrayBracketsParserRuleCall_0_1_0_1 = (RuleCall)cGroup_0_1_0.eContents().get(1);
 		private final RuleCall cXFunctionTypeRefParserRuleCall_1 = (RuleCall)cAlternatives.eContents().get(1);
 		
 		//JvmTypeReference:
-		//	JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} "[" "]")* | XFunctionTypeRef;
+		//	JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} ArrayBrackets)* |
+		//	XFunctionTypeRef;
 		public ParserRule getRule() { return rule; }
 
-		//JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} "[" "]")* | XFunctionTypeRef
+		//JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} ArrayBrackets)* |
+		//XFunctionTypeRef
 		public Alternatives getAlternatives() { return cAlternatives; }
 
-		//JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} "[" "]")*
+		//JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} ArrayBrackets)*
 		public Group getGroup_0() { return cGroup_0; }
 
 		//JvmParameterizedTypeReference
 		public RuleCall getJvmParameterizedTypeReferenceParserRuleCall_0_0() { return cJvmParameterizedTypeReferenceParserRuleCall_0_0; }
 
-		//=> ({JvmGenericArrayTypeReference.componentType=current} "[" "]")*
+		//=> ({JvmGenericArrayTypeReference.componentType=current} ArrayBrackets)*
 		public Group getGroup_0_1() { return cGroup_0_1; }
 
-		//{JvmGenericArrayTypeReference.componentType=current} "[" "]"
+		//{JvmGenericArrayTypeReference.componentType=current} ArrayBrackets
 		public Group getGroup_0_1_0() { return cGroup_0_1_0; }
 
 		//{JvmGenericArrayTypeReference.componentType=current}
 		public Action getJvmGenericArrayTypeReferenceComponentTypeAction_0_1_0_0() { return cJvmGenericArrayTypeReferenceComponentTypeAction_0_1_0_0; }
 
-		//"["
-		public Keyword getLeftSquareBracketKeyword_0_1_0_1() { return cLeftSquareBracketKeyword_0_1_0_1; }
-
-		//"]"
-		public Keyword getRightSquareBracketKeyword_0_1_0_2() { return cRightSquareBracketKeyword_0_1_0_2; }
+		//ArrayBrackets
+		public RuleCall getArrayBracketsParserRuleCall_0_1_0_1() { return cArrayBracketsParserRuleCall_0_1_0_1; }
 
 		//XFunctionTypeRef
 		public RuleCall getXFunctionTypeRefParserRuleCall_1() { return cXFunctionTypeRefParserRuleCall_1; }
+	}
+
+	public class ArrayBracketsElements extends AbstractParserRuleElementFinder {
+		private final ParserRule rule = (ParserRule) GrammarUtil.findRuleForName(getGrammar(), "ArrayBrackets");
+		private final Group cGroup = (Group)rule.eContents().get(1);
+		private final Keyword cLeftSquareBracketKeyword_0 = (Keyword)cGroup.eContents().get(0);
+		private final Keyword cRightSquareBracketKeyword_1 = (Keyword)cGroup.eContents().get(1);
+		
+		//ArrayBrackets:
+		//	"[" "]";
+		public ParserRule getRule() { return rule; }
+
+		//"[" "]"
+		public Group getGroup() { return cGroup; }
+
+		//"["
+		public Keyword getLeftSquareBracketKeyword_0() { return cLeftSquareBracketKeyword_0; }
+
+		//"]"
+		public Keyword getRightSquareBracketKeyword_1() { return cRightSquareBracketKeyword_1; }
 	}
 
 	public class XFunctionTypeRefElements extends AbstractParserRuleElementFinder {
@@ -412,6 +431,7 @@ public class XtypeGrammarAccess extends AbstractGrammarElementFinder {
 	
 	
 	private JvmTypeReferenceElements pJvmTypeReference;
+	private ArrayBracketsElements pArrayBrackets;
 	private XFunctionTypeRefElements pXFunctionTypeRef;
 	private JvmParameterizedTypeReferenceElements pJvmParameterizedTypeReference;
 	private JvmArgumentTypeReferenceElements pJvmArgumentTypeReference;
@@ -423,36 +443,61 @@ public class XtypeGrammarAccess extends AbstractGrammarElementFinder {
 	private QualifiedNameElements pQualifiedName;
 	private ValidIDElements pValidID;
 	private TerminalRule tID;
+	private TerminalRule tSTRING;
+	private TerminalRule tML_COMMENT;
+	private TerminalRule tSL_COMMENT;
+	private TerminalRule tWS;
+	private TerminalRule tANY_OTHER;
 	
-	private final GrammarProvider grammarProvider;
-
-	private TerminalsGrammarAccess gaTerminals;
+	private final Grammar grammar;
 
 	@Inject
-	public XtypeGrammarAccess(GrammarProvider grammarProvider,
-		TerminalsGrammarAccess gaTerminals) {
-		this.grammarProvider = grammarProvider;
-		this.gaTerminals = gaTerminals;
+	public XtypeGrammarAccess(GrammarProvider grammarProvider) {
+		this.grammar = internalFindGrammar(grammarProvider);
 	}
 	
-	public Grammar getGrammar() {	
-		return grammarProvider.getGrammar(this);
+	protected Grammar internalFindGrammar(GrammarProvider grammarProvider) {
+		Grammar grammar = grammarProvider.getGrammar(this);
+		while (grammar != null) {
+			if ("org.eclipse.xtext.xbase.Xtype".equals(grammar.getName())) {
+				return grammar;
+			}
+			List<Grammar> grammars = grammar.getUsedGrammars();
+			if (!grammars.isEmpty()) {
+				grammar = grammars.iterator().next();
+			} else {
+				return null;
+			}
+		}
+		return grammar;
 	}
 	
-
-	public TerminalsGrammarAccess getTerminalsGrammarAccess() {
-		return gaTerminals;
+	
+	public Grammar getGrammar() {
+		return grammar;
 	}
+	
 
 	
 	//JvmTypeReference:
-	//	JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} "[" "]")* | XFunctionTypeRef;
+	//	JvmParameterizedTypeReference => ({JvmGenericArrayTypeReference.componentType=current} ArrayBrackets)* |
+	//	XFunctionTypeRef;
 	public JvmTypeReferenceElements getJvmTypeReferenceAccess() {
 		return (pJvmTypeReference != null) ? pJvmTypeReference : (pJvmTypeReference = new JvmTypeReferenceElements());
 	}
 	
 	public ParserRule getJvmTypeReferenceRule() {
 		return getJvmTypeReferenceAccess().getRule();
+	}
+
+	//ArrayBrackets:
+	//	"[" "]";
+	public ArrayBracketsElements getArrayBracketsAccess() {
+		return (pArrayBrackets != null) ? pArrayBrackets : (pArrayBrackets = new ArrayBracketsElements());
+	}
+	
+	public ParserRule getArrayBracketsRule() {
+		return getArrayBracketsAccess().getRule();
 	}
 
 	//XFunctionTypeRef:
@@ -562,40 +607,34 @@ public class XtypeGrammarAccess extends AbstractGrammarElementFinder {
 		return (tID != null) ? tID : (tID = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "ID"));
 	} 
 
-	//terminal INT returns ecore::EInt:
-	//	"0".."9"+;
-	public TerminalRule getINTRule() {
-		return gaTerminals.getINTRule();
-	} 
-
 	//terminal STRING:
 	//	"\"" ("\\" ("b" | "t" | "n" | "f" | "r" | "u" | "\"" | "\'" | "\\") | !("\\" | "\""))* "\"" | "\'" ("\\" ("b" | "t" |
 	//	"n" | "f" | "r" | "u" | "\"" | "\'" | "\\") | !("\\" | "\'"))* "\'";
 	public TerminalRule getSTRINGRule() {
-		return gaTerminals.getSTRINGRule();
+		return (tSTRING != null) ? tSTRING : (tSTRING = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "STRING"));
 	} 
 
 	//terminal ML_COMMENT:
 	//	"/ *"->"* /";
 	public TerminalRule getML_COMMENTRule() {
-		return gaTerminals.getML_COMMENTRule();
+		return (tML_COMMENT != null) ? tML_COMMENT : (tML_COMMENT = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "ML_COMMENT"));
 	} 
 
 	//terminal SL_COMMENT:
 	//	"//" !("\n" | "\r")* ("\r"? "\n")?;
 	public TerminalRule getSL_COMMENTRule() {
-		return gaTerminals.getSL_COMMENTRule();
+		return (tSL_COMMENT != null) ? tSL_COMMENT : (tSL_COMMENT = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "SL_COMMENT"));
 	} 
 
 	//terminal WS:
 	//	(" " | "\t" | "\r" | "\n")+;
 	public TerminalRule getWSRule() {
-		return gaTerminals.getWSRule();
+		return (tWS != null) ? tWS : (tWS = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "WS"));
 	} 
 
 	//terminal ANY_OTHER:
 	//	.;
 	public TerminalRule getANY_OTHERRule() {
-		return gaTerminals.getANY_OTHERRule();
+		return (tANY_OTHER != null) ? tANY_OTHER : (tANY_OTHER = (TerminalRule) GrammarUtil.findRuleForName(getGrammar(), "ANY_OTHER"));
 	} 
 }

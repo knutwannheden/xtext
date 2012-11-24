@@ -79,7 +79,7 @@ public class XtextSourceViewerConfiguration extends TextSourceViewerConfiguratio
 
 	@Inject
 	private Provider<ITextHover> textHoverProvider;
-	
+
 	@Override
 	public IAnnotationHover getAnnotationHover(ISourceViewer sourceViewer) {
 		IAnnotationHover hover = annotationHoverProvider.get();

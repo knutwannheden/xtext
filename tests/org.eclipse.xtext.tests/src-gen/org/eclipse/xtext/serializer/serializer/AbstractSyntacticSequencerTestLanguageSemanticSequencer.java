@@ -7,7 +7,7 @@ import org.eclipse.xtext.serializer.acceptor.ISemanticSequenceAcceptor;
 import org.eclipse.xtext.serializer.acceptor.SequenceFeeder;
 import org.eclipse.xtext.serializer.diagnostic.ISemanticSequencerDiagnosticProvider;
 import org.eclipse.xtext.serializer.diagnostic.ISerializationDiagnostic.Acceptor;
-import org.eclipse.xtext.serializer.sequencer.AbstractSemanticSequencer;
+import org.eclipse.xtext.serializer.sequencer.AbstractDelegatingSemanticSequencer;
 import org.eclipse.xtext.serializer.sequencer.GenericSequencer;
 import org.eclipse.xtext.serializer.sequencer.ISemanticNodeProvider.INodesForEObjectProvider;
 import org.eclipse.xtext.serializer.sequencer.ISemanticSequencer;
@@ -20,6 +20,7 @@ import org.eclipse.xtext.serializer.syntacticsequencertest.Add2;
 import org.eclipse.xtext.serializer.syntacticsequencertest.AlternativeTransition;
 import org.eclipse.xtext.serializer.syntacticsequencertest.BooleanAlternative;
 import org.eclipse.xtext.serializer.syntacticsequencertest.BooleanAlternativeLiteral;
+import org.eclipse.xtext.serializer.syntacticsequencertest.BooleanValues;
 import org.eclipse.xtext.serializer.syntacticsequencertest.MandatoryKeywords;
 import org.eclipse.xtext.serializer.syntacticsequencertest.MandatoryManyTransition;
 import org.eclipse.xtext.serializer.syntacticsequencertest.Model;
@@ -33,31 +34,11 @@ import org.eclipse.xtext.serializer.syntacticsequencertest.Val0;
 import org.eclipse.xtext.serializer.syntacticsequencertest.Val1;
 import org.eclipse.xtext.serializer.syntacticsequencertest.Val2;
 
-@SuppressWarnings("restriction")
-public class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends AbstractSemanticSequencer {
+@SuppressWarnings("all")
+public abstract class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends AbstractDelegatingSemanticSequencer {
 
 	@Inject
-	protected SyntacticSequencerTestLanguageGrammarAccess grammarAccess;
-	
-	@Inject
-	protected ISemanticSequencerDiagnosticProvider diagnosticProvider;
-	
-	@Inject
-	protected ITransientValueService transientValues;
-	
-	@Inject
-	@GenericSequencer
-	protected Provider<ISemanticSequencer> genericSequencerProvider;
-	
-	protected ISemanticSequencer genericSequencer;
-	
-	
-	@Override
-	public void init(ISemanticSequencer sequencer, ISemanticSequenceAcceptor sequenceAcceptor, Acceptor errorAcceptor) {
-		super.init(sequencer, sequenceAcceptor, errorAcceptor);
-		this.genericSequencer = genericSequencerProvider.get();
-		this.genericSequencer.init(sequencer, sequenceAcceptor, errorAcceptor);
-	}
+	private SyntacticSequencerTestLanguageGrammarAccess grammarAccess;
 	
 	public void createSequence(EObject context, EObject semanticObject) {
 		if(semanticObject.eClass().getEPackage() == SyntacticsequencertestPackage.eINSTANCE) switch(semanticObject.eClass().getClassifierID()) {
@@ -104,6 +85,12 @@ public class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends Abs
 			case SyntacticsequencertestPackage.BOOLEAN_ALTERNATIVE_LITERAL:
 				if(context == grammarAccess.getBooleanAlternativeLiteralRule()) {
 					sequence_BooleanAlternativeLiteral(context, (BooleanAlternativeLiteral) semanticObject); 
+					return; 
+				}
+				else break;
+			case SyntacticsequencertestPackage.BOOLEAN_VALUES:
+				if(context == grammarAccess.getBooleanValuesRule()) {
+					sequence_BooleanValues(context, (BooleanValues) semanticObject); 
 					return; 
 				}
 				else break;
@@ -293,6 +280,15 @@ public class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends Abs
 	
 	/**
 	 * Constraint:
+	 *     (val1?='kw1'? val2?=BOOLEAN_TERMINAL_ID? val3?=BooleanDatatypeID?)
+	 */
+	protected void sequence_BooleanValues(EObject context, BooleanValues semanticObject) {
+		genericSequencer.createSequence(context, semanticObject);
+	}
+	
+	
+	/**
+	 * Constraint:
 	 *     (val1=ID val2=ID val3=ID)
 	 */
 	protected void sequence_MandatoryKeywords(EObject context, MandatoryKeywords semanticObject) {
@@ -342,7 +338,8 @@ public class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends Abs
 	 *         x8=OptionalSingleTransition | 
 	 *         x9=OptionalManyTransition | 
 	 *         x10=MandatoryManyTransition | 
-	 *         x11=AlternativeTransition
+	 *         x11=AlternativeTransition | 
+	 *         x12=BooleanValues
 	 *     )
 	 */
 	protected void sequence_Model(EObject context, Model semanticObject) {
@@ -452,8 +449,8 @@ public class AbstractSyntacticSequencerTestLanguageSemanticSequencer extends Abs
 	/**
 	 * Constraint:
 	 *     (
-	 *         (name=TerminalID | name=ID) 
-	 *         ref1=[SingleCrossReference|TerminalID]? 
+	 *         (name=TERMINAL_ID | name=ID) 
+	 *         ref1=[SingleCrossReference|TERMINAL_ID]? 
 	 *         ref2=[SingleCrossReference|DatatypeID]? 
 	 *         ref3=[SingleCrossReference|ID]? 
 	 *         ref4=[SingleCrossReference|ID]?

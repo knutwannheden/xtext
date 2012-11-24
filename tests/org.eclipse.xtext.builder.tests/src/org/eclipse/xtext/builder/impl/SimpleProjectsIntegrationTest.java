@@ -8,8 +8,10 @@
 package org.eclipse.xtext.builder.impl;
 
 import static org.eclipse.xtext.builder.impl.BuilderUtil.*;
-import static org.eclipse.xtext.ui.junit.util.IResourcesSetupUtil.*;
-import static org.eclipse.xtext.ui.junit.util.JavaProjectSetupUtil.*;
+import static org.eclipse.xtext.junit4.ui.util.IResourcesSetupUtil.*;
+import static org.eclipse.xtext.junit4.ui.util.JavaProjectSetupUtil.*;
+
+import java.util.Iterator;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -21,8 +23,14 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EValidator;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.xtext.builder.tests.builderTestLanguage.BuilderTestLanguagePackage;
+import org.eclipse.xtext.resource.IReferenceDescription;
 import org.eclipse.xtext.ui.XtextProjectHelper;
 import org.eclipse.xtext.util.StringInputStream;
+import org.junit.Test;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
@@ -35,7 +43,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 	private IFile foo_file;
 	private IFile bar_file;
 
-	public void testValidSimpleModel() throws Exception {
+	@Test public void testValidSimpleModel() throws Exception {
 		createSimpleProjectWithXtextNature("foo");
 		IFile file = createFile("foo/foo"+F_EXT, "object Foo ");
 		waitForAutoBuild();
@@ -48,14 +56,14 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		return project;
 	}
 
-	public void testSimpleModelWithSyntaxError() throws Exception {
+	@Test public void testSimpleModelWithSyntaxError() throws Exception {
 		createSimpleProjectWithXtextNature("foo");
 		IFile file = createFile("foo/foo"+F_EXT, "objekt Foo ");
 		waitForAutoBuild();
 		assertEquals(1, countMarkers(file));
 	}
 
-	public void testTwoFilesInSameProject() throws Exception {
+	@Test public void testTwoFilesInSameProject() throws Exception {
 		createSimpleProjectWithXtextNature("foo");
 		IFile file1 = createFile("foo/foo"+F_EXT, "object Foo ");
 		IFile file2 = createFile("foo/bar"+F_EXT, "object Bar references Foo");
@@ -67,7 +75,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(2, countResourcesInIndex());
 	}
 	
-	public void testTwoFilesInSameProjectRemoveNature() throws Exception {
+	@Test public void testTwoFilesInSameProjectRemoveNature() throws Exception {
 		IProject project = createSimpleProjectWithXtextNature("foo");
 		createFile("foo/foo"+F_EXT, "object Foo ");
 		createFile("foo/bar"+F_EXT, "object Bar references Foo");
@@ -91,7 +99,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		return buff.toString();
 	}
 
-	public void testTwoFilesInSameProjectWithLinkingError() throws Exception {
+	@Test public void testTwoFilesInSameProjectWithLinkingError() throws Exception {
 		createSimpleProjectWithXtextNature("foo");
 		createFile("foo/foo"+F_EXT, "object Foo ");
 		IFile file = createFile("foo/bar"+F_EXT, "object Bar references Fuu");
@@ -99,18 +107,18 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(1, countMarkers(file));
 	}
 	
-	public void testTwoFilesInTwoReferencedProjects() throws Exception {
+	@Test public void testTwoFilesInTwoReferencedProjects() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 	}
 	
-	public void testTwoFilesInTwoReferencedProjectsRemoveNature() throws Exception {
+	@Test public void testTwoFilesInTwoReferencedProjectsRemoveNature() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		removeNature(foo_project.getProject(), XtextProjectHelper.NATURE_ID);
 		waitForAutoBuild();
 		assertEquals(1, countMarkers(bar_file));
 	}
 	
-	public void testTwoFilesInTwoReferencedProjectsAddNature() throws Exception {
+	@Test public void testTwoFilesInTwoReferencedProjectsAddNature() throws Exception {
 		foo_project = createSimpleProjectWithXtextNature("foo");
 		removeNature(foo_project.getProject(), XtextProjectHelper.NATURE_ID);
 		bar_project = createSimpleProjectWithXtextNature("bar");
@@ -141,7 +149,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(0, countMarkers(bar_file));
 	}
 
-	public void testTwoFilesInTwoInversedReferencedProjects() throws Exception {
+	@Test public void testTwoFilesInTwoInversedReferencedProjects() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		removeReference(bar_project, foo_project);
 		waitForAutoBuild();
@@ -151,7 +159,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(1, countMarkers(bar_file));
 	}
 
-	public void testTwoFilesInTwoNonReferencedProjects() throws Exception {
+	@Test public void testTwoFilesInTwoNonReferencedProjects() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		removeReference(bar_project, foo_project);
 
@@ -160,7 +168,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(1, countMarkers(bar_file));
 	}
 
-	public void testChangeReferenceOfProjects() throws Exception {
+	@Test public void testChangeReferenceOfProjects() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		
 		removeReference(bar_project, foo_project);
@@ -174,7 +182,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(0, countMarkers(bar_file));
 	}
 
-	public void testOpenAndCloseReferencedProjects() throws Exception {
+	@Test public void testOpenAndCloseReferencedProjects() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		// close project
 		foo_project.getProject().close(monitor());
@@ -185,7 +193,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(printMarkers(bar_file), 0, countMarkers(bar_file));
 	}
 
-	public void testChangeReferencedFile() throws Exception {
+	@Test public void testChangeReferencedFile() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		
 		// change referenced file
@@ -199,7 +207,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(printMarkers(bar_file), 0, countMarkers(bar_file));
 	}
 	
-	public void testDeleteReferencedFile() throws Exception {
+	@Test public void testDeleteReferencedFile() throws Exception {
 		createTwoFilesInTwoReferencedProjects();
 		
 		// delete referenced file
@@ -214,7 +222,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(0, countMarkers(bar_file));
 	}
 	
-	public void testUpdateOfReferencedFile() throws Exception {
+	@Test public void testUpdateOfReferencedFile() throws Exception {
 		IProject project = createSimpleProject("foo");
 		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
 		IFolder folder = createSubFolder(project, "subFolder");
@@ -251,7 +259,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertNumberOfMarkers(fileB, 0);
 	}
 	
-	public void testDeleteFile() throws Exception {
+	@Test public void testDeleteFile() throws Exception {
 		IProject project = createSimpleProject("foo");
 		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
 		IFolder folder = createSubFolder(project, "subFolder");
@@ -269,7 +277,7 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertEquals(0, countResourcesInIndex());
 	}
 	
-	public void testCleanBuild() throws Exception {
+	@Test public void testCleanBuild() throws Exception {
 		IProject project = createSimpleProject("foo");
 		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
 		IFolder folder = createSubFolder(project, "subFolder");
@@ -292,74 +300,82 @@ public class SimpleProjectsIntegrationTest extends AbstractBuilderTest {
 		assertNotNull(getEvents().get(1).getDeltas().get(0).getNew());
 	}
 	
-	public void testProjectNameWithSpace() throws Exception {
+	@Test public void testProjectNameWithSpace() throws Exception {
 		createSimpleProjectWithXtextNature("foo bar");
 		IFile file = createFile("foo bar/foo"+F_EXT, "objekt Foo ");
 		waitForAutoBuild();
 		assertEquals(1, countMarkers(file));
 	}
 	
-//	public void testReexportedSource() throws Exception {
-//		IProject foo = createSimpleProject("foo");
-//		IProject bar = createSimpleProject("bar");
-//		IProject baz = createSimpleProject("baz");
-//		addNature(foo.getProject(), XtextProjectHelper.NATURE_ID);
-//		addNature(bar.getProject(), XtextProjectHelper.NATURE_ID);
-//		addNature(baz.getProject(), XtextProjectHelper.NATURE_ID);
-//		IFile file = foo.getProject().getFile("foo.jar");
-//		file.create(jarInputStream(new TextFile("foo/Foo"+F_EXT, "object Foo")), true, monitor());
-//		IClasspathEntry newLibraryEntry = JavaCore.newLibraryEntry(file.getFullPath(), null, null,true);
-//		addToClasspath(foo, newLibraryEntry);
-//		addToClasspath(bar, JavaCore.newProjectEntry(foo.getPath(), true));
-//		addToClasspath(baz, JavaCore.newProjectEntry(bar.getPath(), false));
-//		addSourceFolder(baz, "src");
-//		IFile bazFile = createFile("baz/src/Baz"+F_EXT, "object Baz references Foo");
-//		waitForAutoBuild();
-//		assertEquals(0,countMarkers(bazFile));
-//		assertEquals(2, countResourcesInIndex());
-//		Iterator<IReferenceDescription> references = getContainedReferences(URI.createPlatformResourceURI(bazFile.getFullPath().toString(),true)).iterator();
-//		IReferenceDescription next = references.next();
-//		assertFalse(references.hasNext());
-//		assertEquals("platform:/resource/baz/src/Baz.buildertestlanguage#/",next.getSourceEObjectUri().toString());
-//		assertEquals("archive:platform:/resource/foo/foo.jar!/foo/Foo.buildertestlanguage#/",next.getTargetEObjectUri().toString());
-//		assertEquals(-1,next.getIndexInList());
-//		assertEquals(BuilderTestLanguagePackage.Literals.ELEMENT__REFERENCES,next.getEReference());
-//	}
+	@Test
+	public void testReexportedSource() throws Exception {
+		IJavaProject foo = createJavaProject("foo");
+		IJavaProject bar = createJavaProject("bar");
+		IJavaProject baz = createJavaProject("baz");
+		addNature(foo.getProject(), XtextProjectHelper.NATURE_ID);
+		addNature(bar.getProject(), XtextProjectHelper.NATURE_ID);
+		addNature(baz.getProject(), XtextProjectHelper.NATURE_ID);
+		IFile file = foo.getProject().getFile("foo.jar");
+		file.create(jarInputStream(new TextFile("foo/Foo"+F_EXT, "object Foo")), true, monitor());
+		IClasspathEntry newLibraryEntry = JavaCore.newLibraryEntry(file.getFullPath(), null, null,true);
+		addToClasspath(foo, newLibraryEntry);
+		addToClasspath(bar, JavaCore.newProjectEntry(foo.getPath(), true));
+		addToClasspath(baz, JavaCore.newProjectEntry(bar.getPath(), false));
+		addSourceFolder(baz, "src");
+		IFile bazFile = createFile("baz/src/Baz"+F_EXT, "object Baz references Foo");
+		waitForAutoBuild();
+		assertEquals(0,countMarkers(bazFile));
+		assertEquals(2, countResourcesInIndex());
+		Iterator<IReferenceDescription> references = getContainedReferences(URI.createPlatformResourceURI(bazFile.getFullPath().toString(),true)).iterator();
+		IReferenceDescription next = references.next();
+		assertFalse(references.hasNext());
+		assertEquals("platform:/resource/baz/src/Baz.buildertestlanguage#/",next.getSourceEObjectUri().toString());
+		assertEquals("archive:platform:/resource/foo/foo.jar!/foo/Foo.buildertestlanguage#/",next.getTargetEObjectUri().toString());
+		assertEquals(-1,next.getIndexInList());
+		assertEquals(BuilderTestLanguagePackage.Literals.ELEMENT__REFERENCES,next.getEReference());
+	}
 	
-//	public void testFullBuild() throws Exception {
-//		IProject project = createSimpleProject("foo");
-//		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
-//		IProject someProject = createProject("bar");
-//		assertEquals(0, countResourcesInIndex());
-//		waitForAutoBuild();
-//		assertEquals(1, countResourcesInIndex());
-//
-//		getBuilderState().addListener(this);
-//		fullBuild();
-//		assertEquals(1, countResourcesInIndex());
-////		System.out.println(print(getEvents().get(0).getDeltas()));
-//		assertEquals(1,getEvents().size());
-//	}
+	@Test
+	public void testFullBuild() throws Exception {
+		IProject project = createSimpleProject("foo");
+		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
+		createProject("bar");
+		waitForAutoBuild();
+		assertEquals(0, countResourcesInIndex());
+		createFile("bar/bar"+F_EXT, "objekt Foo ");
+		waitForAutoBuild();
+		assertEquals(0, countResourcesInIndex());
+		createFile("foo/bar"+F_EXT, "objekt Foo ");
+		waitForAutoBuild();
+		assertEquals(1, countResourcesInIndex());
+
+		getBuilderState().addListener(this);
+		fullBuild();
+		assertEquals(1, countResourcesInIndex());
+//		System.out.println(print(getEvents().get(0).getDeltas()));
+		assertEquals(1,getEvents().size());
+	}
 
 	private int countMarkers(IFile file) throws CoreException {
 		return file.findMarkers(EValidator.MARKER, true, IResource.DEPTH_INFINITE).length;
 	}
 
 	
-//	public void testEvents() throws Exception {
-//		IProject project = createSimpleProject("foo");
-//		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
-//		IProject someProject = createProject("bar");
-//		IFile file = someProject.getFile("foo.jar");
-//		file.create(jarInputStream(new TextFile("foo/Bar"+F_EXT, "object Foo")), true, monitor());
-//		addJarToClasspath(project, file);
-//		waitForAutoBuild();
-////		JavaCore.addElementChangedListener(new IElementChangedListener() {
-////			
-////			public void elementChanged(ElementChangedEvent event) {
-////				System.out.println(event);
-////			}
-////		});
-//		someProject.delete(true, monitor());
-//	}
+	@Test
+	public void testEvents() throws Exception {
+		IJavaProject project = createJavaProject("foo");
+		addNature(project.getProject(), XtextProjectHelper.NATURE_ID);
+		IProject someProject = createProject("bar");
+		IFile file = someProject.getFile("foo.jar");
+		file.create(jarInputStream(new TextFile("foo/Bar"+F_EXT, "object Foo")), true, monitor());
+		addJarToClasspath(project, file);
+		waitForAutoBuild();
+//		JavaCore.addElementChangedListener(new IElementChangedListener() {
+//			
+//			public void elementChanged(ElementChangedEvent event) {
+//				System.out.println(event);
+//			}
+//		});
+		someProject.delete(true, monitor());
+	}
 }

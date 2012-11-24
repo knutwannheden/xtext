@@ -33,6 +33,7 @@ import org.eclipse.xtext.nodemodel.ICompositeNode;
 import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
+import org.eclipse.xtext.parser.IParseResult;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.DefaultHighlightingConfiguration;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightedPositionAcceptor;
@@ -40,8 +41,10 @@ import org.eclipse.xtext.ui.editor.syntaxcoloring.ISemanticHighlightingCalculato
 import org.eclipse.xtext.xbase.XAbstractFeatureCall;
 import org.eclipse.xtext.xbase.XAssignment;
 import org.eclipse.xtext.xbase.XBinaryOperation;
+import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.XFeatureCall;
 import org.eclipse.xtext.xbase.XMemberFeatureCall;
+import org.eclipse.xtext.xbase.XNumberLiteral;
 import org.eclipse.xtext.xbase.XUnaryOperation;
 import org.eclipse.xtext.xbase.XbasePackage;
 import org.eclipse.xtext.xbase.annotations.xAnnotations.XAnnotation;
@@ -74,8 +77,10 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 	private BitSet idLengthsToHighlight;
 
 	public void provideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor) {
-		if (resource == null || resource.getParseResult() == null
-				|| resource.getParseResult().getRootASTElement() == null)
+		if (resource == null)
+			return;
+		IParseResult parseResult = resource.getParseResult();
+		if (parseResult == null || parseResult.getRootASTElement() == null)
 			return;
 		if (highlightedIdentifiers == null) {
 			highlightedIdentifiers = initializeHighlightedIdentifiers();
@@ -102,7 +107,10 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 	 *            the acceptor. Is never <code>null</code>.
 	 */
 	protected void doProvideHighlightingFor(XtextResource resource, IHighlightedPositionAcceptor acceptor) {
-		ICompositeNode node = resource.getParseResult().getRootNode();
+		IParseResult parseResult = resource.getParseResult();
+		if (parseResult == null)
+			throw new IllegalStateException("resource#parseResult may not be null");
+		ICompositeNode node = parseResult.getRootNode();
 		highlightSpecialIdentifiers(acceptor, node);
 		searchAndHighlightElements(resource, acceptor);
 	}
@@ -115,7 +123,9 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 				computeFeatureCallHighlighting((XAbstractFeatureCall) object, acceptor);
 			}
 			// Handle XAnnotation in a special way because we want the @ highlighted too
-			if (object instanceof XAnnotation) {
+			if (object instanceof XNumberLiteral) {
+				highlightNumberLiterals((XNumberLiteral) object, acceptor);
+			} if (object instanceof XAnnotation) {
 				highlightAnnotation((XAnnotation) object, acceptor);
 			} else {
 				computeReferencedJvmTypeHighlighting(acceptor, object);
@@ -160,17 +170,31 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 				if (jvmOperation.isStatic())
 					highlightFeatureCall(featureCall, acceptor, XbaseHighlightingConfiguration.STATIC_METHOD_INVOCATION);
 			}
-			if (featureCall instanceof XMemberFeatureCall || (featureCall instanceof XAssignment && ((XAssignment)featureCall).getValue() != null)){
+			XExpression implicitReceiver = featureCall.getImplicitReceiver();
+			if (featureCall instanceof  XMemberFeatureCall){
 				if(!feature.eIsProxy() && feature instanceof JvmOperation){
-					if(featureCall.getImplicitReceiver() != null || ((JvmOperation) feature).isStatic()){
-						highlightFeatureCall(featureCall, acceptor, 
+					if(((JvmOperation) feature).isStatic()){
+							highlightFeatureCall(featureCall, acceptor, 
 								XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION);
+					}
+					if(implicitReceiver != null){
+							highlightFeatureCall(featureCall, acceptor, 
+								XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION);
+					}
+				}
+			}
+			if((featureCall instanceof XAssignment && ((XAssignment)featureCall).getValue() != null)){
+				if(!feature.eIsProxy() && feature instanceof JvmOperation){
+					if(implicitReceiver instanceof XMemberFeatureCall){
+						if(((XMemberFeatureCall) implicitReceiver).getFeature() instanceof JvmField)
+							highlightFeatureCall(featureCall, acceptor, 
+									XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION);
 					}
 				}
 			}
 			if (featureCall instanceof XFeatureCall){
 				if(!feature.eIsProxy() && feature instanceof JvmOperation){
-					if((featureCall.getImplicitReceiver() != null && ((JvmOperation) feature).isStatic()))
+					if((implicitReceiver != null && ((JvmOperation) feature).isStatic()))
 							highlightFeatureCall(featureCall, acceptor, 
 									XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION);
 				}
@@ -179,7 +203,7 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 				if(!feature.eIsProxy() && feature instanceof JvmOperation){
 					if(featureCall.getImplicitFirstArgument() != null){
 						highlightFeatureCall(featureCall, acceptor, 
-								XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION_WITH_IMPLICIT_ARGUMENT);
+								XbaseHighlightingConfiguration.EXTENSION_METHOD_INVOCATION);
 					}
 				}
 			}
@@ -197,12 +221,20 @@ public class XbaseHighlightingCalculator implements ISemanticHighlightingCalcula
 		JvmAnnotationType annotationType = annotation.getAnnotationType();
 		if (annotationType != null && !annotationType.eIsProxy()) {
 			ICompositeNode xannotationNode = NodeModelUtils.findActualNodeFor(annotation);
-			ILeafNode firstLeafNode = NodeModelUtils.findLeafNodeAtOffset(xannotationNode, xannotationNode.getOffset() );
-			if(firstLeafNode != null)
-				highlightNode(firstLeafNode, XbaseHighlightingConfiguration.ANNOTATION, acceptor);
+			if (xannotationNode != null) {
+				ILeafNode firstLeafNode = NodeModelUtils.findLeafNodeAtOffset(xannotationNode, xannotationNode.getOffset() );
+				if(firstLeafNode != null)
+					highlightNode(firstLeafNode, XbaseHighlightingConfiguration.ANNOTATION, acceptor);
+			}
 			highlightObjectAtFeature(acceptor, annotation, XAnnotationsPackage.Literals.XANNOTATION__ANNOTATION_TYPE, XbaseHighlightingConfiguration.ANNOTATION);
 		}
 	}
+	
+	protected void highlightNumberLiterals(XNumberLiteral literal, IHighlightedPositionAcceptor acceptor) {
+		ICompositeNode node = NodeModelUtils.findActualNodeFor(literal);
+		acceptor.addPosition(node.getOffset(), node.getLength(), DefaultHighlightingConfiguration.NUMBER_ID);
+	}
+	
 
 	protected void highlightSpecialIdentifiers(IHighlightedPositionAcceptor acceptor, ICompositeNode root) {
 		TerminalRule idRule = grammarAccess.getIDRule();

@@ -7,6 +7,8 @@
  *******************************************************************************/
 package org.eclipse.xtext.ui.refactoring.ui;
 
+import static org.eclipse.xtext.util.Strings.*;
+
 import java.lang.reflect.InvocationTargetException;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -21,6 +23,7 @@ import org.eclipse.xtext.resource.IGlobalServiceProvider;
 import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.editor.XtextEditor;
 import org.eclipse.xtext.ui.refactoring.IRenameStrategy;
+import org.eclipse.xtext.ui.refactoring.IRenameStrategy.Provider.NoSuchStrategyException;
 import org.eclipse.xtext.util.Strings;
 import org.eclipse.xtext.util.concurrent.IUnitOfWork;
 
@@ -46,6 +49,9 @@ public class RenameRefactoringController {
 	@Inject
 	private IGlobalServiceProvider globalServiceProvider;
 
+	@Inject
+	private Provider<LinkedEditingUndoSupport> undoSupportProvider;
+	
 	private RenameLinkedMode activeLinkedMode;
 
 	private IRenameElementContext renameElementContext;
@@ -55,6 +61,13 @@ public class RenameRefactoringController {
 	private String newName;
 	
 	public void initialize(IRenameElementContext renameElementContext) {
+		if (activeLinkedMode != null) {
+			if (activeLinkedMode.isSameRenameElementContext(renameElementContext)) {
+				return;
+			} else {
+				cancelLinkedMode();
+			}
+		}
 		this.renameElementContext = renameElementContext;
 		this.newName = null;
 	}
@@ -100,15 +113,8 @@ public class RenameRefactoringController {
 	}
 
 	protected void startLinkedEditing() {
-		if (activeLinkedMode != null) {
-			if (activeLinkedMode.isSameRenameElementContext(renameElementContext)) {
-				startRefactoring(RefactoringType.REFACTORING_DIALOG);
-				return;
-			} else {
-				cancelLinkedMode();
-			}
-		}
-
+		if (activeLinkedMode != null) 
+			startRefactoring(RefactoringType.REFACTORING_DIALOG);
 		try {
 			final XtextEditor xtextEditor = getXtextEditor();
 			if (xtextEditor != null) {
@@ -117,7 +123,8 @@ public class RenameRefactoringController {
 						RenameLinkedMode newLinkedMode = renameLinkedModeProvider.get();
 						if (newLinkedMode.start(renameElementContext, monitor)) {
 							activeLinkedMode = newLinkedMode;
-							undoSupport = new LinkedEditingUndoSupport(xtextEditor);
+							undoSupport = undoSupportProvider.get();
+							undoSupport.startRecording(xtextEditor);
 						}
 					}
 				});
@@ -150,32 +157,46 @@ public class RenameRefactoringController {
 	}
 
 	protected void startDirectRefactoring() throws InterruptedException {
-		if (Strings.isEmpty(newName))
+		if (Strings.isEmpty(newName)) {
 			restoreOriginalSelection();
-		else
-			createRenameSupport(renameElementContext, newName).startDirectRefactoring();
+		} else {
+			String originalName = getOriginalName(getXtextEditor());
+			if(!equal(originalName, newName)) {
+				IRenameSupport renameSupport = createRenameSupport(renameElementContext, newName);
+				if(renameSupport != null) 
+					renameSupport.startDirectRefactoring();
+			}
+		}
 	}
 
 	protected void startRefactoringWithDialog(final boolean previewOnly) throws InterruptedException {
 		if (Strings.isEmpty(newName))
 			newName = getOriginalName(getXtextEditor());
-		if (Strings.isEmpty(newName))
+		if (Strings.isEmpty(newName)) 
 			restoreOriginalSelection();
-		else
-			createRenameSupport(renameElementContext, newName).startRefactoringWithDialog(previewOnly);
+		else {
+			IRenameSupport renameSupport = createRenameSupport(renameElementContext, newName);
+			if(renameSupport != null) {
+				renameSupport.startRefactoringWithDialog(previewOnly);
+			}
+		}
 	}
 
 	protected String getOriginalName(final XtextEditor xtextEditor) {
 		return xtextEditor.getDocument().readOnly(new IUnitOfWork<String, XtextResource>() {
 			public String exec(XtextResource state) throws Exception {
-				EObject targetElement = state.getResourceSet().getEObject(renameElementContext.getTargetElementURI(),
+				try {
+					EObject targetElement = state.getResourceSet().getEObject(renameElementContext.getTargetElementURI(),
 						false);
-				IRenameStrategy.Provider strategyProvider = globalServiceProvider.findService(targetElement,
-						IRenameStrategy.Provider.class);
-				if (strategyProvider != null) {
-					IRenameStrategy strategy = strategyProvider.get(targetElement, renameElementContext);
-					if (strategy != null)
-						return strategy.getOriginalName();
+					IRenameStrategy.Provider strategyProvider = globalServiceProvider.findService(targetElement,
+							IRenameStrategy.Provider.class);
+					if (strategyProvider != null) {
+						IRenameStrategy strategy = strategyProvider.get(targetElement, renameElementContext);
+						if (strategy != null)
+							return strategy.getOriginalName();
+					}
+				} catch(NoSuchStrategyException e) {
+					// null
 				}
 				return null;
 			}

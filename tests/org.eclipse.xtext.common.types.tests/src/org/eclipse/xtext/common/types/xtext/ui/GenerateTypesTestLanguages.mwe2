@@ -31,6 +31,7 @@ Workflow {
 	component = Generator {
 		pathRtProject = "${runtimeProject}"
 		pathUiProject = "${runtimeProject}"
+		pathTestProject = "${runtimeProject}"
 		projectNameRt = "${projectName}"
 		activator = "org.eclipse.xtext.common.types.tests.AbstractActivator"
 		mergeManifest = false
@@ -41,6 +42,9 @@ Workflow {
 			fragment = @CommonTestLanguagesFragments {
 				file.extensions = "typesAssistTest"
 			}
+            fragment = generator.GeneratorFragment {
+            	generatorStub = false
+            }
 		}
 		language = {
 			uri="classpath:/org/eclipse/xtext/common/types/xtext/ui/RefactoringTestLanguage.xtext"
@@ -48,6 +52,7 @@ Workflow {
 			fragment = @CommonTestLanguagesFragments {
 				file.extensions = "typesRefactoring"	
 			} 
+			fragment = junit.Junit4Fragment {}
 		}
 		language = {
 			uri="classpath:/org/eclipse/xtext/common/types/xtext/ui/RefactoringTestLanguage1.xtext"

@@ -13,7 +13,9 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.xtext.builder.DerivedResourceMarkers;
 import org.eclipse.xtext.builder.builderState.IBuilderState;
+import org.eclipse.xtext.builder.trace.FileBasedTraceInformation;
 import org.eclipse.xtext.generator.IDerivedResourceMarkers;
+import org.eclipse.xtext.generator.trace.ITraceInformation;
 import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.service.AbstractGenericModule;
 import org.eclipse.xtext.ui.editor.IDirtyStateManager;
@@ -50,9 +52,19 @@ public class SharedStateModule extends AbstractGenericModule {
 	public Provider<IURIEditorOpener> provideIURIEditorOpener() {
 		return Access.getIURIEditorOpener();
 	}
-	
+
+	/**
+	 * @since 2.3
+	 */
 	public Class<? extends IDerivedResourceMarkers> bindDerivedResourceMarkers() {
 		return DerivedResourceMarkers.class;
+	}
+	
+	/**
+	 * @since 2.3
+	 */
+	public Class<? extends ITraceInformation> bindITraceInformation() {
+		return FileBasedTraceInformation.class;
 	}
 	
 	/**
@@ -74,7 +86,7 @@ public class SharedStateModule extends AbstractGenericModule {
 		if (PlatformUI.isWorkbenchRunning()) {
 			binder.bind(IWorkbench.class).toProvider(new Provider<IWorkbench>() {
 				public IWorkbench get() {
-					return PlatformUI.getWorkbench();
+					return (PlatformUI.isWorkbenchRunning()) ? PlatformUI.getWorkbench() : null;
 				}
 			});
 		}

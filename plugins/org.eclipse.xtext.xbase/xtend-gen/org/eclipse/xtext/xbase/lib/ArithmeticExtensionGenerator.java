@@ -1,5 +1,6 @@
 package org.eclipse.xtext.xbase.lib;
 
+import com.google.common.base.Objects;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import java.io.File;
@@ -14,8 +15,6 @@ import org.eclipse.xtext.xbase.XbaseStandaloneSetup;
 import org.eclipse.xtext.xbase.lib.CollectionLiterals;
 import org.eclipse.xtext.xbase.lib.Exceptions;
 import org.eclipse.xtext.xbase.lib.Functions.Function0;
-import org.eclipse.xtext.xbase.lib.IntegerExtensions;
-import org.eclipse.xtext.xbase.lib.ObjectExtensions;
 import org.eclipse.xtext.xbase.lib.StringExtensions;
 import org.eclipse.xtext.xbase.scoping.featurecalls.OperatorMapping;
 
@@ -24,9 +23,11 @@ public class ArithmeticExtensionGenerator {
   public static void main(final String[] args) {
     XbaseStandaloneSetup _xbaseStandaloneSetup = new XbaseStandaloneSetup();
     Injector _createInjectorAndDoEMFRegistration = _xbaseStandaloneSetup.createInjectorAndDoEMFRegistration();
-    ArithmeticExtensionGenerator _instance = _createInjectorAndDoEMFRegistration.<ArithmeticExtensionGenerator>getInstance(org.eclipse.xtext.xbase.lib.ArithmeticExtensionGenerator.class);
+    ArithmeticExtensionGenerator _instance = _createInjectorAndDoEMFRegistration.<ArithmeticExtensionGenerator>getInstance(ArithmeticExtensionGenerator.class);
     _instance.generate();
   }
+  
+  private String since = "2.3";
   
   private List<String> types = new Function0<List<String>>() {
     public List<String> apply() {
@@ -37,31 +38,16 @@ public class ArithmeticExtensionGenerator {
   
   private List<QualifiedName> comparators = new Function0<List<QualifiedName>>() {
     public List<QualifiedName> apply() {
-      QualifiedName _LESS_THAN = OperatorMapping.LESS_THAN;
-      QualifiedName _LESS_EQUALS_THAN = OperatorMapping.LESS_EQUALS_THAN;
-      QualifiedName _GREATER_THAN = OperatorMapping.GREATER_THAN;
-      QualifiedName _GREATER_EQUALS_THAN = OperatorMapping.GREATER_EQUALS_THAN;
-      QualifiedName _EQUALS = OperatorMapping.EQUALS;
-      QualifiedName _NOT_EQUALS = OperatorMapping.NOT_EQUALS;
-      ArrayList<QualifiedName> _newArrayList = CollectionLiterals.<QualifiedName>newArrayList(_LESS_THAN, _LESS_EQUALS_THAN, _GREATER_THAN, _GREATER_EQUALS_THAN, _EQUALS, _NOT_EQUALS);
+      ArrayList<QualifiedName> _newArrayList = CollectionLiterals.<QualifiedName>newArrayList(OperatorMapping.LESS_THAN, OperatorMapping.LESS_EQUALS_THAN, 
+        OperatorMapping.GREATER_THAN, OperatorMapping.GREATER_EQUALS_THAN, OperatorMapping.EQUALS, OperatorMapping.NOT_EQUALS);
       return _newArrayList;
     }
   }.apply();
   
   private List<QualifiedName> operators = new Function0<List<QualifiedName>>() {
     public List<QualifiedName> apply() {
-      QualifiedName _PLUS = OperatorMapping.PLUS;
-      QualifiedName _MINUS = OperatorMapping.MINUS;
-      QualifiedName _MULTIPLY = OperatorMapping.MULTIPLY;
-      QualifiedName _DIVIDE = OperatorMapping.DIVIDE;
-      QualifiedName _MODULO = OperatorMapping.MODULO;
-      QualifiedName _LESS_THAN = OperatorMapping.LESS_THAN;
-      QualifiedName _LESS_EQUALS_THAN = OperatorMapping.LESS_EQUALS_THAN;
-      QualifiedName _GREATER_THAN = OperatorMapping.GREATER_THAN;
-      QualifiedName _GREATER_EQUALS_THAN = OperatorMapping.GREATER_EQUALS_THAN;
-      QualifiedName _EQUALS = OperatorMapping.EQUALS;
-      QualifiedName _NOT_EQUALS = OperatorMapping.NOT_EQUALS;
-      ArrayList<QualifiedName> _newArrayList = CollectionLiterals.<QualifiedName>newArrayList(_PLUS, _MINUS, _MULTIPLY, _DIVIDE, _MODULO, _LESS_THAN, _LESS_EQUALS_THAN, _GREATER_THAN, _GREATER_EQUALS_THAN, _EQUALS, _NOT_EQUALS);
+      ArrayList<QualifiedName> _newArrayList = CollectionLiterals.<QualifiedName>newArrayList(OperatorMapping.PLUS, OperatorMapping.MINUS, OperatorMapping.MULTIPLY, OperatorMapping.DIVIDE, OperatorMapping.MODULO, OperatorMapping.LESS_THAN, 
+        OperatorMapping.LESS_EQUALS_THAN, OperatorMapping.GREATER_THAN, OperatorMapping.GREATER_EQUALS_THAN, OperatorMapping.EQUALS, OperatorMapping.NOT_EQUALS);
       return _newArrayList;
     }
   }.apply();
@@ -71,57 +57,53 @@ public class ArithmeticExtensionGenerator {
   
   public void generate() {
     try {
-      {
-        final String path = "../org.eclipse.xtext.xbase.lib/src/org/eclipse/xtext/xbase/lib/";
-        File _file = new File(path);
-        _file.mkdirs();
-        List<String> _types = this.types;
-        for (final String type : _types) {
-          {
-            String _className = this.className(type);
-            String _operator_plus = StringExtensions.operator_plus(path, _className);
-            String _operator_plus_1 = StringExtensions.operator_plus(_operator_plus, ".java");
-            File _file_1 = new File(_operator_plus_1);
-            final File file = _file_1;
-            CharSequence _xifexpression = null;
-            boolean _exists = file.exists();
-            if (_exists) {
-              CharSequence _xblockexpression = null;
-              {
-                String _absolutePath = file.getAbsolutePath();
-                String _readFileIntoString = Files.readFileIntoString(_absolutePath);
-                final String content = _readFileIntoString;
-                StringConcatenation _builder = new StringConcatenation();
-                String _startMarker = this.startMarker();
-                int _indexOf = content.indexOf(_startMarker);
-                String _substring = content.substring(0, _indexOf);
-                _builder.append(_substring, "");
-                _builder.newLineIfNotEmpty();
-                _builder.append("\t");
-                CharSequence _generateAllOperations = this.generateAllOperations(type);
-                _builder.append(_generateAllOperations, "	");
-                _builder.newLineIfNotEmpty();
-                String _endMarker = this.endMarker();
-                int _indexOf_1 = content.indexOf(_endMarker);
-                String _endMarker_1 = this.endMarker();
-                int _length = _endMarker_1.length();
-                int _operator_plus_2 = IntegerExtensions.operator_plus(_indexOf_1, _length);
-                String _substring_1 = content.substring(_operator_plus_2);
-                _builder.append(_substring_1, "");
-                _builder.newLineIfNotEmpty();
-                _xblockexpression = (_builder);
-              }
-              _xifexpression = _xblockexpression;
-            } else {
-              CharSequence _generate = this.generate(type);
-              _xifexpression = _generate;
+      final String path = "../org.eclipse.xtext.xbase.lib/src/org/eclipse/xtext/xbase/lib/";
+      File _file = new File(path);
+      _file.mkdirs();
+      for (final String type : this.types) {
+        {
+          String _className = this.className(type);
+          String _plus = (path + _className);
+          String _plus_1 = (_plus + ".java");
+          File _file_1 = new File(_plus_1);
+          final File file = _file_1;
+          CharSequence _xifexpression = null;
+          boolean _exists = file.exists();
+          if (_exists) {
+            CharSequence _xblockexpression = null;
+            {
+              String _absolutePath = file.getAbsolutePath();
+              final String content = Files.readFileIntoString(_absolutePath);
+              StringConcatenation _builder = new StringConcatenation();
+              String _startMarker = this.startMarker();
+              int _indexOf = content.indexOf(_startMarker);
+              String _substring = content.substring(0, _indexOf);
+              _builder.append(_substring, "");
+              _builder.newLineIfNotEmpty();
+              _builder.append("\t");
+              CharSequence _generateAllOperations = this.generateAllOperations(type);
+              _builder.append(_generateAllOperations, "	");
+              _builder.newLineIfNotEmpty();
+              String _endMarker = this.endMarker();
+              int _indexOf_1 = content.indexOf(_endMarker);
+              String _endMarker_1 = this.endMarker();
+              int _length = _endMarker_1.length();
+              int _plus_2 = (_indexOf_1 + _length);
+              String _substring_1 = content.substring(_plus_2);
+              _builder.append(_substring_1, "");
+              _builder.newLineIfNotEmpty();
+              _xblockexpression = (_builder);
             }
-            final CharSequence newContent = _xifexpression;
-            FileWriter _fileWriter = new FileWriter(file);
-            final FileWriter writer = _fileWriter;
-            writer.append(newContent);
-            writer.close();
+            _xifexpression = _xblockexpression;
+          } else {
+            CharSequence _generate = this.generate(type);
+            _xifexpression = _generate;
           }
+          final CharSequence newContent = _xifexpression;
+          FileWriter _fileWriter = new FileWriter(file);
+          final FileWriter writer = _fileWriter;
+          writer.append(newContent);
+          writer.close();
         }
       }
     } catch (Exception _e) {
@@ -169,6 +151,10 @@ public class ArithmeticExtensionGenerator {
     _builder.append("* @author Jan Koehnlein - Code generator");
     _builder.newLine();
     _builder.append(" ");
+    _builder.append("* @since ");
+    _builder.append(this.since, " ");
+    _builder.newLineIfNotEmpty();
+    _builder.append(" ");
     _builder.append("*/");
     _builder.newLine();
     _builder.append("public class ");
@@ -212,15 +198,21 @@ public class ArithmeticExtensionGenerator {
     _builder.append("* @return   <code>-a</code>");
     _builder.newLine();
     _builder.append(" ");
+    _builder.append("* @since ");
+    _builder.append(this.since, " ");
+    _builder.newLineIfNotEmpty();
+    _builder.append(" ");
     _builder.append("*/");
     _builder.newLine();
+    _builder.append("@Pure");
+    _builder.newLine();
+    _builder.append("@Inline(\"(-$1)\")");
+    _builder.newLine();
     _builder.append("public static ");
-    QualifiedName _MINUS = OperatorMapping.MINUS;
-    String _returnType = this.returnType(type, _MINUS, type);
+    String _returnType = this.returnType(type, OperatorMapping.MINUS, type);
     _builder.append(_returnType, "");
     _builder.append(" ");
-    QualifiedName _MINUS_1 = OperatorMapping.MINUS;
-    QualifiedName _methodName = this._operatorMapping.getMethodName(_MINUS_1);
+    QualifiedName _methodName = this._operatorMapping.getMethodName(OperatorMapping.MINUS);
     _builder.append(_methodName, "");
     _builder.append("(");
     _builder.append(type, "");
@@ -233,8 +225,7 @@ public class ArithmeticExtensionGenerator {
     _builder.newLine();
     _builder.newLine();
     {
-      List<String> _types = this.types;
-      for(final String other : _types) {
+      for(final String other : this.types) {
         CharSequence _generateOperations = this.generateOperations(type, other);
         _builder.append(_generateOperations, "");
         _builder.newLineIfNotEmpty();
@@ -249,8 +240,7 @@ public class ArithmeticExtensionGenerator {
   public CharSequence generateOperations(final String op1, final String op2) {
     StringConcatenation _builder = new StringConcatenation();
     {
-      List<QualifiedName> _operators = this.operators;
-      for(final QualifiedName operator : _operators) {
+      for(final QualifiedName operator : this.operators) {
         _builder.append("/**");
         _builder.newLine();
         _builder.append(" ");
@@ -294,8 +284,18 @@ public class ArithmeticExtensionGenerator {
         _builder.append("b</code>");
         _builder.newLineIfNotEmpty();
         _builder.append(" ");
+        _builder.append("* @since ");
+        _builder.append(this.since, " ");
+        _builder.newLineIfNotEmpty();
+        _builder.append(" ");
         _builder.append("*/");
         _builder.newLine();
+        _builder.append("@Pure");
+        _builder.newLine();
+        _builder.append("@Inline(\"($1 ");
+        _builder.append(operator, "");
+        _builder.append(" $2)\")");
+        _builder.newLineIfNotEmpty();
         _builder.append("public static ");
         String _returnType = this.returnType(op1, operator, op2);
         _builder.append(_returnType, "");
@@ -350,11 +350,18 @@ public class ArithmeticExtensionGenerator {
     _builder.append("* @return   <code>Math.pow(a, b)</code>");
     _builder.newLine();
     _builder.append(" ");
+    _builder.append("* @since ");
+    _builder.append(this.since, " ");
+    _builder.newLineIfNotEmpty();
+    _builder.append(" ");
     _builder.append("*/");
     _builder.newLine();
+    _builder.append("@Pure");
+    _builder.newLine();
+    _builder.append("@Inline(value=\"$3.pow($1, $2)\", imported=Math.class)");
+    _builder.newLine();
     _builder.append("public static double ");
-    QualifiedName _POWER = OperatorMapping.POWER;
-    QualifiedName _methodName_2 = this._operatorMapping.getMethodName(_POWER);
+    QualifiedName _methodName_2 = this._operatorMapping.getMethodName(OperatorMapping.POWER);
     _builder.append(_methodName_2, "");
     _builder.append("(");
     _builder.append(op1, "");
@@ -376,15 +383,13 @@ public class ArithmeticExtensionGenerator {
    */
   public String returnType(final String o1, final QualifiedName operator, final String o2) {
     String _xifexpression = null;
-    List<QualifiedName> _comparators = this.comparators;
-    boolean _contains = _comparators.contains(operator);
+    boolean _contains = this.comparators.contains(operator);
     if (_contains) {
       _xifexpression = "boolean";
     } else {
       String _xblockexpression = null;
       {
-        HashSet<String> _newHashSet = CollectionLiterals.<String>newHashSet(o1, o2);
-        final HashSet<String> operands = _newHashSet;
+        final HashSet<String> operands = CollectionLiterals.<String>newHashSet(o1, o2);
         String _xifexpression_1 = null;
         boolean _contains_1 = operands.contains("double");
         if (_contains_1) {
@@ -415,41 +420,41 @@ public class ArithmeticExtensionGenerator {
   
   public String article(final String it) {
     String _switchResult = null;
-    String _lowerCase = it==null?(String)null:it.toLowerCase();
+    String _lowerCase = it.toLowerCase();
     String _substring = _lowerCase.substring(0, 1);
-    final String __valOfSwitchOver = _substring;
-    boolean matched = false;
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(__valOfSwitchOver,"a")) {
-        matched=true;
+    final String _switchValue = _substring;
+    boolean _matched = false;
+    if (!_matched) {
+      if (Objects.equal(_switchValue,"a")) {
+        _matched=true;
         _switchResult = "an";
       }
     }
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(__valOfSwitchOver,"e")) {
-        matched=true;
+    if (!_matched) {
+      if (Objects.equal(_switchValue,"e")) {
+        _matched=true;
         _switchResult = "an";
       }
     }
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(__valOfSwitchOver,"i")) {
-        matched=true;
+    if (!_matched) {
+      if (Objects.equal(_switchValue,"i")) {
+        _matched=true;
         _switchResult = "an";
       }
     }
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(__valOfSwitchOver,"o")) {
-        matched=true;
+    if (!_matched) {
+      if (Objects.equal(_switchValue,"o")) {
+        _matched=true;
         _switchResult = "an";
       }
     }
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(__valOfSwitchOver,"u")) {
-        matched=true;
+    if (!_matched) {
+      if (Objects.equal(_switchValue,"u")) {
+        _matched=true;
         _switchResult = "an";
       }
     }
-    if (!matched) {
+    if (!_matched) {
       _switchResult = "a";
     }
     return _switchResult;
@@ -457,20 +462,20 @@ public class ArithmeticExtensionGenerator {
   
   public String wrapperType(final String it) {
     String _switchResult = null;
-    boolean matched = false;
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(it,"int")) {
-        matched=true;
+    boolean _matched = false;
+    if (!_matched) {
+      if (Objects.equal(it,"int")) {
+        _matched=true;
         _switchResult = "Integer";
       }
     }
-    if (!matched) {
-      if (ObjectExtensions.operator_equals(it,"char")) {
-        matched=true;
+    if (!_matched) {
+      if (Objects.equal(it,"char")) {
+        _matched=true;
         _switchResult = "Character";
       }
     }
-    if (!matched) {
+    if (!_matched) {
       String _firstUpper = StringExtensions.toFirstUpper(it);
       _switchResult = _firstUpper;
     }
@@ -479,8 +484,8 @@ public class ArithmeticExtensionGenerator {
   
   public String className(final String it) {
     String _wrapperType = this.wrapperType(it);
-    String _operator_plus = StringExtensions.operator_plus(_wrapperType, "Extensions");
-    return _operator_plus;
+    String _plus = (_wrapperType + "Extensions");
+    return _plus;
   }
   
   public String toHtml(final QualifiedName it) {

@@ -73,10 +73,8 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 		resourceDescriptionData = newData;
 	}
 
-	protected void updateMarkers(ResourceSet resourceSet, ImmutableList<IResourceDescription.Delta> deltas,
-			IProgressMonitor monitor) {
-		SubMonitor progress = SubMonitor.convert(monitor, 1);
-		markerUpdater.updateMarker(resourceSet, deltas, progress.newChild(1));
+	protected void updateMarkers(IResourceDescription.Delta delta, ResourceSet resourceSet, IProgressMonitor monitor) {
+		markerUpdater.updateMarkers(delta, resourceSet, monitor);
 	}
 
 	protected IResourceDescriptionsData getResourceDescriptionsData() {
@@ -152,7 +150,11 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 			ResourceDescriptionChangeEvent event = new ResourceDescriptionChangeEvent(deltas, this);
 			if (monitor.isCanceled())
 				throw new OperationCanceledException();
-			updateMarkers(null, event.getDeltas(), subMonitor.newChild(1));
+			subMonitor.setWorkRemaining(event.getDeltas().size());
+			for(IResourceDescription.Delta delta : event.getDeltas()) {
+				updateMarkers(delta, null, subMonitor);
+				subMonitor.worked(1);
+			}
 			// update the reference
 			commit(newData);
 			notifyListeners(event);

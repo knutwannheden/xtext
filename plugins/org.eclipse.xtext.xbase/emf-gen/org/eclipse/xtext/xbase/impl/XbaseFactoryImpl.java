@@ -1,7 +1,9 @@
 /**
- * <copyright>
- * </copyright>
- *
+ * Copyright (c) 2011 itemis AG (http://www.itemis.eu) and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
  */
 package org.eclipse.xtext.xbase.impl;
 
@@ -77,7 +79,7 @@ public class XbaseFactoryImpl extends EFactoryImpl implements XbaseFactory
 			case XbasePackage.XCONSTRUCTOR_CALL: return createXConstructorCall();
 			case XbasePackage.XBOOLEAN_LITERAL: return createXBooleanLiteral();
 			case XbasePackage.XNULL_LITERAL: return createXNullLiteral();
-			case XbasePackage.XINT_LITERAL: return createXIntLiteral();
+			case XbasePackage.XNUMBER_LITERAL: return createXNumberLiteral();
 			case XbasePackage.XSTRING_LITERAL: return createXStringLiteral();
 			case XbasePackage.XCLOSURE: return createXClosure();
 			case XbasePackage.XCASTED_EXPRESSION: return createXCastedExpression();
@@ -213,10 +215,10 @@ public class XbaseFactoryImpl extends EFactoryImpl implements XbaseFactory
 	 * <!-- end-user-doc -->
 	 * @generated
 	 */
-	public XIntLiteral createXIntLiteral()
+	public XNumberLiteral createXNumberLiteral()
 	{
-		XIntLiteralImpl xIntLiteral = new XIntLiteralImpl();
-		return xIntLiteral;
+		XNumberLiteralImpl xNumberLiteral = new XNumberLiteralImpl();
+		return xNumberLiteral;
 	}
 
 	/**
@@ -397,7 +399,6 @@ public class XbaseFactoryImpl extends EFactoryImpl implements XbaseFactory
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!-- end-user-doc -->
-	 * @deprecated
 	 * @generated
 	 */
 	@Deprecated

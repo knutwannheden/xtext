@@ -92,6 +92,7 @@ import org.eclipse.xtext.ui.editor.model.TerminalsTokenTypeToPartitionMapper;
 import org.eclipse.xtext.ui.editor.model.XtextDocumentProvider;
 import org.eclipse.xtext.ui.editor.model.XtextDocumentUtil;
 import org.eclipse.xtext.ui.editor.preferences.IPreferenceStoreAccess;
+import org.eclipse.xtext.ui.editor.preferences.PreferenceConstants;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.IHighlightingHelper;
 import org.eclipse.xtext.ui.editor.syntaxcoloring.TextAttributeProvider;
 import org.eclipse.xtext.ui.editor.toggleComments.ToggleSLCommentAction;
@@ -112,6 +113,10 @@ import com.google.inject.name.Named;
 public class XtextEditor extends TextEditor {
 	public static final String ERROR_ANNOTATION_TYPE = "org.eclipse.xtext.ui.editor.error";
 	public static final String WARNING_ANNOTATION_TYPE = "org.eclipse.xtext.ui.editor.warning";
+	/**
+	 * @since 2.3
+	 */
+	public static final String INFO_ANNOTATION_TYPE = "org.eclipse.xtext.ui.editor.info";
 
 	/**
 	 * @since 2.2
@@ -293,7 +298,8 @@ public class XtextEditor extends TextEditor {
 	}
 
 	private IContentOutlinePage getContentOutlinePage() {
-		if (outlinePage == null) {
+		// don't create outline page if the editor was already disposed
+		if (outlinePage == null && getSourceViewer() != null) {
 			outlinePage = createOutlinePage();
 		}
 		return outlinePage;
@@ -459,6 +465,7 @@ public class XtextEditor extends TextEditor {
 	protected ProjectionSupport installProjectionSupport(ProjectionViewer projectionViewer) {
 		ProjectionSupport projectionSupport = new ProjectionSupport(projectionViewer, getAnnotationAccess(),
 				getSharedColors());
+		projectionSupport.addSummarizableAnnotationType(INFO_ANNOTATION_TYPE);
 		projectionSupport.addSummarizableAnnotationType(WARNING_ANNOTATION_TYPE);
 		projectionSupport.addSummarizableAnnotationType(ERROR_ANNOTATION_TYPE);
 		projectionSupport.setAnnotationPainterDrawingStrategy(projectionAnnotationDrawingStrategy);
@@ -798,13 +805,12 @@ public class XtextEditor extends TextEditor {
 		 */
 		@Override
 		public void run() {
-			// TODO preferences
 			// Check whether we are in a java code partition and the preference is enabled
-			//			final IPreferenceStore store= getPreferenceStore();
-			//			if (!store.getBoolean(PreferenceConstants.EDITOR_SUB_WORD_NAVIGATION)) {
-			//				super.run();
-			//				return;
-			//			}
+			final IPreferenceStore store= getPreferenceStore();
+			if (!store.getBoolean(PreferenceConstants.EDITOR_SUB_WORD_NAVIGATION)) {
+				super.run();
+				return;
+			}
 
 			final ISourceViewer viewer = getSourceViewer();
 			final IDocument document = viewer.getDocument();
@@ -1015,13 +1021,12 @@ public class XtextEditor extends TextEditor {
 		 */
 		@Override
 		public void run() {
-			// TODO preferences
 			// Check whether we are in a java code partition and the preference is enabled
-			//			final IPreferenceStore store= getPreferenceStore();
-			//			if (!store.getBoolean(PreferenceConstants.EDITOR_SUB_WORD_NAVIGATION)) {
-			//				super.run();
-			//				return;
-			//			}
+			final IPreferenceStore store= getPreferenceStore();
+			if (!store.getBoolean(PreferenceConstants.EDITOR_SUB_WORD_NAVIGATION)) {
+				super.run();
+				return;
+			}
 
 			final ISourceViewer viewer = getSourceViewer();
 			final IDocument document = viewer.getDocument();

@@ -3,15 +3,16 @@
   <rm:property key="checkout.location" value="${workspace.root}/"/>
   <rm:property key="eclipse.download" value="http://download.eclipse.org"/>
   <rm:property key="xpand_mwe.download" value="${eclipse.download}"/>
-  <rm:property key="xpand.p2.repository" value="${xpand_mwe.download}/modeling/m2t/xpand/updates/nightly"/>
+  <rm:property key="xpand.p2.repository" value="${eclipse.download}/modeling/m2t/xpand/updates/releases"/>
   <rm:property key="mwe.p2.repository" value="${xpand_mwe.download}/modeling/emft/mwe/updates/nightly"/>
+  
   <rm:locator pattern="^org\.eclipse\.xtext\.releng$" searchPathRef="local.releng"/>
   <rm:locator pattern="^org\.eclipse\.emf\.(?:mwe2\.runtime|mwe2\.lib|mwe)(?:\..+)?$" searchPathRef="mwe"/>
   <rm:locator pattern="^org\.eclipse\.(?:emf|xsd)(?:\..+)?$" searchPathRef="emf"/>
   <rm:locator pattern="^org\.eclipse\.(?:xpand|xtend)(?:\..+)?$" searchPathRef="xpand"/>
   <rm:locator pattern="^org\.apache(?:\..+)?$" searchPathRef="orbit" failOnError="false"/>
   <rm:locator pattern="^com\.google(?:\..+)?$" searchPathRef="orbit"/>
-  <rm:locator pattern="^javax\.inject$" searchPathRef="orbit"/>
+  <rm:locator pattern="^javax\.inject(?:\..+)?$" searchPathRef="orbit"/>
   <rm:locator pattern="^org\.aopalliance$" searchPathRef="orbit"/>
   <rm:locator pattern="^org\.easymock$" searchPathRef="orbit"/>
   <rm:locator pattern="^org\.antlr\.runtime(?:\..+)?$" searchPathRef="orbit"/>
@@ -22,6 +23,8 @@
   <rm:locator pattern="^org\.jboss\.netty$" searchPathRef="maven"/>
   <rm:locator pattern="^org\.slf4j\.api$" searchPathRef="maven"/>
   <rm:locator pattern="^com\.ning(?:\..+)?$" searchPathRef="maven"/>
+  <rm:locator pattern="org.eclipse.jdt.annotation" searchPathRef="jdt.annotation"/>
+  
   <rm:locator searchPathRef="platform"/>
   
   <rm:searchPath name="local.releng">
@@ -55,7 +58,7 @@
   </rm:searchPath>
   <rm:searchPath name="orbit">
     <rm:provider componentTypes="eclipse.feature,osgi.bundle" readerType="p2" source="false" mutable="false">
-      <rm:uri format="{0}/tools/orbit/downloads/drops/S20110907174232/repository">
+      <rm:uri format="{0}/modeling/tmf/xtext/updates/orbit">
         <bc:propertyRef key="eclipse.download"/>
       </rm:uri>
     </rm:provider>
@@ -70,6 +73,13 @@
   <rm:searchPath name="gef">
     <rm:provider componentTypes="eclipse.feature,osgi.bundle" readerType="p2" source="false" mutable="false">
       <rm:uri format="{0}/tools/gef/updates/releases">
+        <bc:propertyRef key="eclipse.download"/>
+      </rm:uri>
+    </rm:provider>
+  </rm:searchPath>
+  <rm:searchPath name="jdt.annotation">
+    <rm:provider componentTypes="osgi.bundle" readerType="p2" source="false" mutable="false">
+      <rm:uri format="{0}/eclipse/updates/3.8">
         <bc:propertyRef key="eclipse.download"/>
       </rm:uri>
     </rm:provider>

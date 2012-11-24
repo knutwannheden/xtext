@@ -24,8 +24,8 @@ import org.eclipse.xtext.resource.XtextResource;
 import org.eclipse.xtext.ui.XtextProjectHelper;
 import org.eclipse.xtext.ui.editor.XtextEditor;
 import org.eclipse.xtext.ui.editor.model.IXtextDocument;
+import org.eclipse.xtext.ui.refactoring.ui.IRenameContextFactory;
 import org.eclipse.xtext.ui.refactoring.ui.IRenameElementContext;
-import org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler;
 import org.eclipse.xtext.ui.refactoring.ui.RefactoringPreferences;
 import org.eclipse.xtext.ui.refactoring.ui.RefactoringType;
 import org.eclipse.xtext.ui.refactoring.ui.RenameRefactoringController;
@@ -39,13 +39,12 @@ import com.google.inject.Injector;
 /**
  * @author Jan Koehnlein - Initial contribution and API
  */
-@SuppressWarnings("restriction")
 public class ToSaveOrNotToSaveTest extends AbstractLinkedEditingIntegrationTest {
 
 	private static final String TEST_PROJECT = "refactoring.test";
 
 	@Inject
-	private IRenameElementHandler renameElementHandler;
+	private IRenameContextFactory renameContextFactory;
 
 	@Inject
 	private EObjectAtOffsetHelper eObjectAtOffsetHelper;
@@ -69,9 +68,9 @@ public class ToSaveOrNotToSaveTest extends AbstractLinkedEditingIntegrationTest 
 		IFile fooFile = IResourcesSetupUtil.createFile(TEST_PROJECT + "/foo.refactoringtestlanguage", "foo");
 		IFile barFile = IResourcesSetupUtil
 				.createFile(TEST_PROJECT + "/bar.refactoringtestlanguage", "bar { ref foo }");
+		waitForAutoBuild();
 		fooEditor = openEditor(fooFile);
 		barEditor = openEditor(barFile);
-		waitForAutoBuild();
 		assertTrue(refactoringPreferences.useInlineRefactoring());
 	}
 
@@ -84,6 +83,10 @@ public class ToSaveOrNotToSaveTest extends AbstractLinkedEditingIntegrationTest 
 		for (ITextEditor editor : editors) {
 			IDocument document = editor.getDocumentProvider().getDocument(editor.getEditorInput());
 			document.replace(document.getLength(), 0, " ");
+			if(editor instanceof XtextEditor) {
+				waitForReconciler((XtextEditor) editor);
+			}
+			waitForDisplay();
 			assertTrue(editor.isDirty());
 		}
 	}
@@ -246,18 +249,19 @@ public class ToSaveOrNotToSaveTest extends AbstractLinkedEditingIntegrationTest 
 
 	protected void renameFooToFooBar(final XtextEditor contextEditor) throws Exception {
 		contextEditor.getEditorSite().getPage().activate(contextEditor);
+		waitForDisplay();
 		IXtextDocument document = contextEditor.getDocument();
 		final int offset = document.get().indexOf("foo");
 		contextEditor.selectAndReveal(offset, 3);
+		waitForDisplay();
 		IRenameElementContext context = document.readOnly(new IUnitOfWork<IRenameElementContext, XtextResource>() {
 			public IRenameElementContext exec(XtextResource state) throws Exception {
 				EObject target = eObjectAtOffsetHelper.resolveElementAt(state, offset);
-				return renameElementHandler.createRenameElementContext(target, contextEditor, new TextSelection(offset,
+				return renameContextFactory.createRenameElementContext(target, contextEditor, new TextSelection(offset,
 						3), state);
 			}
 		});
 		controller.initialize(context);
-		waitForReconciler(contextEditor);
 		waitForDisplay();
 		controller.startRefactoring(RefactoringType.LINKED_EDITING);
 		waitForDisplay();

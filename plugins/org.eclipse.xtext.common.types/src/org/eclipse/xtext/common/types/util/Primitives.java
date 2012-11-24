@@ -11,8 +11,7 @@ import static com.google.common.collect.Iterables.*;
 
 import org.eclipse.emf.common.notify.Notifier;
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.ecore.resource.ResourceSet;
-import org.eclipse.xtext.EcoreUtil2;
+import org.eclipse.xtext.common.types.JvmDeclaredType;
 import org.eclipse.xtext.common.types.JvmMultiTypeReference;
 import org.eclipse.xtext.common.types.JvmParameterizedTypeReference;
 import org.eclipse.xtext.common.types.JvmPrimitiveType;
@@ -21,24 +20,18 @@ import org.eclipse.xtext.common.types.JvmTypeConstraint;
 import org.eclipse.xtext.common.types.JvmTypeParameter;
 import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.common.types.JvmUpperBound;
-import org.eclipse.xtext.common.types.access.IJvmTypeProvider;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * @author Sven Efftinge - Initial contribution and API
  */
+@Singleton
 public class Primitives {
 	
 	@Inject
-	private IJvmTypeProvider.Factory typeProviderFactory;
-	
-	@Inject
 	private TypeReferences typeReferences;
-	
-	public void setTypeProviderFactory(IJvmTypeProvider.Factory typeProviderFactory) {
-		this.typeProviderFactory = typeProviderFactory;
-	}
 	
 	public static enum Primitive {
 		Byte,Short,Char,Int,Long,Float,Double,Void, Boolean
@@ -80,7 +73,10 @@ public class Primitives {
 		if (primitive == null || !isPrimitive(primitive)) {
 			return primitive;
 		}
-		return typeReferences.createTypeRef(getWrapperType((JvmPrimitiveType) primitive.getType()));
+		final JvmType wrapperType = getWrapperType((JvmPrimitiveType) primitive.getType());
+		if (wrapperType == null)
+			return primitive;
+		return typeReferences.createTypeRef(wrapperType);
 	}
 	
 	public JvmType getWrapperType(JvmPrimitiveType primitive) {
@@ -107,14 +103,32 @@ public class Primitives {
 				throw new IllegalArgumentException("Not a primitive : "+primitive);
 		}
 	}
+	
+	public JvmType getPrimitiveTypeIfWrapper(JvmDeclaredType type) {
+		if (typeReferences.is(type, Byte.class)) {
+			return typeReferences.findDeclaredType(Byte.TYPE, type);
+		} else if (typeReferences.is(type, Short.class)) {
+			return typeReferences.findDeclaredType(Short.TYPE, type);
+		} else if (typeReferences.is(type, Character.class)) {
+			return typeReferences.findDeclaredType(Character.TYPE, type);
+		} else if (typeReferences.is(type, Integer.class)) {
+			return typeReferences.findDeclaredType(Integer.TYPE, type);
+		} else if (typeReferences.is(type, Long.class)) {
+			return typeReferences.findDeclaredType(Long.TYPE, type);
+		} else if (typeReferences.is(type, Float.class)) {
+			return typeReferences.findDeclaredType(Float.TYPE, type);
+		} else if (typeReferences.is(type, Double.class)) {
+			return typeReferences.findDeclaredType(Double.TYPE, type);
+		} else if (typeReferences.is(type, Boolean.class)) {
+			return typeReferences.findDeclaredType(Boolean.TYPE, type);
+		} else if (typeReferences.is(type, Void.class)) {
+			return typeReferences.findDeclaredType(Void.TYPE, type);
+		}
+		return null;
+	}
 
 	protected JvmType getType(Class<?> class1, Notifier context) {
-		ResourceSet resourceSet = EcoreUtil2.getResourceSet(context);
-		if (resourceSet==null)
-			// context may be null if the editor was closed too early
-			return null;
-		IJvmTypeProvider provider = typeProviderFactory.findOrCreateTypeProvider(resourceSet);
-		return provider.findTypeByName(class1.getCanonicalName());
+		return typeReferences.findDeclaredType(class1, context);
 	}
 	
 	public boolean isPrimitive(JvmTypeReference type) {
@@ -123,9 +137,40 @@ public class Primitives {
 
 	public boolean isWrapperType(JvmTypeReference type) {
 		JvmTypeReference result = asPrimitiveIfWrapperType(type);
-		return result != type;
+		return result != type && result != null;
 	}
 
+	public boolean isWrapperType(JvmType type) {
+		if (typeReferences.is(type, Byte.class)) {
+			return true;
+		} else if (typeReferences.is(type, Short.class)) {
+			return true;
+		} else if (typeReferences.is(type, Character.class)) {
+			return true;
+		} else if (typeReferences.is(type, Integer.class)) {
+			return true;
+		} else if (typeReferences.is(type, Long.class)) {
+			return true;
+		} else if (typeReferences.is(type, Float.class)) {
+			return true;
+		} else if (typeReferences.is(type, Double.class)) {
+			return true;
+		} else if (typeReferences.is(type, Boolean.class)) {
+			return true;
+		} else if (typeReferences.is(type, Void.class)) {
+			return true;
+		}
+		if (type instanceof JvmTypeParameter) {
+			EList<JvmTypeConstraint> constraints = ((JvmTypeParameter)type).getConstraints();
+			for(JvmUpperBound upperBound: filter(constraints, JvmUpperBound.class)) {
+				JvmTypeReference upperBoundType = upperBound.getTypeReference();
+				if (isWrapperType(upperBoundType))
+					return true;
+			}
+		}
+		return false;
+	}
+	
 	public JvmTypeReference asPrimitiveIfWrapperType(JvmTypeReference type) {
 		return new AbstractTypeReferenceVisitor.InheritanceAware<JvmTypeReference>() {
 
@@ -175,6 +220,11 @@ public class Primitives {
 			@Override
 			public JvmTypeReference doVisitTypeReference(JvmTypeReference reference) {
 				return reference;
+			}
+			
+			@Override
+			protected JvmTypeReference handleNullReference() {
+				return null;
 			}
 		}.visit(type);
 		

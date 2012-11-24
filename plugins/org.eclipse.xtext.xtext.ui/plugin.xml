@@ -6,12 +6,13 @@
 	 <extension
             point="org.eclipse.ui.editors">
         <editor
-            class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
-            contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
-            default="true"
-            extensions="xtext,xtext2"
-            id="org.eclipse.xtext.Xtext"
-            name="%Xtext_Editor">
+              class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.editor.XtextEditor"
+              contributorClass="org.eclipse.ui.editors.text.TextEditorActionContributor"
+              default="true"
+              extensions="xtext,xtext2"
+              icon="icons/editor.gif"
+              id="org.eclipse.xtext.Xtext"
+              name="%Xtext_Editor">
         </editor>
     </extension>
     <extension
@@ -161,7 +162,7 @@
 		<wizard
 			category="org.eclipse.xtext.projectwiz"
 			class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.xtext.ui.wizard.project.NewXtextProjectWizard"
-			icon="icons/editor.gif"
+			icon="icons/new_xproj.gif"
 			id="org.eclipse.xtext.xtext.ui.wizard.project.NewXtextProjectWizard"
 			name="%Xtext_Project"
 			project="true">
@@ -172,7 +173,7 @@
 		<wizard
 			category="org.eclipse.xtext.projectwiz"
 			class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.xtext.ui.wizard.ecore2xtext.NewXtextProjectFromEcoreWizard"
-			icon="icons/editor.gif"
+			icon="icons/new_xproj.gif"
 			id="org.eclipse.xtext.xtext.ui.wizard.ecore2xtext.NewXtextProjectFromEcoreWizard"
 			name="%Xtext_Project_From_Ecore"
 			project="true">
@@ -180,6 +181,22 @@
             	%NewXtext_Project_From_Ecore.description
          	</description>
 		</wizard>
+		<wizard
+			category="org.eclipse.xtext.projectwiz/org.eclipse.xtext.projectwiz.releng"
+			class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.xtext.ui.wizard.releng.NewRelengProjectWizard"
+			icon="icons/new_xproj.gif"
+			id="org.eclipse.xtext.xtext.ui.wizard.releng.NewRelengProjectWizard"
+			name="%Xtext_Releng_Project"
+			project="true">
+			<description>
+            	%NewXtext_Releng_Project.description
+         	</description>
+		</wizard>
+  <category
+        id="org.eclipse.xtext.projectwiz.releng"
+        name="%Xtext_Wizard_Releng_Category"
+        parentCategory="org.eclipse.xtext.projectwiz">
+  </category>
 	</extension>
 	
 	<extension
@@ -540,7 +557,7 @@
    	<!-- Rename Refactoring -->
 	<extension point="org.eclipse.ui.handlers">
 		<handler 
-			class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.IRenameElementHandler"
+			class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.refactoring.ui.DefaultRenameElementHandler"
 			commandId="org.eclipse.xtext.ui.refactoring.RenameElement">
 			<activeWhen>
 				<reference
@@ -588,6 +605,57 @@
              </with>
           </enablement>
        </renameParticipant>
+    </extension>
+
+    <!-- marker definitions for org.eclipse.xtext.Xtext -->
+    <extension
+            id="xtext.check.fast"
+            name="%Grammar_Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.fast"/>
+        <persistent value="true"/>
+    </extension>
+    <extension
+            id="xtext.check.normal"
+            name="%Grammar_Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.normal"/>
+        <persistent value="true"/>
+    </extension>
+    <extension
+            id="xtext.check.expensive"
+            name="%Grammar_Problem"
+            point="org.eclipse.core.resources.markers">
+        <super type="org.eclipse.xtext.ui.check.expensive"/>
+        <persistent value="true"/>
+    </extension>
+    <!-- quickfix marker resolution generator for org.eclipse.xtext.Xtext -->
+    <extension
+            point="org.eclipse.ui.ide.markerResolution">
+        <markerResolutionGenerator
+            class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="org.eclipse.xtext.xtext.ui.xtext.check.fast">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
+        <markerResolutionGenerator
+            class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="org.eclipse.xtext.xtext.ui.xtext.check.normal">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
+        <markerResolutionGenerator
+            class="org.eclipse.xtext.ui.XtextExecutableExtensionFactory:org.eclipse.xtext.ui.editor.quickfix.MarkerResolutionGenerator"
+            markerType="org.eclipse.xtext.xtext.ui.xtext.check.expensive">
+            <attribute
+                name="FIXABLE_KEY"
+                value="true">
+            </attribute>
+        </markerResolutionGenerator>
     </extension>
 
 </plugin>

@@ -8,10 +8,7 @@
 package org.eclipse.xtext.ui.refactoring.ui;
 
 import org.eclipse.core.resources.IFile;
-import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.core.runtime.OperationCanceledException;
-import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IWorkbench;
@@ -35,6 +32,9 @@ public class SaveHelper {
 
 	@Inject(optional = true)
 	private IWorkbench workbench;
+	
+	@Inject  
+	private SyncUtil syncUtil;
 
 	public void saveEditors(final IRenameElementContext context) {
 		new DisplayRunnable() {
@@ -48,7 +48,7 @@ public class SaveHelper {
 				
 			}
 		}.syncExec();
-		waitForAutoBuild();
+		syncUtil.waitForAutoBuild(null);
 	}
 
 	protected IWorkbenchPage getWorkbenchPage(IRenameElementContext context) {
@@ -72,19 +72,5 @@ public class SaveHelper {
 		return null;
 	}
 	
-	protected static void waitForAutoBuild() {
-		boolean wasInterrupted = false;
-		do {
-			try {
-				Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD,
-						null);
-				wasInterrupted = false;
-			} catch (OperationCanceledException e) {
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				wasInterrupted = true;
-			}
-		} while (wasInterrupted);
-	}
 
 }

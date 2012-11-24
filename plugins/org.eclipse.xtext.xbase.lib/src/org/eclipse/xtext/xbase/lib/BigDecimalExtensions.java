@@ -8,13 +8,17 @@
 package org.eclipse.xtext.xbase.lib;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
+
+import com.google.common.annotations.GwtCompatible;
+
 
 /**
  * This is an extension library for {@link BigDecimal big decimal numbers}.
  * 
  * @author Jan Koehnlein - Initial contribution and API
  */
-public class BigDecimalExtensions {
+@GwtCompatible public class BigDecimalExtensions {
 
 	/**
 	 * The unary <code>minus</code> operator. 
@@ -25,6 +29,8 @@ public class BigDecimalExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.negate()")
 	public static BigDecimal operator_minus(BigDecimal a) {
 		return a.negate();
 	}
@@ -40,6 +46,8 @@ public class BigDecimalExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.add($2)")
 	public static BigDecimal operator_plus(BigDecimal a, BigDecimal b) {
 		return a.add(b);
 	}
@@ -55,6 +63,8 @@ public class BigDecimalExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.subtract($2)")
 	public static BigDecimal operator_minus(BigDecimal a, BigDecimal b) {
 		return a.subtract(b);
 	}
@@ -70,6 +80,8 @@ public class BigDecimalExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.pow($2)")
 	public static BigDecimal operator_power(BigDecimal a, int exponent) {
 		return a.pow(exponent);
 	}
@@ -85,6 +97,8 @@ public class BigDecimalExtensions {
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.multiply($2)")
 	public static BigDecimal operator_multiply(BigDecimal a, BigDecimal b) {
 		return a.multiply(b);
 	}
@@ -96,11 +110,13 @@ public class BigDecimalExtensions {
 	 *            a BigDecimal. May not be <code>null</code>.
 	 * @param b
 	 *            a BigDecimal. May not be <code>null</code>.
-	 * @return <code>a.divide(b)</code>
+	 * @return <code>a.divide(b, MathContext.DECIMAL128)</code>
 	 * @throws NullPointerException
 	 *             if {@code a} or {@code b} is <code>null</code>.
 	 */
+	@Pure
+	@Inline(value="$1.divide($2, $3.DECIMAL128)", imported=MathContext.class)
 	public static BigDecimal operator_divide(BigDecimal a, BigDecimal b) {
-		return a.divide(b);
+		return a.divide(b, MathContext.DECIMAL128);
 	}
 }

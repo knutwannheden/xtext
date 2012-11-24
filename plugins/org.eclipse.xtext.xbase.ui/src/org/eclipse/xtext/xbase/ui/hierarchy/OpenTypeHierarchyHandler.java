@@ -15,8 +15,7 @@ import org.eclipse.xtext.ui.editor.XtextEditor;
 /**
  * @author Holger Schill - Initial contribution and API
  */
-@SuppressWarnings("restriction")
-public class OpenTypeHierarchyHandler extends AbstractTypeHierarchyHandler {
+public class OpenTypeHierarchyHandler extends AbstractHierarchyHandler {
 
 	@Override
 	protected void openPresentation(final XtextEditor editor, IJavaElement javaElement,  final EObject selectedElement) {

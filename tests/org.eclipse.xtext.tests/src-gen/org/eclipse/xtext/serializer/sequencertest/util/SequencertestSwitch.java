@@ -13,6 +13,7 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.xtext.serializer.sequencertest.AltList1;
 import org.eclipse.xtext.serializer.sequencertest.AltList2;
 import org.eclipse.xtext.serializer.sequencertest.AlternativeMultiplicities;
+import org.eclipse.xtext.serializer.sequencertest.Complex1;
 import org.eclipse.xtext.serializer.sequencertest.DependentAlternative1;
 import org.eclipse.xtext.serializer.sequencertest.DependentAlternative2;
 import org.eclipse.xtext.serializer.sequencertest.GroupMultiplicities;
@@ -23,6 +24,7 @@ import org.eclipse.xtext.serializer.sequencertest.MultiKeywords;
 import org.eclipse.xtext.serializer.sequencertest.MultiKeywordsOrID;
 import org.eclipse.xtext.serializer.sequencertest.MultiTerminals;
 import org.eclipse.xtext.serializer.sequencertest.Optional;
+import org.eclipse.xtext.serializer.sequencertest.OptionalDouble;
 import org.eclipse.xtext.serializer.sequencertest.SequencertestPackage;
 import org.eclipse.xtext.serializer.sequencertest.SimpleAlternative;
 import org.eclipse.xtext.serializer.sequencertest.SimpleGroup;
@@ -381,6 +383,20 @@ public class SequencertestSwitch<T>
       {
         UnorderedGroupBoolean unorderedGroupBoolean = (UnorderedGroupBoolean)theEObject;
         T result = caseUnorderedGroupBoolean(unorderedGroupBoolean);
+        if (result == null) result = defaultCase(theEObject);
+        return result;
+      }
+      case SequencertestPackage.COMPLEX1:
+      {
+        Complex1 complex1 = (Complex1)theEObject;
+        T result = caseComplex1(complex1);
+        if (result == null) result = defaultCase(theEObject);
+        return result;
+      }
+      case SequencertestPackage.OPTIONAL_DOUBLE:
+      {
+        OptionalDouble optionalDouble = (OptionalDouble)theEObject;
+        T result = caseOptionalDouble(optionalDouble);
         if (result == null) result = defaultCase(theEObject);
         return result;
       }
@@ -960,6 +976,38 @@ public class SequencertestSwitch<T>
    * @generated
    */
   public T caseUnorderedGroupBoolean(UnorderedGroupBoolean object)
+  {
+    return null;
+  }
+
+  /**
+   * Returns the result of interpreting the object as an instance of '<em>Complex1</em>'.
+   * <!-- begin-user-doc -->
+   * This implementation returns null;
+   * returning a non-null result will terminate the switch.
+   * <!-- end-user-doc -->
+   * @param object the target of the switch.
+   * @return the result of interpreting the object as an instance of '<em>Complex1</em>'.
+   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+   * @generated
+   */
+  public T caseComplex1(Complex1 object)
+  {
+    return null;
+  }
+
+  /**
+   * Returns the result of interpreting the object as an instance of '<em>Optional Double</em>'.
+   * <!-- begin-user-doc -->
+   * This implementation returns null;
+   * returning a non-null result will terminate the switch.
+   * <!-- end-user-doc -->
+   * @param object the target of the switch.
+   * @return the result of interpreting the object as an instance of '<em>Optional Double</em>'.
+   * @see #doSwitch(org.eclipse.emf.ecore.EObject) doSwitch(EObject)
+   * @generated
+   */
+  public T caseOptionalDouble(OptionalDouble object)
   {
     return null;
   }
