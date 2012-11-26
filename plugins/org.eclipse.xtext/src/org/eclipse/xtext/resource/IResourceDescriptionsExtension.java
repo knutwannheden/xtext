@@ -7,12 +7,14 @@
  *******************************************************************************/
 package org.eclipse.xtext.resource;
 
+import java.util.Arrays;
+import java.util.EnumSet;
+
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.xtext.util.Arrays;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
- * @since 2.3
+ * @since 2.4
  */
 public interface IResourceDescriptionsExtension {
 
@@ -29,10 +31,18 @@ public interface IResourceDescriptionsExtension {
 			IMPORTED_NAMES;
 		}
 
-		private MatchType[] matchTypes;
+		private EnumSet<MatchType> matchTypes;
+
+		protected ReferenceMatchPolicy(MatchType matchType) {
+			this.matchTypes = EnumSet.of(matchType);
+		}
+
+		protected ReferenceMatchPolicy(MatchType matchType1, MatchType matchType2) {
+			this.matchTypes = EnumSet.of(matchType1, matchType2);
+		}
 
 		protected ReferenceMatchPolicy(MatchType... matchTypes) {
-			this.matchTypes = matchTypes;
+			this.matchTypes = EnumSet.of(matchTypes[0], Arrays.copyOfRange(matchTypes, 1, matchTypes.length));
 		}
 
 		public static ReferenceMatchPolicy create(MatchType... matchTypes) {
@@ -48,14 +58,14 @@ public interface IResourceDescriptionsExtension {
 		}
 
 		/**
-		 * Checks whether this policy includes the given other type.
+		 * Checks whether this policy includes the given match type.
 		 * 
 		 * @param type
 		 *            other type
-		 * @return true if this match policy includes the given type
+		 * @return true if this match policy includes the given match type
 		 */
 		public boolean includes(final MatchType type) {
-			return Arrays.contains(matchTypes, type);
+			return matchTypes.contains(type);
 		}
 	}
 
