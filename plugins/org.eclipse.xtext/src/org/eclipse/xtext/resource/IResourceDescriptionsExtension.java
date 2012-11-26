@@ -26,7 +26,6 @@ public interface IResourceDescriptionsExtension {
 		public static enum MatchType {
 			/** Matches up a resource's reference descriptions against the target objects. */
 			REFERENCES,
-	
 			/** Matches a resource's imported names (ignoring case) against the target object names. */
 			IMPORTED_NAMES;
 		}

@@ -97,7 +97,7 @@ public interface IResourceDescription extends ISelectable {
 	 * @since 2.4
 	 */
 	interface ManagerExtension {
-		
+
 		  /**
 		   * Batch operation to return all URIs of resources (managed by this manager) which are affected by the given set of deltas.
 		   * 

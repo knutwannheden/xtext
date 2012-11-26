@@ -22,7 +22,6 @@ import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.util.IAcceptor;
 
 import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.Uninterruptibles;
 
 /**
  * Asynchronous write behind buffer which periodically (every 100 ms) flushes the buffered resources to the DB.
@@ -125,7 +124,7 @@ class WriteBehindBuffer implements Runnable {
 		// wait for next flush
 		bufferFlushLock.lock();
 		try {
-			awaitUninterruptibly(bufferFlushed);
+			bufferFlushed.awaitUninterruptibly();
 		} finally {
 			bufferFlushLock.unlock();
 		}
@@ -146,29 +145,6 @@ class WriteBehindBuffer implements Runnable {
 			bufferLock.unlock();
 		}
 		return oldBuffer.values();
-	}
-
-	/**
-	 * Copied from {@link Uninterruptibles#awaitUninterruptibly(java.util.concurrent.CountDownLatch)}.
-	 * 
-	 * See http://code.google.com/p/guava-libraries/issues/detail?id=1212
-	 */
-	private static void awaitUninterruptibly(Condition condition) {
-		boolean interrupted = false;
-		try {
-			while (true) {
-				try {
-					condition.await();
-					return;
-				} catch (InterruptedException e) {
-					interrupted = true;
-				}
-			}
-		} finally {
-			if (interrupted) {
-				Thread.currentThread().interrupt();
-			}
-		}
 	}
 
 }

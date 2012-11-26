@@ -44,7 +44,6 @@ import org.eclipse.xtext.util.CancelIndicator;
 import org.eclipse.xtext.util.Strings;
 
 import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
@@ -125,7 +124,7 @@ public class ClusteringBuilderState extends AbstractBuilderState {
         // queued for processing, its URI is removed from this set. queueAffectedResources will consider only resources
         // in this set as potential candidates.
         if (!toBeDeleted.isEmpty())
-        	newData.removeDescriptions(toBeDeleted);
+            newData.removeDescriptions(toBeDeleted);
 
         final Set<URI> allRemainingURIs = Sets.newLinkedHashSet(newData.getAllURIs());
         allRemainingURIs.removeAll(buildData.getToBeUpdated());

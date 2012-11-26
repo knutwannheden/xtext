@@ -126,7 +126,7 @@ public class DirtyStateManager extends AbstractResourceDescriptionChangeEventSou
 	public IResourceDescription getResourceDescription(URI normalizedURI) {
 		return getDirtyResourceDescription(normalizedURI);
 	}
-	
+
 	/**
 	 * @since 2.4
 	 */
