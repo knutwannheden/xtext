@@ -37,6 +37,7 @@ import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 
 import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -177,7 +178,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	public void importData(final Iterable<IResourceDescription> resourceDescriptions) {
+	public void importData(final Collection<IResourceDescription> resourceDescriptions) {
 		ensureInitialized();
 		try {
 			beginChanges();
@@ -201,7 +202,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	private void insertResources(final Iterable<IResourceDescription> resourceDescriptions, final boolean external) {
+	private void insertResources(final Collection<IResourceDescription> resourceDescriptions, final boolean external) {
 		PreparedStatement resIdStmt = null;
 		PreparedStatement resMapStmt = null;
 		PreparedStatement resInsStmt = null;
@@ -214,7 +215,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 			// reserve potentially required resource ids
 			resIdStmt = conn.getConnection().prepareStatement("SELECT NEXT VALUE FOR RES_SEQ FROM SYSTEM_RANGE(1, ?)");
-			resIdStmt.setInt(1, Iterables.size(resourceDescriptions));
+			resIdStmt.setInt(1, resourceDescriptions.size());
 			ResultSet rs = resIdStmt.executeQuery();
 
 			resMapStmt = conn.prepare("INSERT INTO RES_MAP (RES_ID) VALUES (?)");
@@ -324,7 +325,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		return resourceMap.getId(uri);
 	}
 
-	public Iterable<SelectableDBBasedResourceDescription> loadResources(final Set<URI> uris) {
+	public Collection<SelectableDBBasedResourceDescription> loadResources(final Set<URI> uris) {
 		final List<Integer> ids = Lists.newArrayListWithCapacity(uris.size());
 		for (URI uri : uris) {
 			ids.add(resourceMap.getId(uri));
@@ -410,13 +411,13 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	public void updateResources(final Iterable<IResourceDescription> resourceDescriptions) {
+	public void updateResources(final Collection<IResourceDescription> resourceDescriptions) {
 		ensureInitialized();
 
-		if (Iterables.size(resourceDescriptions) == 1) {
+		if (resourceDescriptions.size() == 1) {
 			deleteResourceDescription(resourceDescriptions.iterator().next().getURI());
 		} else {
-			deleteResourceDescriptions(Iterables.transform(resourceDescriptions,
+			deleteResourceDescriptions(Collections2.transform(resourceDescriptions,
 					new Function<IResourceDescription, URI>() {
 						public URI apply(final IResourceDescription from) {
 							return from.getURI();
@@ -511,7 +512,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	private void deleteResourceDescriptions(final Iterable<URI> uris) {
+	private void deleteResourceDescriptions(final Collection<URI> uris) {
 		PreparedStatement refUpdStmt = null;
 		PreparedStatement objUpdStmt = null;
 		PreparedStatement resNamesUpdStmt = null;
