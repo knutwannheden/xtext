@@ -33,8 +33,8 @@ import org.eclipse.ui.preferences.IWorkbenchPreferenceContainer;
 import org.eclipse.xtext.builder.EclipseOutputConfigurationProvider;
 import org.eclipse.xtext.builder.internal.Activator;
 import org.eclipse.xtext.generator.OutputConfiguration;
-
-import com.google.common.collect.Sets;
+import org.eclipse.xtext.ui.preferences.OptionsConfigurationBlock;
+import org.eclipse.xtext.ui.preferences.ScrolledPageContent;
 
 /**
  * @author Michael Clay - Initial contribution and API
@@ -47,32 +47,32 @@ public class BuilderConfigurationBlock extends OptionsConfigurationBlock {
 
 	public BuilderConfigurationBlock(IProject project, IPreferenceStore preferenceStore,
 			EclipseOutputConfigurationProvider configurationProvider, IWorkbenchPreferenceContainer container) {
-		super(project, getKeys(project, configurationProvider), preferenceStore, container);
+		super(project, preferenceStore, container);
 		this.configurationProvider = configurationProvider;
 	}
 
-	private static String[] getKeys(IProject project, EclipseOutputConfigurationProvider configurationProvider) {
-		Set<String> keys = Sets.newHashSet(BuilderPreferenceAccess.PREF_AUTO_BUILDING, OptionsConfigurationBlock.IS_PROJECT_SPECIFIC);
-		Set<OutputConfiguration> outputConfigurations = configurationProvider.getOutputConfigurations(project);
-		for (OutputConfiguration outputConfiguration : outputConfigurations) {
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_DIRECTORY));
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_CREATE_DIRECTORY));
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_CLEAN_DIRECTORY));
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_OVERRIDE));
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_DERIVED));
-			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
-					EclipseOutputConfigurationProvider.OUTPUT_CLEANUP_DERIVED));
-		}
-		return keys.toArray(new String[] {});
-	}
+//	private static String[] getKeys(IProject project, EclipseOutputConfigurationProvider configurationProvider) {
+//		Set<String> keys = Sets.newHashSet(BuilderPreferenceAccess.PREF_AUTO_BUILDING, OptionsConfigurationBlock.IS_PROJECT_SPECIFIC);
+//		Set<OutputConfiguration> outputConfigurations = configurationProvider.getOutputConfigurations(project);
+//		for (OutputConfiguration outputConfiguration : outputConfigurations) {
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_DIRECTORY));
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_CREATE_DIRECTORY));
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_CLEAN_DIRECTORY));
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_OVERRIDE));
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_DERIVED));
+//			keys.add(BuilderPreferenceAccess.getKey(outputConfiguration,
+//					EclipseOutputConfigurationProvider.OUTPUT_CLEANUP_DERIVED));
+//		}
+//		return keys.toArray(new String[] {});
+//	}
 
 	@Override
-	protected Control createContents(Composite parent) {
+	protected Control doCreateContents(Composite parent) {
 		PixelConverter pixelConverter = new PixelConverter(parent);
 		setShell(parent.getShell());
 		Composite mainComp = new Composite(parent, SWT.NONE);
@@ -137,6 +137,7 @@ public class BuilderConfigurationBlock extends OptionsConfigurationBlock {
 					BuilderPreferenceAccess.getKey(outputConfiguration,
 							EclipseOutputConfigurationProvider.OUTPUT_CLEAN_DIRECTORY), trueFalseValues, 0);
 		}
+		registerKey(OptionsConfigurationBlock.IS_PROJECT_SPECIFIC);
 		IDialogSettings section = Activator.getDefault().getDialogSettings().getSection(SETTINGS_SECTION_NAME);
 		restoreSectionExpansionStates(section);
 		return pageContent;

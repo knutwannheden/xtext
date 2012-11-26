@@ -5,28 +5,18 @@
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
  *******************************************************************************/
-package org.eclipse.xtext.validation;
+package org.eclipse.xtext.ui.editor.quickfix;
+
+import org.eclipse.xtext.validation.Issue;
 
 /**
- * @author Dennis Huebner - Initial contribution and API
+ * @author Sven Efftinge - Initial contribution and API
  * @since 2.4
  */
-public class IssueCode {
+public interface IssueResolutionProviderExtension {
 
-	private final String code;
-
-	public final static String SEVERITY_ERROR = "error";
-
-	public IssueCode(String code) {
-		this.code = code;
-	}
-
-	public String getCode() {
-		return code;
-	}
-
-	public String getDefaultSeverity() {
-		return SEVERITY_ERROR;
-	}
-
+	/**
+	 * @return whether this resolution provider is able to provide resolutions for the given issue.
+	 */
+	boolean hasResolutionFor(Issue issue);
 }
