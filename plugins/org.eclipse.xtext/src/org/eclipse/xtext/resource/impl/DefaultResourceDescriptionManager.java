@@ -28,7 +28,6 @@ import org.eclipse.xtext.resource.IResourceServiceProvider;
 import org.eclipse.xtext.resource.containers.IAllContainersState;
 import org.eclipse.xtext.util.IResourceScopeCache;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Collections2;
@@ -268,22 +267,20 @@ public class DefaultResourceDescriptionManager implements IResourceDescription.M
 		}
 
 		if (!changedOrDeletedResources.isEmpty()) {
-			Iterables.addAll(references, Iterables.transform(
-					context.findAllReferencingResources(changedOrDeletedResources, ReferenceMatchPolicy.referencesOnly()),
-					new Function<IResourceDescription, URI>() {
-						public URI apply(final IResourceDescription from) {
-							return from.getURI();
-						}
-					}));
+			for (IResourceDescription resource : context.findAllReferencingResources(changedOrDeletedResources,
+					ReferenceMatchPolicy.referencesOnly())) {
+				URI uri = resource.getURI();
+				if (filter.apply(uri))
+					references.add(uri);
+			}
 		}
 		if (!Iterables.isEmpty(changedOrDeletedObjects)) {
-			Iterables.addAll(references, Iterables.transform(
-					context.findObjectReferencingResources(changedOrDeletedObjects, ReferenceMatchPolicy.referencesOnly()),
-					new Function<IResourceDescription, URI>() {
-						public URI apply(final IResourceDescription from) {
-							return from.getURI();
-						}
-					}));
+			for (IResourceDescription resource : context.findObjectReferencingResources(changedOrDeletedObjects,
+					ReferenceMatchPolicy.referencesOnly())) {
+				URI uri = resource.getURI();
+				if (filter.apply(uri))
+					references.add(uri);
+			}
 		}
 
 		for (String container : changedOrAddedResources.keySet()) {

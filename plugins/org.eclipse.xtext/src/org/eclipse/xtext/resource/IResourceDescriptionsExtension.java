@@ -56,6 +56,10 @@ public interface IResourceDescriptionsExtension {
 			return new ReferenceMatchPolicy(MatchType.IMPORTED_NAMES);
 		}
 
+		public static ReferenceMatchPolicy all() {
+			return new ReferenceMatchPolicy(MatchType.REFERENCES, MatchType.IMPORTED_NAMES);
+		}
+
 		/**
 		 * Checks whether this policy includes the given match type.
 		 * 

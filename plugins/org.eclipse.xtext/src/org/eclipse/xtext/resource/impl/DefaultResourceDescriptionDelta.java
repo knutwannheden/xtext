@@ -14,9 +14,6 @@ import org.eclipse.xtext.resource.IEObjectDescription;
 import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.util.Arrays;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-
 /**
  * @author Sven Efftinge - Initial contribution and API
  * @since 2.1
