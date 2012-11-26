@@ -23,7 +23,6 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 /**

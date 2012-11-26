@@ -11,13 +11,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 import org.h2.jdbc.JdbcPreparedStatement;
 
 import com.google.common.collect.MapMaker;
+import com.google.common.collect.Maps;
 
 /**
  * @author Knut Wannheden - Initial contribution and API
@@ -26,7 +26,7 @@ public class StatementPool {
 
 	private static final Logger LOGGER = Logger.getLogger(StatementPool.class);
 
-	private final ConcurrentMap<String, PreparedStatement> statementPool = new ConcurrentHashMap<String, PreparedStatement>();
+	private final ConcurrentMap<String, PreparedStatement> statementPool = Maps.newConcurrentMap();
 	private final Map<PreparedStatement, String> statementsInUse = new MapMaker().concurrencyLevel(1).softKeys()
 			.softValues().makeMap();
 

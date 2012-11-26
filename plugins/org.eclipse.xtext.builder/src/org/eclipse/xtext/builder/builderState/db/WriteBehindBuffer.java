@@ -22,6 +22,7 @@ import org.eclipse.xtext.resource.IResourceDescription;
 import org.eclipse.xtext.util.IAcceptor;
 
 import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.Uninterruptibles;
 
 /**
  * Asynchronous write behind buffer which periodically (every 100 ms) flushes the buffered resources to the DB.
@@ -37,6 +38,14 @@ class WriteBehindBuffer implements Runnable {
 	private final DBBasedBuilderState index;
 	private final IAcceptor<Collection<IResourceDescription>> flushAcceptor;
 
+	private Map<URI, IResourceDescription> buffer = Maps.newLinkedHashMap();
+	private final Lock bufferLock = new ReentrantLock();
+
+	private final Lock bufferFlushLock = new ReentrantLock();
+	private final Condition bufferFlushed = bufferFlushLock.newCondition();
+
+	private ScheduledExecutorService bufferFlushScheduler;
+
 	/**
 	 * Creates a new instance of {@link WriteBehindBuffer}.
 	 * 
@@ -45,17 +54,11 @@ class WriteBehindBuffer implements Runnable {
 	 * @param flushAcceptor
 	 *            acceptor to accept flushed resources
 	 */
-	public WriteBehindBuffer(final DBBasedBuilderState index, final IAcceptor<Collection<IResourceDescription>> flushAcceptor) {
+	public WriteBehindBuffer(final DBBasedBuilderState index,
+			final IAcceptor<Collection<IResourceDescription>> flushAcceptor) {
 		this.index = index;
 		this.flushAcceptor = flushAcceptor;
 	}
-
-	private Map<URI, IResourceDescription> buffer = Maps.newLinkedHashMap();
-
-	private final Lock bufferFlushLock = new ReentrantLock();
-	private final Condition bufferFlushed = bufferFlushLock.newCondition();
-
-	private ScheduledExecutorService bufferFlushScheduler;
 
 	/**
 	 * Starts the write behind buffer thread.
@@ -69,7 +72,7 @@ class WriteBehindBuffer implements Runnable {
 	 * Immediately stops the write behind buffer thread.
 	 */
 	public void stop() {
-		bufferFlushScheduler.shutdown();
+		bufferFlushScheduler.shutdownNow();
 	}
 
 	/** {@inheritDoc} */
@@ -86,7 +89,8 @@ class WriteBehindBuffer implements Runnable {
 			bufferFlushed.signalAll();
 			bufferFlushLock.unlock();
 		}
-		flushAcceptor.accept(bufferCopy);
+		if (flushAcceptor != null)
+			flushAcceptor.accept(bufferCopy);
 	}
 
 	/**
@@ -97,8 +101,13 @@ class WriteBehindBuffer implements Runnable {
 	 * @param description
 	 *            resource description
 	 */
-	public synchronized void put(final URI uri, final IResourceDescription description) {
-		buffer.put(uri, description);
+	public void put(final URI uri, final IResourceDescription description) {
+		bufferLock.lock();
+		try {
+			buffer.put(uri, description);
+		} finally {
+			bufferLock.unlock();
+		}
 	}
 
 	/**
@@ -106,18 +115,17 @@ class WriteBehindBuffer implements Runnable {
 	 * {@link #put(URI, IResourceDescription) added resources} will be flushed or not.
 	 */
 	public void flush() {
-		// TODO simplify locking
+		if (bufferFlushScheduler.isShutdown())
+			return;
+
+		// wait for flush in progress
+		if (bufferFlushLock.tryLock())
+			bufferFlushLock.unlock();
+
+		// wait for next flush
 		bufferFlushLock.lock();
-		boolean awaitFlush;
-		synchronized (this) {
-			awaitFlush = !buffer.isEmpty(); // NOPMD
-		}
 		try {
-			if (awaitFlush) {
-				bufferFlushed.await();
-			}
-		} catch (InterruptedException e) {
-			throw new IllegalStateException(e);
+			awaitUninterruptibly(bufferFlushed);
 		} finally {
 			bufferFlushLock.unlock();
 		}
@@ -130,10 +138,37 @@ class WriteBehindBuffer implements Runnable {
 	 */
 	private Collection<IResourceDescription> clear() {
 		Map<URI, IResourceDescription> oldBuffer = null;
-		synchronized (this) {
+		bufferLock.lock();
+		try {
 			oldBuffer = buffer;
 			buffer = Maps.newLinkedHashMap();
+		} finally {
+			bufferLock.unlock();
 		}
 		return oldBuffer.values();
 	}
+
+	/**
+	 * Copied from {@link Uninterruptibles#awaitUninterruptibly(java.util.concurrent.CountDownLatch)}.
+	 * 
+	 * See http://code.google.com/p/guava-libraries/issues/detail?id=1212
+	 */
+	private static void awaitUninterruptibly(Condition condition) {
+		boolean interrupted = false;
+		try {
+			while (true) {
+				try {
+					condition.await();
+					return;
+				} catch (InterruptedException e) {
+					interrupted = true;
+				}
+			}
+		} finally {
+			if (interrupted) {
+				Thread.currentThread().interrupt();
+			}
+		}
+	}
+
 }
