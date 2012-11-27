@@ -243,7 +243,6 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 
 	public void addDescription(final URI uri, final IResourceDescription newDescription) {
 		assertInTransaction();
-		buffer.put(uri, newDescription);
 		allURIs.add(uri);
 		for (IEObjectDescription object : newDescription.getExportedObjects()) {
 			QualifiedName lowerCase = object.getName().toLowerCase();
@@ -261,6 +260,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 
 		// don't call addCache() here as resource must strictly remain in cache until flushed
 		cache.put(uri, newDescription);
+		buffer.put(uri, newDescription);
 	}
 
 	public void removeDescription(final URI uri) {

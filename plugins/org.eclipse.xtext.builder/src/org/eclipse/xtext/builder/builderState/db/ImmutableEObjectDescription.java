@@ -32,7 +32,7 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 		this.name = name;
 		this.uri = uri;
 		this.eClass = eClass;
-		this.userData = userData;
+		this.userData = userData == null || userData.length == 0 ? EMPTY_ARRAY : userData;
 	}
 
 	public static ImmutableEObjectDescription copyOf(IEObjectDescription obj) {
@@ -75,8 +75,6 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 	}
 
 	public String[] getUserDataKeys() {
-		if (userData == null) return EMPTY_ARRAY;
-
 		int count = userData.length / 2;
 		String[] keys = new String[count];
 		System.arraycopy(userData, 0, keys, 0, count);
@@ -85,7 +83,7 @@ public class ImmutableEObjectDescription implements IEObjectDescription {
 
 	@Override
 	public String toString() {
-		return "ImmutableEObjectDescription(" + getName().toString() + ")";
+		return "ImmutableEObjectDescription(" + getName().toString() + ", " + getEObjectURI() + ")";
 	}
 
 	public static Object[] getUserDataArray(final IEObjectDescription obj) {

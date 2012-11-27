@@ -340,28 +340,23 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			resStmt = conn.prepare("SELECT M.RES_ID FROM " + resourceMap.getTable()
 					+ " M INNER JOIN TABLE(ID INT=?) I ON M.RES_ID = I.ID");
 			resStmt.setObject(1, idArray);
-			resStmt.execute();
-			ResultSet rs = resStmt.getResultSet();
+			ResultSet rs = resStmt.executeQuery();
 			while (rs.next()) {
 				int resId = rs.getInt(1);
 				result.put(resId, new SelectableDBBasedResourceDescription(this, resourceMap.getURI(resId)));
 			}
 
-			IEObjectDescriptionIterable objects = new IEObjectDescriptionIterable() {
-				@Override
-				protected PreparedStatement createPreparedStatement() throws SQLException {
-					PreparedStatement stmt = conn
-							.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID ORDER BY SEQ_NR");
-					stmt.setObject(1, idArray);
-					return stmt;
-				}
-			};
-			objStmt = objects.createPreparedStatement();
-			objStmt.execute();
-			rs = objStmt.getResultSet();
+			objStmt = conn.prepare("SELECT O.RES_ID, O.FRAG, O.NAME, O.ECLASS_ID, O.USER_DATA FROM OBJ O INNER JOIN TABLE(ID INT=?) I ON O.RES_ID = I.ID ORDER BY O.RES_ID, O.SEQ_NR");
+			objStmt.setObject(1, idArray);
+			rs = objStmt.executeQuery();
 			while (rs.next()) {
-				IEObjectDescription obj = objects.computeNext(rs);
-				result.get(rs.getInt(1)).getExportedObjects().add(obj);
+				EClass type = packageRegistry.getEClass(rs.getInt(4));
+				if (type != null) {
+					SelectableDBBasedResourceDescription res = result.get(rs.getInt(1));
+					res.getExportedObjects().add(
+							new ImmutableEObjectDescription(createQualifiedNameFromString(rs.getString(3)), res
+									.getURI().appendFragment(rs.getString(2)), type, getUserData(rs.getObject(5))));
+				}
 			}
 		} catch (SQLException e) {
 			throw new DBException(e);
@@ -375,8 +370,6 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 
 	/**
 	 * Loads all object names present in the database associated with the URIs in which they occur.
-	 * <p>
-	 * TODO: consider using URI[] arrays (or even Object => URI, URI[]) to save more memory
 	 * 
 	 * @param destination
 	 *            map to which to add all names to the respective resources mappings

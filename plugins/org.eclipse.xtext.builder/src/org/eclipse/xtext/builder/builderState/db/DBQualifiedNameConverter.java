@@ -11,10 +11,9 @@ import java.util.List;
 
 import org.eclipse.xtext.naming.IQualifiedNameConverter;
 import org.eclipse.xtext.naming.QualifiedName;
+import org.eclipse.xtext.util.Strings;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 /**
@@ -23,9 +22,7 @@ import com.google.common.collect.Lists;
 public class DBQualifiedNameConverter implements IQualifiedNameConverter {
 
 	private static final char DOT = '.';
-	private static final char ENCODED_DOT = 0x1B; // ESC (escape)
-
-	private final Splitter splitter = Splitter.on(DOT);
+	private static final char ENCODED_DOT = 0xb7; // (middle dot)
 
 	private final CharMatcher segmentEncoder = CharMatcher.is(DOT);
 	private final CharMatcher segmentDecoder = CharMatcher.is(ENCODED_DOT);
@@ -52,8 +49,8 @@ public class DBQualifiedNameConverter implements IQualifiedNameConverter {
 		if (qualifiedNameAsText == null)
 			throw new IllegalArgumentException("Qualified name cannot be null");
 
-		Iterable<String> encodedSegments = splitter.split(qualifiedNameAsText);
-		List<String> segments = Lists.newArrayListWithCapacity(Iterables.size(encodedSegments));
+		List<String> encodedSegments = Strings.split(qualifiedNameAsText, DOT);
+		List<String> segments = Lists.newArrayListWithCapacity(encodedSegments.size());
 		for (String seg : encodedSegments) {
 			segments.add(segmentDecoder.replaceFrom(seg, DOT));
 		}
