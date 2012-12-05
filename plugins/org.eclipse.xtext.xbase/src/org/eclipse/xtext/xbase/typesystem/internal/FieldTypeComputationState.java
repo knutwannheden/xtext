@@ -13,7 +13,10 @@ import java.util.List;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.xtext.common.types.JvmField;
+import org.eclipse.xtext.common.types.JvmMember;
+import org.eclipse.xtext.common.types.JvmTypeReference;
 import org.eclipse.xtext.xbase.scoping.batch.IFeatureScopeSession;
+import org.eclipse.xtext.xbase.typesystem.computation.ITypeComputationResult;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
 
 /**
@@ -38,6 +41,24 @@ public class FieldTypeComputationState extends AbstractLogicalContainerAwareRoot
 	@Override
 	@Nullable
 	protected LightweightTypeReference getExpectedType() {
-		return getResolvedTypes().getActualType(getMember());
+		return getResolvedTypes().getExpectedTypeForAssociatedExpression(getMember(), getDefiniteRootExpression());
+	}
+	
+	@Override
+	protected ITypeComputationResult createNoTypeResult() {
+		JvmField field = (JvmField) getMember();
+		JvmTypeReference type = field.getType();
+		if (type != null) {
+			final LightweightTypeReference result = resolvedTypes.getConverter().toLightweightReference(type);
+			if (result != null) {
+				return new NoTypeResult(getMember(), result.getOwner()) {
+					@Override
+					public LightweightTypeReference getActualExpressionType() {
+						return result;
+					}
+				};
+			}
+		}
+		return new NoTypeResult(getMember(), resolvedTypes.getReferenceOwner());
 	}
 }

@@ -23,65 +23,19 @@ import org.eclipse.xtext.nodemodel.ILeafNode;
 import org.eclipse.xtext.nodemodel.INode;
 import org.eclipse.xtext.nodemodel.util.NodeModelUtils;
 
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 
 /**
+ * The default implementation of the documentation provider for {@link EObject emf objects} based
+ * on Xtext languages.
+ * 
+ * It uses a single ML_COMMENT token by default to return the contained text as the documentation.
+ * 
  * @author Christoph Kulla - Initial contribution and API
  */
 @Singleton
-public class MultiLineCommentDocumentationProvider implements IEObjectDocumentationProvider, IEObjectDocumentationProviderExtension {
+public class MultiLineCommentDocumentationProvider extends AbstractMultiLineCommentProvider implements IEObjectDocumentationProvider, IEObjectDocumentationProviderExtension {
 
-	public final static String RULE = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.ruleName";
-	public final static String START_TAG = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.startTag";
-	public final static String END_TAG = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.endTag";
-	public final static String LINE_PREFIX = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.linePrefix";
-	public final static String LINE_POSTFIX = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.linePostfix";
-	public final static String WHITESPACE = "org.eclipse.xtext.ui.editor.hover.MultiLineDocumentationProvider.whitespace";
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(RULE)
-	protected String ruleName = "ML_COMMENT";
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(START_TAG)
-	protected String startTag = "/\\*\\*?"; // regular expression
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(END_TAG)
-	protected String endTag = "\\*/"; // regular expression
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(LINE_PREFIX)
-	protected String linePrefix = "\\** ?"; // regular expression
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(LINE_POSTFIX)
-	protected String linePostfix = "\\**"; // regular expression
-
-	/**
-	 * @since 2.3
-	 */
-	@Inject(optional = true)
-	@Named(WHITESPACE)
-	protected String whitespace = "( |\\t)*"; // regular expression
-	
 	protected String findComment(EObject o) {
 		String returnValue = null;
 		List<INode> documentationNodes = getDocumentationNodes(o);
@@ -92,7 +46,7 @@ public class MultiLineCommentDocumentationProvider implements IEObjectDocumentat
 	}
 	
 	/**
-	 * Returns the nearest multi line comment node that precedes the given object.
+	 * Returns the nearest multi line comment node that precedes the given object. 
 	 * @since 2.3
 	 * @return a list with exactly one node or an empty list if the object is undocumented.
 	 */
@@ -119,13 +73,6 @@ public class MultiLineCommentDocumentationProvider implements IEObjectDocumentat
 
 	public String getDocumentation(EObject o) {
 		String returnValue = findComment(o);
-		if (returnValue != null) {
-			returnValue = returnValue.replaceAll("\\A" + startTag, "");
-			returnValue = returnValue.replaceAll(endTag + "\\z", "");
-			returnValue = returnValue.replaceAll("(?m)^"+ whitespace + linePrefix, "");
-			returnValue = returnValue.replaceAll("(?m)" + whitespace + linePostfix + whitespace + "$", "");
-			return returnValue.trim();
-		} else
-			return null;
+		return getTextFromMultilineComment(returnValue);
 	}
 }

@@ -15,8 +15,9 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.xtext.common.types.JvmFormalParameter;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.xbase.scoping.batch.IFeatureScopeSession;
+import org.eclipse.xtext.xbase.typesystem.InferredTypeIndicator;
+import org.eclipse.xtext.xbase.typesystem.computation.ITypeComputationResult;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
-import org.eclipse.xtext.xbase.typesystem.references.OwnedConverter;
 
 /**
  * @author Sebastian Zarnekow - Initial contribution and API
@@ -30,9 +31,7 @@ public class OperationBodyComputationState extends AbstractLogicalContainerAware
 			JvmOperation operation,
 			LogicalContainerAwareReentrantTypeResolver reentrantTypeResolver) {
 		super(resolvedTypes, featureScopeSession, operation, reentrantTypeResolver);
-		OwnedConverter converter = getConverter();
 		for(JvmFormalParameter parameter: operation.getParameters()) {
-			resolvedTypes.setType(parameter, converter.toLightweightReference(parameter.getParameterType()));
 			addLocalToCurrentScope(parameter);
 		}
 	}
@@ -52,6 +51,22 @@ public class OperationBodyComputationState extends AbstractLogicalContainerAware
 	@Override
 	@Nullable
 	protected LightweightTypeReference getExpectedType() {
-		return getResolvedTypes().getActualType(getMember());
+		JvmOperation operation = (JvmOperation) getMember();
+		LightweightTypeReference expectedType = ((LogicalContainerAwareReentrantTypeResolver)getResolver()).getReturnTypeOfOverriddenOperation(operation, resolvedTypes, getFeatureScopeSession());
+		if (expectedType != null) {
+			InferredTypeIndicator.resolveTo(operation.getReturnType(), expectedType.toJavaCompliantTypeReference());
+			return expectedType;
+		}
+		return getResolvedTypes().getExpectedTypeForAssociatedExpression(getMember(), getDefiniteRootExpression());
+	}
+	
+	@Override
+	protected ITypeComputationResult createNoTypeResult() {
+		JvmOperation operation = (JvmOperation) getMember();
+		LightweightTypeReference expectedType = ((LogicalContainerAwareReentrantTypeResolver)getResolver()).getReturnTypeOfOverriddenOperation(operation, resolvedTypes, getFeatureScopeSession());
+		if (expectedType != null) {
+			InferredTypeIndicator.resolveTo(operation.getReturnType(), expectedType.toJavaCompliantTypeReference());
+		}
+		return new NoTypeResult(getMember(), resolvedTypes.getReferenceOwner());
 	}
 }

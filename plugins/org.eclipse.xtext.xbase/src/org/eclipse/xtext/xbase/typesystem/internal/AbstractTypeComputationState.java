@@ -88,15 +88,16 @@ public abstract class AbstractTypeComputationState implements ITypeComputationSt
 	
 	public final ITypeComputationResult computeTypes(@Nullable XExpression expression) {
 		if (expression != null) {
+			if (expression.eContainer() == null && expression.eResource() == null)
+				throw new IllegalStateException("Dangling expression: " + expression);
 			ExpressionAwareStackedResolvedTypes stackedResolvedTypes = doComputeTypes(expression);
 			stackedResolvedTypes.performMergeIntoParent();
 			return new ResolutionBasedComputationResult(expression, resolvedTypes);
 		} else {
-			// create diagnostics if necessary
-			return new NoTypeResult();
+			return new NoTypeResult(null, getReferenceOwner());
 		}
 	}
-
+	
 	protected ExpressionAwareStackedResolvedTypes doComputeTypes(XExpression expression) {
 		ExpressionAwareStackedResolvedTypes stackedResolvedTypes = resolvedTypes.pushTypes(expression);
 		ExpressionTypeComputationState state = createExpressionComputationState(expression, stackedResolvedTypes);
@@ -202,7 +203,7 @@ public abstract class AbstractTypeComputationState implements ITypeComputationSt
 	public List<IFeatureLinkingCandidate> getLinkingCandidates(XAbstractFeatureCall featureCall) {
 		IFeatureLinkingCandidate result = resolvedTypes.getFeature(featureCall);
 		if (result != null) {
-			return Collections.singletonList(result);
+			return Collections.<IFeatureLinkingCandidate>singletonList(new AppliedFeatureLinkingCandidate(result));
 		}
 		EObject proxyOrResolved = (EObject) featureCall.eGet(XbasePackage.Literals.XABSTRACT_FEATURE_CALL__FEATURE, false);
 		if (proxyOrResolved == null) {
@@ -370,7 +371,7 @@ public abstract class AbstractTypeComputationState implements ITypeComputationSt
 	}
 
 	public ITypeReferenceOwner getReferenceOwner() {
-		return getResolvedTypes().getReferenceOwner();
+		return resolvedTypes.getReferenceOwner();
 	}
 	
 	public OwnedConverter getConverter() {

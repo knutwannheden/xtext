@@ -626,6 +626,11 @@ public abstract class AbstractTypeResolverTest<Reference extends Object> extends
   }
   
   @Test
+  public void testFeatureCallWithArrayToIterableConversion_04() throws Exception {
+    this.resolvesTo("(null as String[][]).head", "String[]");
+  }
+  
+  @Test
   public void testReturnType_01() throws Exception {
     this.resolvesTo("return \'foo\'", "void");
   }
@@ -997,6 +1002,11 @@ public abstract class AbstractTypeResolverTest<Reference extends Object> extends
   }
   
   @Test
+  public void testIfExpression_15() throws Exception {
+    this.resolvesTo("if (true) null else null", "null");
+  }
+  
+  @Test
   public void testSwitchExpression() throws Exception {
     this.resolvesTo("switch true { case true : \'s\' case false : \'foo\' default: \'bar\'}", "String");
     this.resolvesTo("switch true { case true : \'s\' case false : new Object() default: \'bar\'}", "Object");
@@ -1115,6 +1125,16 @@ public abstract class AbstractTypeResolverTest<Reference extends Object> extends
   @Test
   public void testBlockExpression_06() throws Exception {
     this.resolvesTo("{val Object s = \'\' s.notify}", "void");
+  }
+  
+  @Test
+  public void testBlockExpression_07() throws Exception {
+    this.resolvesTo("{\n            val (Integer, Double, Boolean) => void fun1 = null\n            val (byte[], Object) => double[] fun2 = null\n            val test = newArrayList.map[1 -> org::eclipse::xtext::xbase::lib::Pair::of(fun1, fun2)]\n            val test2 = newArrayList.map[2 -> org::eclipse::xtext::xbase::lib::Pair::of(fun1, fun2)]\n            val test3 = com::google::common::collect::Iterables::concat(test, test2).toMap[key].entrySet.map[value].toList\n            test3\n        }", "List<Pair<Integer, Pair<(Integer, Double, Boolean)=>void, (byte[], Object)=>double[]>>>");
+  }
+  
+  @Test
+  public void testBlockExpression_08() throws Exception {
+    this.resolvesTo("{\n            val (Integer, Double, Boolean) => void fun1 = null\n            val (byte[], Object) => double[] fun2 = null\n            val test = newArrayList.map[1 -> org::eclipse::xtext::xbase::lib::Pair::of(fun1, fun2)]\n            val test2 = newArrayList.map[2 -> org::eclipse::xtext::xbase::lib::Pair::of(fun1, fun2)]\n            val test3 = com::google::common::collect::Iterables::concat(test, test2).toMap[key].entrySet.map[value].toList\n            test3.head.value.value.apply(null, null).last\n        }", "Double");
   }
   
   @Test

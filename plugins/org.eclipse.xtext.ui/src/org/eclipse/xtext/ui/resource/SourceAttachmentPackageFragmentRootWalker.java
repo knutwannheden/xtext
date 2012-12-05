@@ -31,7 +31,7 @@ import com.google.common.collect.Sets;
 /**
  * @since 2.4
  */
-public abstract class SourceAttachmentPackageFragmentRootWalker<T> extends PackageFragmentRootWalker<T> {
+abstract class SourceAttachmentPackageFragmentRootWalker<T> extends PackageFragmentRootWalker<T> {
 
 	private final static Logger LOG = Logger.getLogger(SourceAttachmentPackageFragmentRootWalker.class);
 
@@ -40,16 +40,20 @@ public abstract class SourceAttachmentPackageFragmentRootWalker<T> extends Packa
 	private Set<Pattern> binIncludePatterns;
 	private boolean visitAll;
 	private String bundleSymbolicName;
+	
+	public String getBundleSymbolicName() {
+		return bundleSymbolicName;
+	}
 
 	/**
 	 * Also traverse the source attachment's folder's bin includes, if it's an attachment for a bundle.
 	 */
 	@Override
 	public T traverse(IPackageFragmentRoot root, boolean stopOnFirstResult) throws JavaModelException {
-
+		bundleSymbolicName = null;
 		// Determine the bundle name from the manifest.
 		//
-		IPath path = root.getPath();
+		IPath path = root.isExternal() ? root.getPath() : root.getUnderlyingResource().getLocation();
 		if (path != null) {
 			if ("jar".equals(path.getFileExtension())) {
 				try {
@@ -164,7 +168,6 @@ public abstract class SourceAttachmentPackageFragmentRootWalker<T> extends Packa
 
 		// Clear the state that's cached during this traversal.
 		//
-		bundleSymbolicName = null;
 		visitAll = false;
 		binIncludePatterns = null;
 		return result;

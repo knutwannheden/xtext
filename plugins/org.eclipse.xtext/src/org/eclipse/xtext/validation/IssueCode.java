@@ -28,5 +28,8 @@ public class IssueCode {
 	public String getDefaultSeverity() {
 		return SEVERITY_ERROR;
 	}
-
+	
+	public boolean isDerived() {
+		return false;
+	}
 }

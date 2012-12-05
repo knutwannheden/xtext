@@ -7,9 +7,10 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState;
 
+import static com.google.common.collect.Sets.*;
+
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -32,7 +33,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 
@@ -175,16 +175,15 @@ public abstract class AbstractBuilderState extends AbstractResourceDescriptionCh
 	protected Collection<IResourceDescription.Delta> doClean(Set<URI> toBeRemoved, IProgressMonitor monitor) {
 		SubMonitor subMonitor = SubMonitor.convert(monitor, Messages.AbstractBuilderState_2, toBeRemoved.size());
 		subMonitor.subTask(Messages.AbstractBuilderState_2);
-		Set<URI> toBeDeletedAsSet = Sets.newHashSet(toBeRemoved);
-		Map<URI, IResourceDescription.Delta> result = Maps.newHashMap();
-		for (URI toDelete : toBeDeletedAsSet) {
+		Set<IResourceDescription.Delta> result = newLinkedHashSet();
+		for (URI toDelete : toBeRemoved) {
 			IResourceDescription resourceDescription = getResourceDescription(toDelete);
 			if (resourceDescription != null) {
-				result.put(toDelete, new DefaultResourceDescriptionDelta(resourceDescription, null));
+				result.add(new DefaultResourceDescriptionDelta(resourceDescription, null));
 			}
 			subMonitor.worked(1);
 		}
-		return result.values();
+		return result;
 	}
 
 	public Iterable<IEObjectDescription> getExportedObjects() {

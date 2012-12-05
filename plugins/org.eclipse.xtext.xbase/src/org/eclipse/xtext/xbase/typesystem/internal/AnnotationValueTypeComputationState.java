@@ -16,6 +16,7 @@ import org.eclipse.xtext.common.types.JvmAnnotationValue;
 import org.eclipse.xtext.common.types.JvmOperation;
 import org.eclipse.xtext.xbase.XExpression;
 import org.eclipse.xtext.xbase.scoping.batch.IFeatureScopeSession;
+import org.eclipse.xtext.xbase.typesystem.computation.ITypeComputationResult;
 import org.eclipse.xtext.xbase.typesystem.references.LightweightTypeReference;
 
 /**
@@ -47,7 +48,7 @@ public class AnnotationValueTypeComputationState extends AbstractRootTypeComputa
 	protected LightweightTypeReference getExpectedType() {
 		JvmOperation operation = annotationValue.getOperation();
 		LightweightTypeReference result = getResolvedTypes().getActualType(operation);
-		if (result.isArray()) {
+		if (result != null && result.isArray()) {
 			return result.getComponentType();
 		}
 		return result;
@@ -56,5 +57,10 @@ public class AnnotationValueTypeComputationState extends AbstractRootTypeComputa
 	@Override
 	protected XExpression getRootExpression() {
 		return expression;
+	}
+	
+	@Override
+	protected ITypeComputationResult createNoTypeResult() {
+		return new NoTypeResult(annotationValue, resolvedTypes.getReferenceOwner());
 	}
 }
