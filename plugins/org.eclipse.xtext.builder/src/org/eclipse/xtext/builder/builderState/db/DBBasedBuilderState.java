@@ -426,7 +426,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		deleteResourceDescription(uri);
 	}
 
-	public void deleteResources(final Set<URI> uris) {
+	public void deleteResources(final Collection<URI> uris) {
 		ensureInitialized();
 		if (uris.size() == 1)
 			deleteResourceDescription(uris.iterator().next());

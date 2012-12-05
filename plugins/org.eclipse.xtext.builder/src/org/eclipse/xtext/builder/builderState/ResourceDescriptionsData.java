@@ -86,7 +86,7 @@ public class ResourceDescriptionsData extends AbstractCompoundSelectable impleme
 		}
 	}
 	
-	public void removeDescriptions(Set<URI> uris) {
+	public void removeDescriptions(Collection<URI> uris) {
 		for (URI uri : uris)
 			removeDescription(uri);
 	}

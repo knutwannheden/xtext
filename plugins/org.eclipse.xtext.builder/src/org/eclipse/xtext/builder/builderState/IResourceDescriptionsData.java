@@ -7,6 +7,7 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState;
 
+import java.util.Collection;
 import java.util.Set;
 
 import org.eclipse.emf.common.util.URI;
@@ -28,6 +29,6 @@ public interface IResourceDescriptionsData extends IResourceDescriptions, IResou
 
 	void removeDescription(URI uri);
 
-	void removeDescriptions(Set<URI> uris);
+	void removeDescriptions(Collection<URI> collection);
 
 }

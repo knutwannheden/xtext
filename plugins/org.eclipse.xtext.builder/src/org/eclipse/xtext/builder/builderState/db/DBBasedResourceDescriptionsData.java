@@ -267,7 +267,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		removeDescriptions(ImmutableSet.of(uri));
 	}
 
-	public void removeDescriptions(Set<URI> uris) {
+	public void removeDescriptions(Collection<URI> uris) {
 		assertInTransaction();
 		allURIs.removeAll(uris);
 		// TODO check if we can make this faster
