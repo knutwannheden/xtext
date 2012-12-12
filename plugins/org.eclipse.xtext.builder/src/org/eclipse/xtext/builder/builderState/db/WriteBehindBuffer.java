@@ -116,27 +116,23 @@ class WriteBehindBuffer implements Runnable {
 		if (bufferFlushScheduler.isShutdown())
 			return;
 
-		// check if flush required
-		boolean flushRequired = true;
-		bufferLock.lock();
 		try {
-			flushRequired = !buffer.isEmpty();
-		} finally {
-			bufferLock.unlock();
-		}
-
-		// wait for flush in progress
-		if (bufferFlushLock.tryLock())
-			bufferFlushLock.unlock();
-
-		// wait for next flush
-		if (flushRequired) {
 			bufferFlushLock.lock();
+
+			// check if flush required
+			boolean flushRequired = true;
 			try {
-				bufferFlushed.awaitUninterruptibly();
+				bufferLock.lock();
+				flushRequired = !buffer.isEmpty();
 			} finally {
-				bufferFlushLock.unlock();
+				bufferLock.unlock();
 			}
+	
+			// wait for next flush
+			if (flushRequired)
+				bufferFlushed.awaitUninterruptibly();
+		} finally {
+			bufferFlushLock.unlock();
 		}
 	}
 
