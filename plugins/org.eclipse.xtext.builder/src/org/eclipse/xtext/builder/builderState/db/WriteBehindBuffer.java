@@ -7,7 +7,6 @@
  *******************************************************************************/
 package org.eclipse.xtext.builder.builderState.db;
 
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -35,7 +34,7 @@ class WriteBehindBuffer implements Runnable {
 	private static final int DELAY = 100;
 
 	private final DBBasedBuilderState index;
-	private final IAcceptor<Collection<IResourceDescription>> flushAcceptor;
+	private final IAcceptor<Map<URI, IResourceDescription>> flushAcceptor;
 
 	private Map<URI, IResourceDescription> buffer = Maps.newHashMap();
 	private final Lock bufferLock = new ReentrantLock();
@@ -54,7 +53,7 @@ class WriteBehindBuffer implements Runnable {
 	 *            acceptor to accept flushed resources
 	 */
 	public WriteBehindBuffer(final DBBasedBuilderState index,
-			final IAcceptor<Collection<IResourceDescription>> flushAcceptor) {
+			final IAcceptor<Map<URI, IResourceDescription>> flushAcceptor) {
 		this.index = index;
 		this.flushAcceptor = flushAcceptor;
 	}
@@ -77,7 +76,7 @@ class WriteBehindBuffer implements Runnable {
 	/** {@inheritDoc} */
 	public void run() {
 		bufferFlushLock.lock();
-		Collection<IResourceDescription> bufferCopy = clear();
+		Map<URI, IResourceDescription> bufferCopy = clear();
 		try {
 			if (!bufferCopy.isEmpty()) {
 				index.updateResources(bufferCopy);
@@ -146,7 +145,7 @@ class WriteBehindBuffer implements Runnable {
 	 * 
 	 * @return old buffer contents
 	 */
-	private Collection<IResourceDescription> clear() {
+	private Map<URI, IResourceDescription> clear() {
 		Map<URI, IResourceDescription> oldBuffer = null;
 		bufferLock.lock();
 		try {
@@ -155,7 +154,7 @@ class WriteBehindBuffer implements Runnable {
 		} finally {
 			bufferLock.unlock();
 		}
-		return oldBuffer.values();
+		return oldBuffer;
 	}
 
 }

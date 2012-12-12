@@ -9,6 +9,7 @@ package org.eclipse.xtext.builder.builderState.db;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
@@ -27,6 +28,7 @@ import org.junit.Test;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -83,24 +85,26 @@ public class DBBasedBuilderStateTest extends Assert {
 
 	@Test
 	public void testSimpleTransactionCommit() {
-		List<IResourceDescription> resources = ImmutableList.of(createDescription("foo.bar"));
+		IResourceDescription description = createDescription("foo.bar");
+		Map<URI, IResourceDescription> resources = ImmutableMap.of(description.getURI(), description);
 
 		state.beginChanges();
 		assertEmpty(state);
 		state.updateResources(resources);
-		assertOnlyContains(resources, state);
+		assertOnlyContains(resources.values(), state);
 		state.commitChanges();
-		assertOnlyContains(resources, state);
+		assertOnlyContains(resources.values(), state);
 	}
 
 	@Test
 	public void testSimpleTransactionRollback() {
-		List<IResourceDescription> resources = ImmutableList.of(createDescription("foo.bar"));
+		IResourceDescription description = createDescription("foo.bar");
+		Map<URI, IResourceDescription> resources = ImmutableMap.of(description.getURI(), description);
 
 		state.beginChanges();
 		assertEmpty(state);
 		state.updateResources(resources);
-		assertOnlyContains(resources, state);
+		assertOnlyContains(resources.values(), state);
 		state.rollbackChanges();
 		assertEmpty(state);
 	}
@@ -109,7 +113,7 @@ public class DBBasedBuilderStateTest extends Assert {
 	public void testCopy() {
 		IResourceDescription oldResource = createDescription("foo.bar");
 		state.beginChanges();
-		state.updateResources(ImmutableList.of(oldResource));
+		state.updateResources(ImmutableMap.of(oldResource.getURI(), oldResource));
 		state.commitChanges();
 
 		IResourceDescription newResource = createDescription("foo2.bar");
@@ -118,7 +122,7 @@ public class DBBasedBuilderStateTest extends Assert {
 		newState.beginChanges();
 		assertOnlyContains(ImmutableList.of(oldResource), newState);
 
-		newState.updateResources(ImmutableList.of(newResource));
+		newState.updateResources(ImmutableMap.of(newResource.getURI(), newResource));
 		assertOnlyContains(ImmutableList.of(oldResource), state);
 		assertOnlyContains(ImmutableList.of(oldResource, newResource), newState);
 

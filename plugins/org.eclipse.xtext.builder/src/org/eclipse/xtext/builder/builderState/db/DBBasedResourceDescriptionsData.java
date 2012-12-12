@@ -45,7 +45,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 
 	// caching
 	private Set<URI> allURIs = Sets.newHashSet();
-	private Map<QualifiedName, Collection<URI>> lookupMap = Maps.newHashMap();
+	private Map<QualifiedName, List<URI>> lookupMap = Maps.newHashMap();
 	private Map<URI, IResourceDescription> cache = new MapMaker().concurrencyLevel(1).softValues().makeMap();
 
 	// buffering
@@ -56,7 +56,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 	}
 
 	protected DBBasedResourceDescriptionsData(final DBBasedBuilderState index, Set<URI> allURIs,
-			Map<QualifiedName, Collection<URI>> lookupMap, Map<URI, IResourceDescription> cache) {
+			Map<QualifiedName, List<URI>> lookupMap, Map<URI, IResourceDescription> cache) {
 		this.index = index;
 		this.allURIs = allURIs;
 		this.lookupMap = lookupMap;
@@ -181,11 +181,12 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		ensureInitialized();
 		index.beginChanges();
 		inTransaction = true;
-		buffer = new WriteBehindBuffer(index, new IAcceptor<Collection<IResourceDescription>>() {
-			public void accept(final Collection<IResourceDescription> t) {
+		buffer = new WriteBehindBuffer(index, new IAcceptor<Map<URI, IResourceDescription>>() {
+			public void accept(final Map<URI, IResourceDescription> t) {
 				// replace full blown originals in cache
-				for (IResourceDescription res : t) {
-					addToCache(res.getURI(), res);
+				for (IResourceDescription res : t.values()) {
+					if (res != null)
+						addToCache(res.getURI(), res);
 				}
 			}
 		});
@@ -246,7 +247,7 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		allURIs.add(uri);
 		for (IEObjectDescription object : newDescription.getExportedObjects()) {
 			QualifiedName lowerCase = object.getName().toLowerCase();
-			Collection<URI> uris = lookupMap.get(lowerCase);
+			List<URI> uris = lookupMap.get(lowerCase);
 			if (uris != null) {
 				if (!uris.contains(uri)) {
 					uris.add(uri);
@@ -271,17 +272,19 @@ public class DBBasedResourceDescriptionsData implements IResourceDescriptionsDat
 		assertInTransaction();
 		allURIs.removeAll(uris);
 		// TODO check if we can make this faster
-		for (Iterator<Map.Entry<QualifiedName, Collection<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
-			Map.Entry<QualifiedName, Collection<URI>> entry = it.next();
-			Collection<URI> mappedUris = entry.getValue();
-			if (mappedUris.removeAll(uris)) {
+		for (Iterator<Map.Entry<QualifiedName, List<URI>>> it = lookupMap.entrySet().iterator(); it.hasNext();) {
+			Map.Entry<QualifiedName, List<URI>> entry = it.next();
+			List<URI> mappedUris = entry.getValue();
+			if (mappedUris.remove(uris)) {
 				if (mappedUris.isEmpty()) {
 					it.remove();
 				}
 			}
 		}
 		cache.keySet().removeAll(uris);
-		index.deleteResources(uris);
+		for (URI uri : uris) {
+			buffer.put(uri, null);
+		}
 	}
 
 	public DBBasedResourceDescriptionsData copy(boolean keepOldState) {

@@ -36,7 +36,7 @@ import org.eclipse.xtext.resource.IResourceDescriptions;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension;
 import org.eclipse.xtext.resource.IResourceDescriptionsExtension.ReferenceMatchPolicy.MatchType;
 
-import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -374,7 +374,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 	 * @param destination
 	 *            map to which to add all names to the respective resources mappings
 	 */
-	public void loadAllQualifiedNames(final Map<QualifiedName, Collection<URI>> destination) {
+	public void loadAllQualifiedNames(final Map<QualifiedName, List<URI>> destination) {
 		ensureInitialized();
 		PreparedStatement stmt = null;
 		try {
@@ -383,7 +383,7 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 			ResultSet rs = stmt.getResultSet();
 			while (rs.next()) {
 				QualifiedName name = createQualifiedNameFromString(rs.getString(1).toLowerCase());
-				Collection<URI> resources = destination.get(name);
+				List<URI> resources = destination.get(name);
 				URI resource = resourceMap.getURI(rs.getInt(2));
 				if (resource == null)
 					continue;
@@ -404,21 +404,16 @@ public class DBBasedBuilderState implements IResourceDescriptions, IResourceDesc
 		}
 	}
 
-	public void updateResources(final Collection<IResourceDescription> resourceDescriptions) {
+	public void updateResources(final Map<URI, IResourceDescription> bufferCopy) {
 		ensureInitialized();
 
-		if (resourceDescriptions.size() == 1) {
-			deleteResourceDescription(resourceDescriptions.iterator().next().getURI());
+		if (bufferCopy.size() == 1) {
+			deleteResourceDescription(bufferCopy.keySet().iterator().next());
 		} else {
-			deleteResourceDescriptions(Collections2.transform(resourceDescriptions,
-					new Function<IResourceDescription, URI>() {
-						public URI apply(final IResourceDescription from) {
-							return from.getURI();
-						}
-					}));
+			deleteResourceDescriptions(bufferCopy.keySet());
 		}
 
-		insertResources(resourceDescriptions, false);
+		insertResources(Collections2.filter(bufferCopy.values(), Predicates.notNull()), false);
 	}
 
 	public void deleteResource(final URI uri) {
