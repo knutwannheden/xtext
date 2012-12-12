@@ -37,7 +37,7 @@ class WriteBehindBuffer implements Runnable {
 	private final DBBasedBuilderState index;
 	private final IAcceptor<Collection<IResourceDescription>> flushAcceptor;
 
-	private Map<URI, IResourceDescription> buffer = Maps.newLinkedHashMap();
+	private Map<URI, IResourceDescription> buffer = Maps.newHashMap();
 	private final Lock bufferLock = new ReentrantLock();
 
 	private final Lock bufferFlushLock = new ReentrantLock();
@@ -117,16 +117,27 @@ class WriteBehindBuffer implements Runnable {
 		if (bufferFlushScheduler.isShutdown())
 			return;
 
+		// check if flush required
+		boolean flushRequired = true;
+		bufferLock.lock();
+		try {
+			flushRequired = !buffer.isEmpty();
+		} finally {
+			bufferLock.unlock();
+		}
+
 		// wait for flush in progress
 		if (bufferFlushLock.tryLock())
 			bufferFlushLock.unlock();
 
 		// wait for next flush
-		bufferFlushLock.lock();
-		try {
-			bufferFlushed.awaitUninterruptibly();
-		} finally {
-			bufferFlushLock.unlock();
+		if (flushRequired) {
+			bufferFlushLock.lock();
+			try {
+				bufferFlushed.awaitUninterruptibly();
+			} finally {
+				bufferFlushLock.unlock();
+			}
 		}
 	}
 
